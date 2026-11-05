@@ -1,0 +1,14 @@
+.git
+.env
+.env.*
+!.env.example
+**/node_modules
+**/dist
+**/coverage
+**/.expo
+**/test-results
+**/playwright-report
+storage
+tmp
+database/*.sqlite*
+clients/desktop/build/bin

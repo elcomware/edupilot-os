@@ -1,22 +1,13 @@
 package routes
 
 import (
-	"github.com/goravel/framework/contracts/http"
-	"github.com/goravel/framework/support"
-
-	"github.com/elcomware/edupilot-os/app/http/controllers"
 	"github.com/elcomware/edupilot-os/app/facades"
+	"github.com/goravel/framework/contracts/http"
 )
 
 func Web() {
 	facades.Route().Get("/", func(ctx http.Context) http.Response {
-		return ctx.Response().View().Make("welcome.tmpl", map[string]any{
-			"version": support.Version,
-		})
+		return ctx.Response().Success().Json(http.Json{"application": "EduPilot OS", "api": "/api/v1", "health": "/api/v1/health"})
 	})
-
 	facades.Route().Static("public", "./public")
-
-	userController := controllers.NewUserController()
-	facades.Route().Get("/users", userController.Index)
 }

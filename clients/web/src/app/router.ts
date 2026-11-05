@@ -1,4 +1,4 @@
-import {useSyncExternalStore} from 'react'
+import {useEffect,useSyncExternalStore} from 'react'
 type Route = {page:'workspace'|'settings'|'unknown'} | {page:'module';key:string}
 export function readRoute(hash:string):Route {
   if(hash==='' || hash==='#/' || hash==='#/workspace') return {page:'workspace'}
@@ -9,3 +9,20 @@ export function readRoute(hash:string):Route {
 const subscribe=(cb:()=>void)=>{window.addEventListener('hashchange',cb);return()=>window.removeEventListener('hashchange',cb)}
 export function useRoute() {return readRoute(useSyncExternalStore(subscribe,()=>window.location.hash,()=>''))}
 export const moduleHref=(key:string)=>'#/modules/'+encodeURIComponent(key)
+
+// Hash routes can also change through browser history while a modal is open.
+// Capture the transition before React observes it, restoring the previous
+// location when the user keeps the draft. No student data is written to disk.
+export function useUnsavedGuard(dirty:boolean, warning:string){
+ useEffect(()=>{
+   if(!dirty)return
+   let accepted=window.location.href
+   const unload=(e:BeforeUnloadEvent)=>{e.preventDefault();e.returnValue=''}
+   const hash=(e:HashChangeEvent)=>{
+     if(window.confirm(warning)){accepted=location.href;return}
+     e.stopImmediatePropagation();window.history.pushState(null,'',accepted)
+   }
+   window.addEventListener('beforeunload',unload);window.addEventListener('hashchange',hash,true)
+   return()=>{window.removeEventListener('beforeunload',unload);window.removeEventListener('hashchange',hash,true)}
+ },[dirty,warning])
+}

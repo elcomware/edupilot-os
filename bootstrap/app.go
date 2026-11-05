@@ -4,6 +4,7 @@ import (
 	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 
+	"github.com/elcomware/edupilot-os/app/jobs"
 	"github.com/elcomware/edupilot-os/config"
 	"github.com/elcomware/edupilot-os/routes"
 )
@@ -11,6 +12,8 @@ import (
 func Boot() contractsfoundation.Application {
 	return foundation.Setup().
 		WithMigrations(Migrations).
+		WithJobs(jobs.Jobs).
+		WithSchedule(jobs.Schedule).
 		WithRouting(func() {
 			routes.Web()
 			routes.API()

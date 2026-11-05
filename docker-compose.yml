@@ -1,0 +1,114 @@
+name: edupilot
+
+x-runtime-env: &runtime-env
+  APP_NAME: EduPilot
+  APP_ENV: ${APP_ENV:-local}
+  APP_DEBUG: ${APP_DEBUG:-false}
+  QUEUE_CONNECTION: ${QUEUE_CONNECTION:-sync}
+  EDUPILOT_ENABLED_MODULES: ${EDUPILOT_ENABLED_MODULES:-}
+  LOG_CHANNEL: ${LOG_CHANNEL:-stack}
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  APP_KEY: ${APP_KEY:?Run make setup first}
+  JWT_SECRET: ${JWT_SECRET:?Run make setup first}
+  APP_URL: ${APP_URL:-http://localhost:3000}
+  APP_HOST: 0.0.0.0
+  APP_PORT: "3000"
+  DB_CONNECTION: sqlite
+  DB_DATABASE: database/edupilot.sqlite
+  EDUPILOT_DEDICATED_DATABASES: ${EDUPILOT_DEDICATED_DATABASES:-[]}
+  # Redis is reserved for optional cache/queue adapters; the durable outbox uses SQL.
+  REDIS_URL: redis://redis:6379/0
+  EDUPILOT_DOCUMENTS_DRIVER: ${EDUPILOT_DOCUMENTS_DRIVER:-local}
+  EDUPILOT_DOCUMENTS_ROOT: ${EDUPILOT_DOCUMENTS_ROOT:-storage/documents}
+  S3_ENDPOINT: ${S3_ENDPOINT:-http://storage:9000}
+  S3_BUCKET: ${S3_BUCKET:-edupilot}
+  S3_REGION: ${S3_REGION:-us-east-1}
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+
+x-backend: &backend
+  image: edupilot-backend:local
+  pull_policy: never
+  environment: *runtime-env
+  volumes:
+    - school-data:/srv/edupilot/database
+    - runtime-files:/srv/edupilot/storage
+  init: true
+
+services:
+  migrate:
+    <<: *backend
+    build:
+      context: .
+      target: backend
+    pull_policy: build
+    command: ["migrate"]
+    restart: "no"
+  api:
+    <<: *backend
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${API_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/api/v1/ready"]
+      interval: 5s
+      timeout: 4s
+      retries: 24
+      start_period: 10s
+  worker:
+    <<: *backend
+    command: ["worker"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    restart: unless-stopped
+  seed-admin:
+    <<: *backend
+    profiles: ["tools"]
+    command: ["seed-admin"]
+    restart: "no"
+  web:
+    build:
+      context: .
+      target: web
+    depends_on:
+      api: {condition: service_healthy}
+    init: true
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+  storage:
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Run make setup first}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Run make setup first}
+    ports:
+      - "127.0.0.1:${STORAGE_PORT:-9000}:9000"
+      - "127.0.0.1:${STORAGE_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - object-data:/data
+    restart: unless-stopped
+
+volumes:
+  school-data:
+  runtime-files:
+  redis-data:
+  object-data:

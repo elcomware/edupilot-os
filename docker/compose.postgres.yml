@@ -1,0 +1,40 @@
+# Apply with -f docker-compose.yml -f docker/compose.postgres.yml.
+x-pg-env: &pg-env
+  DB_CONNECTION: postgres
+  DB_DATABASE: ${POSTGRES_DB:-edupilot}
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_USERNAME: ${POSTGRES_USER:-edupilot}
+  DB_PASSWORD: ${DB_PASSWORD:?Run make setup first}
+  DB_SSLMODE: disable
+services:
+  postgres:
+    image: postgres:16-bookworm
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-edupilot}
+      POSTGRES_USER: ${POSTGRES_USER:-edupilot}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Run make setup first}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+  migrate:
+    environment: *pg-env
+    depends_on:
+      postgres: {condition: service_healthy}
+  api:
+    environment: *pg-env
+  worker:
+    environment: *pg-env
+  seed-admin:
+    environment: *pg-env
+    depends_on:
+      postgres: {condition: service_healthy}
+volumes:
+  pg-data:

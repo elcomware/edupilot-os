@@ -11,6 +11,7 @@ import (
 
 	"github.com/elcomware/edupilot-os/app/facades"
 	"github.com/elcomware/edupilot-os/bootstrap"
+	"github.com/elcomware/edupilot-os/database/edumigrations"
 	"github.com/elcomware/edupilot-os/platform/database"
 	"github.com/elcomware/edupilot-os/platform/identity"
 )
@@ -65,7 +66,7 @@ func run(mode string) error {
 	if err != nil {
 		return err
 	}
-	if err = catalog.CheckReady(ctx); err != nil {
+	if err = edumigrations.CheckReady(ctx, catalog, facades.Schema().Migrations()); err != nil {
 		return err
 	}
 	service := identity.New(&catalog.Control)

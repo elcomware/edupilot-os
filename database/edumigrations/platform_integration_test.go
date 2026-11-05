@@ -160,6 +160,9 @@ func TestHybridRoutingAndTransactionalDelivery(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			if err := missingOverride.CheckReady(ctx); !errors.Is(err, database.ErrPlacement) {
+				t.Fatalf("readiness accepted removed dedicated override: %v", err)
+			}
 			if _, err := missingOverride.ForTenantContext(ctx, "west"); !errors.Is(err, database.ErrPlacement) {
 				t.Fatalf("removed config routed formerly dedicated school: %v", err)
 			}

@@ -29,6 +29,7 @@ type Page struct {
 // Repository methods must isolate every read and write by school. Update uses
 // compare-and-swap; a successful mutation and its event commit together.
 type Repository interface {
+	Get(context.Context, string, string) (Entry, error)
 	List(context.Context, string, int, int) (Page, error)
 	Create(context.Context, string, string) (Entry, error)
 	Update(context.Context, string, Entry) (Entry, error)
@@ -55,4 +56,11 @@ func (s Service) Update(ctx context.Context, school string, item Entry) (Entry, 
 		return Entry{}, ErrInvalid
 	}
 	return s.Store.Update(ctx, school, item)
+}
+
+func (s Service) Get(ctx context.Context, school, id string) (Entry, error) {
+	if strings.TrimSpace(school) == "" || strings.TrimSpace(id) == "" {
+		return Entry{}, ErrInvalid
+	}
+	return s.Store.Get(ctx, school, id)
 }

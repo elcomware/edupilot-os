@@ -126,3 +126,16 @@ func (s *Store) mutate(ctx context.Context, school string, item workspace.Entry,
 	}
 	return tx.Commit()
 }
+
+func (s *Store) Get(ctx context.Context, school, id string) (workspace.Entry, error) {
+	pool, err := s.db.ForTenantContext(ctx, school)
+	if err != nil {
+		return workspace.Entry{}, err
+	}
+	var item workspace.Entry
+	err = pool.DB.QueryRowContext(ctx, pool.Bind("SELECT id,title,status,version FROM "+s.table+" WHERE school_id=? AND id=?"), school, id).Scan(&item.ID, &item.Title, &item.Status, &item.Version)
+	if errors.Is(err, sql.ErrNoRows) {
+		return workspace.Entry{}, workspace.ErrMissing
+	}
+	return item, err
+}

@@ -1,10 +1,12 @@
 // Package edumigrations maps module-owned SQL plans to Goravel's native migration
-// registry. Goravel opens the transaction on Connection() and stores each unique
-// signature in the control database's normal migration ledger.
+// registry. The native migrator owns the control ledger. Dedicated plans open
+// transactions on their explicitly named Goravel pool.
 package edumigrations
 
 import (
+	"context"
 	"crypto/rand"
+	"errors"
 	"fmt"
 
 	"github.com/elcomware/edupilot-os/app/facades"
@@ -71,16 +73,21 @@ type registered struct {
 }
 
 var _ schema.Migration = (*registered)(nil)
-var _ schema.Connection = (*registered)(nil)
 
-func (m *registered) Signature() string  { return m.plan.ID + "__" + m.node.Name }
-func (m *registered) Connection() string { return m.node.Name }
-func (m *registered) Up() error          { return m.run(false) }
-func (m *registered) Down() error        { return m.run(true) }
+func (m *registered) Signature() string { return m.plan.ID + "__" + m.node.Name }
+func (m *registered) Up() error         { return m.run(false) }
+func (m *registered) Down() error       { return m.run(true) }
 func (m *registered) run(down bool) error {
+	// Goravel v1.18's cached Orm.Connection(name) can report the *previous*
+	// connection name even though its query uses the correct physical pool.
+	// Keep the native migrator on control. For dedicated DDL, obtain the named
+	// physical handle explicitly rather than implementing schema.Connection.
+	if m.node.Tenant != "" {
+		return m.onDedicated(down)
+	}
 	frameworkSchema := facades.Schema()
 	if frameworkSchema == nil || frameworkSchema.GetConnection() != m.node.Name {
-		return fmt.Errorf("%s: incorrect Goravel schema connection", m.Signature())
+		return fmt.Errorf("%s: incorrect Goravel control connection", m.Signature())
 	}
 	tx := frameworkSchema.Orm().Query()
 	if tx == nil || !tx.InTransaction() {
@@ -93,6 +100,39 @@ func (m *registered) run(down bool) error {
 		}
 		return result.RowsAffected, nil
 	})
+}
+
+func (m *registered) onDedicated(down bool) error {
+	orm := facades.Orm()
+	if orm == nil || orm.Query() == nil {
+		return errors.New("Goravel ORM is unavailable")
+	}
+	conn := orm.Connection(m.node.Name)
+	if conn == nil || conn.Query() == nil {
+		return fmt.Errorf("%s: dedicated Goravel connection unavailable", m.Signature())
+	}
+	db, err := conn.DB()
+	if err != nil {
+		return fmt.Errorf("%s: resolve named pool: %w", m.Signature(), err)
+	}
+	pool := database.Pool{DB: db, Driver: m.node.Driver}
+	ctx := context.Background() // Goravel Migration.Up/Down do not receive a context.
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("%s: start dedicated transaction: %w", m.Signature(), err)
+	}
+	defer tx.Rollback()
+	err = m.apply(down, func(sql string, args ...any) (int64, error) {
+		result, err := tx.ExecContext(ctx, pool.Bind(sql), args...)
+		if err != nil {
+			return 0, err
+		}
+		return result.RowsAffected()
+	})
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // Goravel commits the selected connection before updating its default-connection

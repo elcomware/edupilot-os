@@ -10,7 +10,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/elcomware/edupilot-os/app/facades"
 	"github.com/elcomware/edupilot-os/bootstrap"
+	"github.com/elcomware/edupilot-os/database/edumigrations"
 	"github.com/elcomware/edupilot-os/platform/database"
 	"github.com/elcomware/edupilot-os/platform/outbox"
 )
@@ -32,7 +34,7 @@ func run(ctx context.Context) error {
 	}
 	start, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	if err := catalog.CheckReady(start); err != nil {
+	if err := edumigrations.CheckReady(start, catalog, facades.Schema().Migrations()); err != nil {
 		return err
 	}
 	pools := catalog.All()

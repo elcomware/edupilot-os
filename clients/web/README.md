@@ -13,4 +13,6 @@ From the repository root, install the npm workspaces, then use `npm run dev:web`
 
 Session tokens live in memory only. Refresh or reopen the app and sign in again. The current fragment is retained for deep links. Server-side authentication and authorization apply to every request. Theme preferences and pinned module keys persist on this device; no student data or credentials are stored locally.
 
-Extend `features/collections` for a new specialized experience. Keep generic workspace entries labeled as entries. Shared transport and DTOs live in `packages/api-client`, while query state belongs to TanStack Query and cosmetic controls belong to Zustand. See the root DESIGN.md and UX-CONTRACT.md.
+Enrollment adds active-student placement and versioned withdrawal; Documents adds raw upload and retrieval by server-issued ID. File storage must be configured on the server. A missing upload confirmation may mean a file exists without an ID; the UI does not replay it. JSON requests have a 15-second deadline; file transfers have a 60-second deadline. The transport rejects redirects and the web query client never queues offline writes.
+
+Use `features/specialized/ModulePanel.tsx` to register a specialized experience. Keep generic workspace entries labeled as entries. Shared transport and DTOs live in `packages/api-client`, while query state belongs to TanStack Query and cosmetic controls belong to Zustand. See the root DESIGN.md and UX-CONTRACT.md.

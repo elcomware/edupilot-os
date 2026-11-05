@@ -49,6 +49,23 @@ func visible(d catalog.Descriptor, p identity.Principal) catalog.Descriptor {
 			capabilities = append(capabilities, capability)
 		}
 	}
+
+	if d.Key == "documents" {
+		if p.Allows(identity.DocumentsRead) {
+			capabilities = append(capabilities, "files.download")
+		}
+		if p.Allows(identity.DocumentsWrite) {
+			capabilities = append(capabilities, "files.upload")
+		}
+	}
+	if d.Key == "enrollment" {
+		if p.Allows(identity.WorkspaceRead) && p.Allows(identity.StudentsRead) {
+			capabilities = append(capabilities, "placements.list")
+		}
+		if p.Allows(identity.WorkspaceWrite) && p.Allows(identity.StudentsWrite) {
+			capabilities = append(capabilities, "placements.write")
+		}
+	}
 	d.Capabilities = capabilities
 	return d
 }
@@ -173,4 +190,26 @@ func (a moduleAPI) entries(w http.ResponseWriter, r *http.Request) {
 		slog.Error("workspace request failed", "module", key, "error", err)
 		problem(w, 503, "unavailable", "Workspace storage is unavailable.")
 	}
+}
+
+func (a moduleAPI) entry(w http.ResponseWriter, r *http.Request) {
+	p, ok := authorized(w, r, identity.WorkspaceRead)
+	if !ok {
+		return
+	}
+	svc, ok := a.registry.Entries(r.PathValue("key"))
+	if !ok {
+		problem(w, 404, "not_found", "Unknown work list.")
+		return
+	}
+	item, err := svc.Get(r.Context(), p.School, r.PathValue("id"))
+	if errors.Is(err, workspace.ErrMissing) {
+		problem(w, 404, "not_found", "Entry not found.")
+		return
+	}
+	if err != nil {
+		problem(w, 503, "unavailable", "Workspace storage is unavailable.")
+		return
+	}
+	respond(w, 200, item)
 }

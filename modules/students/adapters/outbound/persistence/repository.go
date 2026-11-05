@@ -29,11 +29,25 @@ func New(catalog Catalog) *Repository { return &Repository{catalog: catalog} }
 var _ ports.Repository = (*Repository)(nil)
 
 func (r *Repository) Get(ctx context.Context, school, id string) (domain.Student, error) {
-	p, err := r.catalog.ForTenantContext(ctx, school)
-	if err != nil {
-		return domain.Student{}, err
+	const query = "SELECT given_name, family_name, status, version FROM students_records WHERE school_id=? AND id=?"
+	var row *sql.Row
+	if scope, ok := database.TransactionFromContext(ctx); ok {
+		if scope.School != school || scope.Tx == nil || scope.Pool.DB == nil {
+			return domain.Student{}, errors.New("invalid student lookup transaction scope")
+		}
+		statement := query
+		if scope.Pool.Driver == "postgres" {
+			// An enrollment transaction holds this lock until its own write commits.
+			statement += " FOR SHARE"
+		}
+		row = scope.Tx.QueryRowContext(ctx, scope.Pool.Bind(statement), school, id)
+	} else {
+		pool, err := r.catalog.ForTenantContext(ctx, school)
+		if err != nil {
+			return domain.Student{}, err
+		}
+		row = pool.DB.QueryRowContext(ctx, pool.Bind(query), school, id)
 	}
-	row := p.DB.QueryRowContext(ctx, p.Bind(`SELECT given_name, family_name, status, version FROM students_records WHERE school_id=? AND id=?`), school, id)
 	var given, family, status string
 	var version int64
 	if err := row.Scan(&given, &family, &status, &version); err != nil {

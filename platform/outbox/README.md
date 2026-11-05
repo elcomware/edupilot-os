@@ -1,6 +1,6 @@
 # Transactional outbox
 
-Start the worker after running `./artisan migrate`, using the same connection configuration as the API:
+Start the worker after running `go run ./cmd/migrate`, using the same connection configuration as the API:
 
 ```sh
 go run ./cmd/worker

@@ -3,6 +3,7 @@
 package gateway
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -53,6 +54,7 @@ func Mount(assets, api http.Handler) http.Handler {
 func fail(w http.ResponseWriter, status int, code string) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(status)
 	fmt.Fprintf(w, "{\"error\":{\"code\":%q,\"message\":%q}}", code, http.StatusText(status))
 }
@@ -62,10 +64,11 @@ func fail(w http.ResponseWriter, status int, code string) {
 func New(origin *url.URL) (http.Handler, func()) {
 	tr := &http.Transport{
 		DialContext:         (&net.Dialer{Timeout: 5 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
-		TLSHandshakeTimeout: 8 * time.Second, ResponseHeaderTimeout: 15 * time.Second,
+		TLSHandshakeTimeout: 8 * time.Second, ResponseHeaderTimeout: 50 * time.Second,
 		MaxResponseHeaderBytes: 64 << 10, IdleConnTimeout: 60 * time.Second, ForceAttemptHTTP2: true,
 	}
-	client := &http.Client{Transport: tr, Timeout: 25 * time.Second, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}
+	client := &http.Client{Transport: tr, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}
+	documentTransfers := make(chan struct{}, 8)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet, http.MethodPost, http.MethodPatch, http.MethodPut, http.MethodDelete:
@@ -73,33 +76,56 @@ func New(origin *url.URL) (http.Handler, func()) {
 			fail(w, http.StatusMethodNotAllowed, "method_not_allowed")
 			return
 		}
-		if r.ContentLength > maxRequest {
-			fail(w, http.StatusRequestEntityTooLarge, "request_too_large")
+		upload := r.Method == http.MethodPost && r.URL.Path == documentFiles
+		var download string
+		if r.Method == http.MethodGet {
+			download = documentPathID(r.URL.Path)
+		}
+		requestLimit, sizeCode := maxRequest, "request_too_large"
+		if upload {
+			requestLimit, sizeCode = maxDocumentBytes, "file_too_large"
+		}
+		deadline := 25 * time.Second
+		if upload || download != "" {
+			// Match the backend's bounded concurrency before buffering a file.
+			select {
+			case documentTransfers <- struct{}{}:
+				defer func() { <-documentTransfers }()
+			default:
+				fail(w, http.StatusServiceUnavailable, "busy")
+				return
+			}
+			deadline = 50 * time.Second // Documents allows up to 45 s for storage.
+		}
+		if r.ContentLength > int64(requestLimit) {
+			fail(w, http.StatusRequestEntityTooLarge, sizeCode)
 			return
 		}
 		var body io.Reader
 		if r.Body != nil && r.Body != http.NoBody {
-			data, err := io.ReadAll(io.LimitReader(r.Body, maxRequest+1))
+			data, err := io.ReadAll(io.LimitReader(r.Body, int64(requestLimit)+1))
 			if err != nil {
 				fail(w, http.StatusBadRequest, "invalid_body")
 				return
 			}
-			if len(data) > maxRequest {
-				fail(w, http.StatusRequestEntityTooLarge, "request_too_large")
+			if len(data) > requestLimit {
+				fail(w, http.StatusRequestEntityTooLarge, sizeCode)
 				return
 			}
-			body = strings.NewReader(string(data))
+			body = bytes.NewReader(data)
 		}
 		dest := *origin
 		dest.Path, dest.RawQuery = r.URL.Path, r.URL.RawQuery
-		req, err := http.NewRequestWithContext(r.Context(), r.Method, dest.String(), body)
+		ctx, cancel := context.WithTimeout(r.Context(), deadline)
+		defer cancel()
+		req, err := http.NewRequestWithContext(ctx, r.Method, dest.String(), body)
 		if err != nil {
 			fail(w, http.StatusBadRequest, "invalid_request")
 			return
 		}
 		for _, name := range []string{"Authorization", "Content-Type", "Accept", "Accept-Language"} {
-			if value := r.Header.Get(name); value != "" {
-				req.Header.Set(name, value)
+			for _, value := range r.Header.Values(name) {
+				req.Header.Add(name, value)
 			}
 		}
 		res, err := client.Do(req)
@@ -116,14 +142,35 @@ func New(origin *url.URL) (http.Handler, func()) {
 			fail(w, http.StatusBadGateway, "upstream_redirect")
 			return
 		}
-		data, err := io.ReadAll(io.LimitReader(res.Body, maxResponse+1))
-		if err != nil || len(data) > maxResponse {
+		responseLimit := maxResponse
+		isDownload := download != "" && res.StatusCode == http.StatusOK
+		if isDownload {
+			responseLimit = maxDocumentBytes
+		}
+		if res.ContentLength > int64(responseLimit) {
+			fail(w, http.StatusBadGateway, "invalid_upstream_body")
+			return
+		}
+		data, err := io.ReadAll(io.LimitReader(res.Body, int64(responseLimit)+1))
+		if err != nil || len(data) > responseLimit {
 			fail(w, http.StatusBadGateway, "invalid_upstream_body")
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
+		if isDownload && !setDownloadHeaders(w.Header(), res.Header, download) {
+			fail(w, http.StatusBadGateway, "invalid_upstream_attachment")
+			return
+		}
+		if upload && res.StatusCode == http.StatusCreated {
+			// A successful upload remains successful even if the upstream
+			// omitted Location. Never pass through an external URL.
+			location := res.Header.Get("Location")
+			if len(res.Header.Values("Location")) == 1 && documentPathID(location) != "" {
+				w.Header().Set("Location", location)
+			}
+		}
 		w.WriteHeader(res.StatusCode)
 		if res.StatusCode != http.StatusNoContent {
 			_, _ = w.Write(data)

@@ -31,7 +31,10 @@ func TestRegisterExpandsTenantPlansAndRestrictsControlPlans(t *testing.T) {
 		if m.Signature() != want[i] {
 			t.Errorf("unexpected migration %d: %s", i, m.Signature())
 		}
-		connection := m.(schema.Connection).Connection()
+		if _, switchesFrameworkConnection := m.(schema.Connection); switchesFrameworkConnection {
+			t.Fatal("native migrator must stay on its control connection")
+		}
+		connection := m.(*registered).node.Name
 		if connection != config.Nodes()[i%2].Name {
 			t.Errorf("migration %s uses %q", m.Signature(), connection)
 		}

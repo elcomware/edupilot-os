@@ -71,6 +71,7 @@ func (p Pool) Bind(query string) string {
 }
 
 type target struct {
+	name  string
 	pool  Pool
 	owner string
 }
@@ -102,7 +103,7 @@ func Open(settings Settings, resolve Resolver) (*Catalog, error) {
 			return nil, fmt.Errorf("connection %s has an invalid or reused pool", node.Name)
 		}
 		seen[handle] = true
-		t := target{Pool{handle, node.Driver}, node.Owner()}
+		t := target{name: node.Name, pool: Pool{handle, node.Driver}, owner: node.Owner()}
 		catalog.nodes = append(catalog.nodes, t)
 		if node.Tenant == "" {
 			catalog.Control = t.pool
@@ -140,6 +141,16 @@ func (c *Catalog) All() []Pool {
 	return result
 }
 
+// Named returns deployment-configured connections for operational checks.
+// Request handlers must resolve the authorized tenant via ForTenantContext instead.
+func (c *Catalog) Named() map[string]Pool {
+	nodes := make(map[string]Pool, len(c.nodes))
+	for _, node := range c.nodes {
+		nodes[node.name] = node.pool
+	}
+	return nodes
+}
+
 func (t target) identity(ctx context.Context) (string, error) {
 	var owner, identity string
 	if err := t.pool.DB.QueryRowContext(ctx, "SELECT owner, pool_id FROM edu_pool_marker WHERE singleton = 1").Scan(&owner, &identity); err != nil {
@@ -151,14 +162,40 @@ func (t target) identity(ctx context.Context) (string, error) {
 	return identity, nil
 }
 
-// CheckReady validates migrations, connectivity and ownership on every physical database.
+// CheckReady checks marker ownership, connectivity and all durable placement pins
+// before serving. A removed dedicated route or restored DB with a new identity
+// fails readiness immediately, even before that school makes its next request.
 func (c *Catalog) CheckReady(ctx context.Context) error {
-	for _, t := range c.nodes {
-		if _, err := t.identity(ctx); err != nil {
+	if c == nil || len(c.nodes) == 0 || c.Control.DB == nil {
+		return errors.New("database catalog is not configured")
+	}
+	identities := make(map[string]string, len(c.nodes))
+	for _, target := range c.nodes {
+		identity, err := target.identity(ctx)
+		if err != nil {
 			return err
 		}
+		identities[target.owner] = identity
 	}
-	return nil
+	rows, err := c.Control.DB.QueryContext(ctx, "SELECT tenant_id, pool_id FROM edu_tenant_placement")
+	if err != nil {
+		return fmt.Errorf("read durable tenant placement: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var tenant, pinned string
+		if err := rows.Scan(&tenant, &pinned); err != nil {
+			return err
+		}
+		t := c.nodes[0]
+		if dedicated, ok := c.routes[tenant]; ok {
+			t = dedicated
+		}
+		if !ValidTenant(tenant) || pinned != identities[t.owner] {
+			return fmt.Errorf("%w: school %q requires an explicit database cutover", ErrPlacement, tenant)
+		}
+	}
+	return rows.Err()
 }
 
 // ForTenant is for code without a request context. Use ForTenantContext in request handlers.
