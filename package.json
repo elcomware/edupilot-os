@@ -1,0 +1,12 @@
+{
+  "name": "edupilot-os",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["clients/web", "clients/mobile", "packages/*"],
+  "engines": {"node": "^22.13.0 || ^24.3.0 || >=26"},
+  "scripts": {
+    "dev:web": "npm run dev --workspace @edupilot/web",
+    "build:web": "npm run build --workspace @edupilot/web",
+    "test:web": "npm run test --workspace @edupilot/web"
+  }
+}
