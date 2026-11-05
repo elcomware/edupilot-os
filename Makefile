@@ -60,3 +60,7 @@ e2e-install:
 	cd tests/e2e && npm exec --workspaces=false -- playwright install chromium
 e2e:
 	cd tests/e2e && npm run test --workspaces=false
+
+.PHONY: test-desktop
+test-desktop:
+	cd clients/desktop && go test ./internal/gateway

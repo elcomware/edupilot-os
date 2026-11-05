@@ -11,21 +11,21 @@ export function apiRoot(
       !url.hostname ||
       url.username ||
       url.password ||
-      url.pathname !== '/' ||
+      url.pathname !== "/" ||
       url.search ||
       url.hash ||
       /[?#]/.test(raw)
     )
       return null;
-    const simulator = ['localhost', '127.0.0.1', '[::1]', '10.0.2.2'].includes(
+    const simulator = ["localhost", "127.0.0.1", "[::1]", "10.0.2.2"].includes(
       url.hostname,
     );
     if (
-      url.protocol !== 'https:' &&
-      !(development && simulator && url.protocol === 'http:')
+      url.protocol !== "https:" &&
+      !(development && simulator && url.protocol === "http:")
     )
       return null;
-    return url.origin + '/api/v1';
+    return url.origin + "/api/v1";
   } catch {
     return null;
   }

@@ -15,6 +15,11 @@ jobs:
       - run: npm run build --workspace @edupilot/web
       - run: make test-web test-mobile
       - run: node clients/desktop/scripts/build.mjs --assets-only
+      - uses: actions/setup-go@v5
+        with: {go-version-file: 'clients/desktop/go.mod'}
+      - name: Run the Wails gateway specifications
+        working-directory: clients/desktop
+        run: go test ./internal/gateway
   stack:
     strategy:
       fail-fast: false

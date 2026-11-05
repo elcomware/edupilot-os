@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { View } from 'react-native';
-import type { SessionModel, SessionState } from '../session';
-import type { Translator } from '../strings';
-import { Action, Field, Heading, Notice, s } from '../ui';
+import { useState } from "react";
+import { View } from "react-native";
+import type { SessionModel, SessionState } from "../session";
+import type { Translator } from "../strings";
+import { Action, Field, Heading, Notice, s } from "../ui";
 
 export function Login({
   model,
@@ -13,12 +13,12 @@ export function Login({
   state: SessionState;
   t: Translator;
 }) {
-  const [school, setSchool] = useState(''),
-    [email, setEmail] = useState(''),
-    [password, setPassword] = useState(''),
+  const [school, setSchool] = useState(""),
+    [email, setEmail] = useState(""),
+    [password, setPassword] = useState(""),
     [visible, show] = useState(false),
     [invalid, setInvalid] = useState(false);
-  const pending = state.kind === 'signingIn';
+  const pending = state.kind === "signingIn";
   const submit = () => {
     if (!school.trim() || !email.trim() || !password) {
       setInvalid(true);
@@ -31,13 +31,13 @@ export function Login({
   return (
     <>
       <Heading
-        kicker={t('register')}
-        title={t('signIn')}
-        detail={t('signInIntro')}
+        kicker={t("register")}
+        title={t("signIn")}
+        detail={t("signInIntro")}
       />
       <View style={s.panel}>
         <Field
-          label={t('school')}
+          label={t("school")}
           value={school}
           onChangeText={setSchool}
           autoCorrect={false}
@@ -45,7 +45,7 @@ export function Login({
           editable={!pending}
         />
         <Field
-          label={t('email')}
+          label={t("email")}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -55,7 +55,7 @@ export function Login({
           editable={!pending}
         />
         <Field
-          label={t('password')}
+          label={t("password")}
           value={password}
           onChangeText={setPassword}
           secureTextEntry={!visible}
@@ -67,17 +67,17 @@ export function Login({
         />
         <View style={s.row}>
           <Action
-            label={t(visible ? 'hide' : 'show')}
+            label={t(visible ? "hide" : "show")}
             onPress={() => show(!visible)}
             disabled={pending}
           />
         </View>
-        {invalid && <Notice error>{t('incomplete')}</Notice>}
-        {state.kind === 'guest' && state.reason && (
+        {invalid && <Notice error>{t("incomplete")}</Notice>}
+        {state.kind === "guest" && state.reason && (
           <Notice error>{t(state.reason)}</Notice>
         )}
         <Action
-          label={t('signIn')}
+          label={t("signIn")}
           variant="solid"
           onPress={submit}
           busy={pending}

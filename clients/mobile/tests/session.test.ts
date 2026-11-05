@@ -1,17 +1,17 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import type { Credentials, Principal } from '@edupilot/api-client';
-import { SessionModel, type TokenStore } from '../src/session.ts';
+import test from "node:test";
+import assert from "node:assert/strict";
+import type { Credentials, Principal } from "@edupilot/api-client";
+import { SessionModel, type TokenStore } from "../src/session.ts";
 
 const principal: Principal = {
-  id: 'fixture-user',
-  school: 'school-A',
-  permissions: ['students.read'],
+  id: "fixture-user",
+  school: "school-A",
+  permissions: ["students.read"],
 };
 const credentials: Credentials = {
-  school: 'school-A',
-  email: 'test@example.test',
-  password: 'fixture',
+  school: "school-A",
+  email: "test@example.test",
+  password: "fixture",
 };
 function setup(cached: string | null, status = 200, logoutStatus = 204) {
   let saved = cached,
@@ -32,7 +32,7 @@ function setup(cached: string | null, status = 200, logoutStatus = 204) {
       if (status !== 200) throw { status };
       return principal;
     },
-    login: async () => ({ principal, token: 'new-token' }),
+    login: async () => ({ principal, token: "new-token" }),
     logout: async () => {
       logouts++;
       presented = getToken();
@@ -47,65 +47,65 @@ function setup(cached: string | null, status = 200, logoutStatus = 204) {
     presented: () => presented,
   };
 }
-test('restores only a server-validated identity', async () => {
-  const c = setup('cached');
+test("restores only a server-validated identity", async () => {
+  const c = setup("cached");
   await c.model.restore();
-  assert.equal(c.presented(), 'cached');
-  assert.deepEqual(c.model.snapshot(), { kind: 'member', principal });
+  assert.equal(c.presented(), "cached");
+  assert.deepEqual(c.model.snapshot(), { kind: "member", principal });
 });
-test('network failure locks private UI but keeps the record for retry', async () => {
-  const c = setup('cached', 503);
+test("network failure locks private UI but keeps the record for retry", async () => {
+  const c = setup("cached", 503);
   await c.model.restore();
-  assert.equal(c.model.snapshot().kind, 'retry');
+  assert.equal(c.model.snapshot().kind, "retry");
   assert.equal(c.model.getToken(), null);
-  assert.equal(c.saved(), 'cached');
+  assert.equal(c.saved(), "cached");
 });
-test('expired credential is forgotten without rendering private content', async () => {
-  const c = setup('expired', 401);
+test("expired credential is forgotten without rendering private content", async () => {
+  const c = setup("expired", 401);
   await c.model.restore();
-  assert.deepEqual(c.model.snapshot(), { kind: 'guest', reason: 'expired' });
+  assert.deepEqual(c.model.snapshot(), { kind: "guest", reason: "expired" });
   assert.equal(c.saved(), null);
 });
-test('logout revokes the active bearer and clears local storage', async () => {
+test("logout revokes the active bearer and clears local storage", async () => {
   const c = setup(null);
   await c.model.restore();
   await c.model.login(credentials);
-  assert.equal(c.saved(), 'new-token');
+  assert.equal(c.saved(), "new-token");
   await c.model.logout();
-  assert.equal(c.presented(), 'new-token');
+  assert.equal(c.presented(), "new-token");
   assert.equal(c.logouts(), 1);
   assert.equal(c.model.getToken(), null);
   assert.equal(c.saved(), null);
-  assert.equal(c.model.snapshot().kind, 'guest');
+  assert.equal(c.model.snapshot().kind, "guest");
 });
-test('failed revocation still signs out locally and reports the limit', async () => {
-  const c = setup('cached', 200, 503);
+test("failed revocation still signs out locally and reports the limit", async () => {
+  const c = setup("cached", 200, 503);
   await c.model.restore();
   await c.model.logout();
   assert.equal(c.saved(), null);
   assert.deepEqual(c.model.snapshot(), {
-    kind: 'guest',
-    reason: 'remoteLogout',
+    kind: "guest",
+    reason: "remoteLogout",
   });
 });
-test('locked secure storage prevents resuming private content after logout', async () => {
-  const c = setup('cached');
+test("locked secure storage prevents resuming private content after logout", async () => {
+  const c = setup("cached");
   await c.model.restore();
   c.store.remove = async () => {
-    throw new Error('locked');
+    throw new Error("locked");
   };
   await c.model.logout();
   assert.equal(c.model.getToken(), null);
-  assert.equal(c.model.snapshot().kind, 'erase');
+  assert.equal(c.model.snapshot().kind, "erase");
 });
-test('a login whose token cannot be saved revokes rather than publishing the member', async () => {
+test("a login whose token cannot be saved revokes rather than publishing the member", async () => {
   const c = setup(null);
   await c.model.restore();
   c.store.write = async () => {
-    throw new Error('locked');
+    throw new Error("locked");
   };
   await c.model.login(credentials);
   assert.equal(c.logouts(), 1);
   assert.equal(c.model.getToken(), null);
-  assert.deepEqual(c.model.snapshot(), { kind: 'guest', reason: 'storage' });
+  assert.deepEqual(c.model.snapshot(), { kind: "guest", reason: "storage" });
 });

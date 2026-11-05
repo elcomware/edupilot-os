@@ -89,7 +89,7 @@ func forbidden(area string, parts []string, name string) bool {
 	if !isCore {
 		return false
 	}
-	return strings.HasPrefix(name, "github.com/goravel/") || strings.HasPrefix(name, "gorm.io/") || name == "database/sql" || strings.Contains(name, "/adapters/") || strings.HasPrefix(name, project+"app/") || strings.HasPrefix(name, project+"platform/database") || strings.HasPrefix(name, project+"platform/identity")
+	return strings.HasPrefix(name, "github.com/goravel/") || strings.HasPrefix(name, "gorm.io/") || name == "net/http" || name == "database/sql" || strings.Contains(name, "/adapters/") || strings.HasPrefix(name, project+"app/") || strings.HasPrefix(name, project+"platform/database") || strings.HasPrefix(name, project+"platform/identity")
 }
 
 func TestEveryManifestEntryIsWiredOnce(t *testing.T) {

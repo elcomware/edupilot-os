@@ -5,9 +5,9 @@ import (
 	"context"
 	"crypto/sha256"
 	"errors"
+	"github.com/elcomware/edupilot-os/platform/media"
 	"io"
 	"mime"
-	"net/http"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -67,7 +67,7 @@ func detect(data []byte) (string, error) {
 	if len(data) > MaxFileSize {
 		return "", ErrFileTooLarge
 	}
-	mediaType, _, err := mime.ParseMediaType(http.DetectContentType(data))
+	mediaType, err := media.Detect(data)
 	if err != nil || extension[mediaType] == "" {
 		return "", ErrFileType
 	}

@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState } from 'react';
-import { Text, View } from 'react-native';
+import { useCallback, useRef, useState } from "react";
+import { Text, View } from "react-native";
 import type {
   ApiClient,
   ModuleDescriptor,
@@ -7,18 +7,18 @@ import type {
   Principal,
   Student,
   WorkspaceEntry,
-} from '@edupilot/api-client';
-import type { Locale, Translator, TextKey } from '../strings';
-import { feedback } from '../session';
-import { useResource } from '../resource';
-import { Action, Field, Heading, Notice, Pager, Spinner, s } from '../ui';
+} from "@edupilot/api-client";
+import type { Locale, Translator, TextKey } from "../strings";
+import { feedback } from "../session";
+import { useResource } from "../resource";
+import { Action, Field, Heading, Notice, Pager, Spinner, s } from "../ui";
 
 export interface Draft {
   given: string;
   family: string;
   title: string;
 }
-export const blank: Draft = { given: '', family: '', title: '' };
+export const blank: Draft = { given: "", family: "", title: "" };
 const pageSize = 20;
 type Row = Student | WorkspaceEntry;
 export function Register({
@@ -38,14 +38,14 @@ export function Register({
   draft: Draft;
   setDraft: (d: Draft) => void;
 }) {
-  const student = module.key === 'students';
+  const student = module.key === "students";
   const canRead = principal.permissions.includes(
-    student ? 'students.read' : 'workspace.read',
+    student ? "students.read" : "workspace.read",
   );
   const canWrite =
     principal.permissions.includes(
-      student ? 'students.write' : 'workspace.write',
-    ) && module.capabilities.includes('create');
+      student ? "students.write" : "workspace.write",
+    ) && module.capabilities.includes("create");
   const [offset, setOffset] = useState(0);
   const load = useCallback(
     async (signal: AbortSignal): Promise<Page<Row>> => {
@@ -79,11 +79,11 @@ export function Register({
           !/[\u0000-\u001f\u007f-\u009f]/u.test(v),
       )
     ) {
-      setMessage({ key: 'invalidNames', error: true });
+      setMessage({ key: "invalidNames", error: true });
       return;
     }
     if (!student && (!title || Array.from(title).length > 160)) {
-      setMessage({ key: 'invalidTitle', error: true });
+      setMessage({ key: "invalidTitle", error: true });
       return;
     }
     gate.current = true;
@@ -94,12 +94,12 @@ export function Register({
         await api.createStudent({ givenName: given, familyName: family });
       else await api.createEntry(module.key, { title });
       setDraft(blank);
-      setMessage({ key: student ? 'registered' : 'added', error: false });
+      setMessage({ key: student ? "registered" : "added", error: false });
       setOffset(0);
       refresh();
     } catch (e) {
       const key = feedback(e);
-      setMessage({ key, error: true, uncertain: key === 'network' });
+      setMessage({ key, error: true, uncertain: key === "network" });
     } finally {
       gate.current = false;
       setSaving(false);
@@ -108,7 +108,7 @@ export function Register({
   return (
     <>
       <Heading
-        kicker={t(student ? 'roster' : 'workspace')}
+        kicker={t(student ? "roster" : "workspace")}
         title={module.title[locale]}
       />
       {canWrite && (
@@ -116,14 +116,14 @@ export function Register({
           {student ? (
             <>
               <Field
-                label={t('given')}
+                label={t("given")}
                 value={draft.given}
                 onChangeText={(given) => setDraft({ ...draft, given })}
                 autoCapitalize="words"
                 editable={!saving}
               />
               <Field
-                label={t('family')}
+                label={t("family")}
                 value={draft.family}
                 onChangeText={(family) => setDraft({ ...draft, family })}
                 autoCapitalize="words"
@@ -132,14 +132,14 @@ export function Register({
             </>
           ) : (
             <Field
-              label={t('entryTitle')}
+              label={t("entryTitle")}
               value={draft.title}
               onChangeText={(title) => setDraft({ ...draft, title })}
               editable={!saving}
             />
           )}
           <Action
-            label={t(student ? 'addStudent' : 'addEntry')}
+            label={t(student ? "addStudent" : "addEntry")}
             onPress={() => void submit()}
             variant="solid"
             busy={saving}
@@ -147,47 +147,47 @@ export function Register({
           {message && (
             <Notice error={message.error}>
               {t(message.key)}
-              {message.uncertain ? ' ' + t('pendingCreate') : ''}
+              {message.uncertain ? " " + t("pendingCreate") : ""}
             </Notice>
           )}
         </View>
       )}
       {!canRead ? (
-        <Notice error>{t('forbidden')}</Notice>
+        <Notice error>{t("forbidden")}</Notice>
       ) : (
         <>
           <View style={s.row}>
             <Action
-              label={t('refresh')}
+              label={t("refresh")}
               onPress={refresh}
-              disabled={state.kind === 'loading'}
+              disabled={state.kind === "loading"}
             />
           </View>
-          {state.kind === 'loading' && <Spinner t={t} />}
-          {state.kind === 'failed' && <Notice error>{t(state.reason)}</Notice>}
-          {state.kind === 'ready' && (
+          {state.kind === "loading" && <Spinner t={t} />}
+          {state.kind === "failed" && <Notice error>{t(state.reason)}</Notice>}
+          {state.kind === "ready" && (
             <View style={s.panel}>
               {!state.data.items.length && (
                 <Text style={s.muted}>
-                  {t(student ? 'emptyStudents' : 'emptyEntries')}
+                  {t(student ? "emptyStudents" : "emptyEntries")}
                 </Text>
               )}
               {state.data.items.map((row) => (
                 <View style={s.rowItem} key={row.id}>
                   <Text style={s.name}>
-                    {'givenName' in row
-                      ? row.givenName + ' ' + row.familyName
+                    {"givenName" in row
+                      ? row.givenName + " " + row.familyName
                       : row.title}
                   </Text>
                   <Text style={s.muted}>
-                    {row.status === 'active'
-                      ? t('active')
-                      : row.status === 'archived'
-                        ? t('archived')
-                        : row.status === 'open'
-                          ? t('open')
-                          : row.status === 'closed'
-                            ? t('closed')
+                    {row.status === "active"
+                      ? t("active")
+                      : row.status === "archived"
+                        ? t("archived")
+                        : row.status === "open"
+                          ? t("open")
+                          : row.status === "closed"
+                            ? t("closed")
                             : row.status}
                   </Text>
                 </View>

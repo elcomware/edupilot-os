@@ -4,7 +4,7 @@ import {
   useMemo,
   useState,
   useSyncExternalStore,
-} from 'react';
+} from "react";
 import {
   BackHandler,
   KeyboardAvoidingView,
@@ -13,34 +13,34 @@ import {
   StatusBar,
   Text,
   View,
-} from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { getLocales } from 'expo-localization';
+} from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { getLocales } from "expo-localization";
 import {
   createApiClient,
   type ApiClient,
   type Principal,
   type ModuleDescriptor,
-} from '@edupilot/api-client';
-import { apiRoot } from './src/endpoint';
-import { SessionModel } from './src/session';
-import { tokenStore } from './src/storage';
-import { copy, type Locale, type Translator } from './src/strings';
-import { Action, Notice, Spinner, s } from './src/ui';
-import { Login } from './src/screens/Login';
-import { Catalog } from './src/screens/Catalog';
-import { Register, blank, type Draft } from './src/screens/Register';
+} from "@edupilot/api-client";
+import { apiRoot } from "./src/endpoint";
+import { SessionModel } from "./src/session";
+import { tokenStore } from "./src/storage";
+import { copy, type Locale, type Translator } from "./src/strings";
+import { Action, Notice, Spinner, s } from "./src/ui";
+import { Login } from "./src/screens/Login";
+import { Catalog } from "./src/screens/Catalog";
+import { Register, blank, type Draft } from "./src/screens/Register";
 
 const root = apiRoot(process.env.EXPO_PUBLIC_API_ORIGIN, __DEV__);
 const timeoutFetch: typeof fetch = (input, init) => {
   const controller = new AbortController();
   const abort = () => controller.abort();
-  init?.signal?.addEventListener('abort', abort);
+  init?.signal?.addEventListener("abort", abort);
   if (init?.signal?.aborted) controller.abort();
   const timer = setTimeout(abort, 18000);
   return fetch(input, { ...init, signal: controller.signal }).finally(() => {
     clearTimeout(timer);
-    init?.signal?.removeEventListener('abort', abort);
+    init?.signal?.removeEventListener("abort", abort);
   });
 };
 function Member({
@@ -61,7 +61,7 @@ function Member({
   // unmounts this entire component and discards every school-specific value.
   const [drafts, saveDrafts] = useState<Record<string, Draft>>({});
   useEffect(() => {
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
       if (!module) return false;
       setModule(null);
       return true;
@@ -71,8 +71,8 @@ function Member({
   return (
     <>
       <View style={s.row}>
-        {module && <Action label={t('back')} onPress={() => setModule(null)} />}
-        <Action label={t('logout')} onPress={logout} />
+        {module && <Action label={t("back")} onPress={() => setModule(null)} />}
+        <Action label={t("logout")} onPress={logout} />
       </View>
       {module ? (
         <Register
@@ -130,16 +130,16 @@ function SessionContent({
     void model.restore();
   }, [model]);
   switch (state.kind) {
-    case 'guest':
-    case 'signingIn':
+    case "guest":
+    case "signingIn":
       return <Login model={model} state={state} t={t} />;
-    case 'checking':
-    case 'signingOut':
+    case "checking":
+    case "signingOut":
       return <Spinner t={t} />;
-    case 'member':
+    case "member":
       return (
         <Member
-          key={state.principal.school + '/' + state.principal.id}
+          key={state.principal.school + "/" + state.principal.id}
           api={api}
           principal={state.principal}
           locale={locale}
@@ -147,24 +147,24 @@ function SessionContent({
           logout={() => void model.logout()}
         />
       );
-    case 'retry':
-    case 'erase':
+    case "retry":
+    case "erase":
       return (
         <>
           <Notice error>
-            {t(state.kind === 'retry' ? 'restore' : 'erase')}
+            {t(state.kind === "retry" ? "restore" : "erase")}
           </Notice>
-          {state.kind === 'retry' && (
-            <Action label={t('retry')} onPress={() => void model.restore()} />
+          {state.kind === "retry" && (
+            <Action label={t("retry")} onPress={() => void model.restore()} />
           )}
-          <Action label={t('clearLocal')} onPress={() => void model.logout()} />
+          <Action label={t("clearLocal")} onPress={() => void model.logout()} />
         </>
       );
   }
 }
 export default function App() {
   const [locale, setLocale] = useState<Locale>(() =>
-    getLocales()[0]?.languageCode === 'fr' ? 'fr' : 'en',
+    getLocales()[0]?.languageCode === "fr" ? "fr" : "en",
   );
   const t: Translator = useCallback((key) => copy[locale][key], [locale]);
   return (
@@ -173,17 +173,17 @@ export default function App() {
       <SafeAreaView style={s.full}>
         <View style={s.header}>
           <View style={s.headerInner}>
-            <Text style={s.logo}>{t('brand')}</Text>
+            <Text style={s.logo}>{t("brand")}</Text>
             <Action
-              label={t('language')}
+              label={t("language")}
               variant="dark"
-              onPress={() => setLocale(locale === 'en' ? 'fr' : 'en')}
+              onPress={() => setLocale(locale === "en" ? "fr" : "en")}
             />
           </View>
         </View>
         <KeyboardAvoidingView
           style={s.full}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
           <ScrollView
             contentContainerStyle={s.scroll}
@@ -193,7 +193,7 @@ export default function App() {
               {root ? (
                 <SessionContent base={root} locale={locale} t={t} />
               ) : (
-                <Notice error>{t('setup')}</Notice>
+                <Notice error>{t("setup")}</Notice>
               )}
             </View>
           </ScrollView>
