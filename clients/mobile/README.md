@@ -1,0 +1,16 @@
+# EduPilot mobile
+
+Expo SDK 58 / React Native 0.88.1, for iOS and Android. This app uses the shared `@edupilot/api-client` against the same Goravel server as web and desktop. It opens the authenticated school's catalog, lists/paginates/registers Students, and lists/adds entries in the other module registers. Module workspaces hold planning entries; adding a Payments entry does not process a payment.
+
+1. Start the backend, migrate, and provision a school administrator as documented in the root README. Install npm workspace dependencies at the repository root. Use Node 22.13+ (22.x) or 24.3+ (24.x).
+2. Copy `clients/mobile/.env.example` to `clients/mobile/.env.local`. Set `EXPO_PUBLIC_API_ORIGIN` to the reachable **origin** of your deployed server, e.g. `https://school.example.org`. No API path, credential or tenant identifier belongs here. Expo inlines this public value at bundle time.
+3. Run `npm run start --workspace @edupilot/mobile` from the repository root and open the app in a compatible Expo Go or development build. For native development builds use `npm run android --workspace @edupilot/mobile` (Android SDK/emulator) or `npm run ios --workspace @edupilot/mobile` (macOS/Xcode/simulator).
+4. Sign in with the provisioned school ID, email and password. The first language is French on French-language devices, otherwise English; switch language in the header. The server controls read/write permissions on every request.
+
+Use trusted HTTPS for real devices and release bundles. Development bundles permit plain HTTP only for simulator loopback endpoints (`http://127.0.0.1:3000` on iOS simulator, `http://10.0.2.2:3000` on Android emulator); the simulator's development transport policy must also permit HTTP. On physical devices, localhost is the phone; use a reachable HTTPS school API. Changing the API address requires a Metro restart/full reload or a new release bundle. No server address selector is exposed at login.
+
+**Session model.** Only the bearer token and the origin it belongs to are stored in SecureStore (Android Keystore/iOS Keychain). No password, cached principal or student list is persisted. Startup verifies the stored token at `GET /api/v1/session`. HTTP 401 removes it; a temporary network or secure-store failure locks private screens and allows retry or local removal. Signing out calls server revocation and removes the local token. If revocation cannot be confirmed, the app says so. A token from an old server is never sent to a newly configured one. Drafts remain in memory across module navigation and are discarded when the user signs out.
+
+**Local checks for later:** `npm run typecheck --workspace @edupilot/mobile`, `npm run test --workspace @edupilot/mobile`, and `npm run export --workspace @edupilot/mobile` (native Metro bundles, not signed store binaries). Tests cover endpoint policy, recovery, storage failure and revocation. Device signing, app identifiers, developer account enrollment and store submission are deployment responsibilities.
+
+Sources: [Expo SDK compatibility](https://docs.expo.dev/versions/latest/) · [monorepo support](https://docs.expo.dev/guides/monorepos/) · [SecureStore](https://docs.expo.dev/versions/latest/sdk/securestore/).

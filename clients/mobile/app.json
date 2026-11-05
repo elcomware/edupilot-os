@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "EduPilot",
+    "slug": "edupilot-mobile",
+    "version": "0.1.0",
+    "orientation": "default",
+    "userInterfaceStyle": "light",
+    "platforms": ["android", "ios"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "org.edupilot.mobile",
+      "config": { "usesNonExemptEncryption": false }
+    },
+    "android": { "package": "org.edupilot.mobile" },
+    "plugins": ["expo-secure-store", "expo-localization"]
+  }
+}
