@@ -1,0 +1,56 @@
+name: Manual verification
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  clients:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Install client workspaces
+        run: if [ -e package-lock.json ]; then npm ci; else npm install; fi
+      - run: npm run build --workspace @edupilot/web
+      - run: make test-web test-mobile
+      - run: node clients/desktop/scripts/build.mjs --assets-only
+  stack:
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [sqlite, postgres]
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      DB: ${{ matrix.db }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: {go-version-file: 'go.mod'}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Start real application and migrate
+        run: make up
+      - name: Run Go specifications
+        shell: bash
+        run: |
+          if [ "$DB" = postgres ]; then
+            pw=$(sed -n 's/^DB_PASSWORD=//p' .env)
+            echo "::add-mask::$pw"
+            export EDUPILOT_TEST_POSTGRES_DSN="postgres://edupilot:$pw@127.0.0.1:5432/edupilot?sslmode=disable"
+          fi
+          make test-go
+      - name: Install browser runner
+        working-directory: tests/e2e
+        run: |
+          npm ci --workspaces=false
+          npm exec --workspaces=false -- playwright install --with-deps chromium
+      - name: Exercise two real schools
+        run: bash scripts/ci-e2e.sh
+      - name: Show service state on failure
+        if: failure()
+        run: make ps
+      - name: Stop local services
+        if: always()
+        run: make down

@@ -26,13 +26,13 @@ type ClientOptions = {
 export function createApiClient({baseUrl, getToken, onUnauthorized, fetcher = fetch}: ClientOptions) {
   const root = baseUrl.replace(/\/+$/, '')
   const key = encodeURIComponent
-  async function send<T>(path:string, method:string, body:BodyInit|undefined, contentType:string|undefined, consume:(r:Response)=>Promise<T>, signal?:AbortSignal, authenticate=true, timeoutMs=15000):Promise<T> {
+  async function send<T>(path:string, method:string, body:RequestInit['body'], contentType:string|undefined, consume:(r:Response)=>Promise<T>, signal?:AbortSignal, authenticate=true, timeoutMs=15000):Promise<T> {
     const token = authenticate ? getToken?.() : null
     const headers: Record<string, string> = {Accept: 'application/json'}
     if (token) headers.Authorization = 'Bearer ' + token
     if (contentType) headers['Content-Type'] = contentType
     const write=method!=='GET'
-    if(write && typeof navigator!=='undefined' && navigator.onLine===false)
+    if(write && typeof navigator!=='undefined' && (navigator as {onLine?:boolean}).onLine===false)
       throw new ApiError(0,'offline','No request was sent while offline.')
     const controller=new AbortController(), cancel=()=>controller.abort()
     if(signal?.aborted)cancel();else signal?.addEventListener('abort',cancel,{once:true})

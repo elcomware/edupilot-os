@@ -6,13 +6,13 @@ import (
 	"github.com/elcomware/edupilot-os/modules/classes/application"
 	"github.com/elcomware/edupilot-os/modules/classes/migrations"
 	"github.com/elcomware/edupilot-os/modules/modulekit"
-	"github.com/elcomware/edupilot-os/platform/catalog"
+
 	"github.com/elcomware/edupilot-os/platform/database"
 )
 
 func Definition() modulekit.Definition {
 	return modulekit.Definition{
-		Descriptor: catalog.Descriptor{Key: "classes", Group: "academics", Title: catalog.Title{EN: "Classes and sections", FR: "Classes et sections"}, Capabilities: []string{"list", "create", "update"}},
+		Descriptor: Descriptor(),
 		Bind: func(db *database.Catalog) application.Entries {
 			return application.Entries{Store: persistence.New(db)}
 		},

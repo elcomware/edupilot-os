@@ -56,7 +56,7 @@ test-mobile:
 	npm run typecheck --workspace @edupilot/mobile
 	npm run test --workspace @edupilot/mobile
 e2e-install:
-	cd tests/e2e && npm install --workspaces=false
+	cd tests/e2e && npm ci --workspaces=false
 	cd tests/e2e && npm exec --workspaces=false -- playwright install chromium
 e2e:
 	cd tests/e2e && npm run test --workspaces=false
