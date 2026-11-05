@@ -1,0 +1,16 @@
+.idea
+.vscode
+.DS_Store
+.env
+.env.*
+!.env.example
+storage
+tmp
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+.expo/
+database/*.sqlite*
+build/bin/
