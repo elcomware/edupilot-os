@@ -3,6 +3,7 @@ package modules
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/elcomware/edupilot-os/modules/modulekit"
 	"github.com/elcomware/edupilot-os/platform/database"
@@ -40,4 +41,34 @@ func (r *Registry) Find(key string) (modulekit.Definition, bool) { d, ok := r.in
 func (r *Registry) Entries(key string) (workspace.Service, bool) {
 	s, ok := r.entries[key]
 	return s, ok
+}
+
+// Enabled filters deployable modules by operator configuration. The default
+// opens the complete catalog; unexpected names fail closed at startup.
+func Enabled(all []modulekit.Definition, csv string) ([]modulekit.Definition, error) {
+	if strings.TrimSpace(csv) == "" {
+		return all, nil
+	}
+	wanted := map[string]bool{}
+	for _, part := range strings.Split(csv, ",") {
+		key := strings.TrimSpace(part)
+		if key == "" || wanted[key] {
+			return nil, fmt.Errorf("invalid or duplicate enabled module %q", key)
+		}
+		wanted[key] = true
+	}
+	if wanted["enrollment"] && !wanted["students"] {
+		return nil, fmt.Errorf("enrollment requires students")
+	}
+	var selected []modulekit.Definition
+	for _, d := range all {
+		if wanted[d.Key] {
+			selected = append(selected, d)
+			delete(wanted, d.Key)
+		}
+	}
+	if len(wanted) > 0 {
+		return nil, fmt.Errorf("unknown enabled module in %q", csv)
+	}
+	return selected, nil
 }

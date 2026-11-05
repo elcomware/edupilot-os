@@ -1,13 +1,29 @@
 package bootstrap
 
 import (
-	"github.com/goravel/framework/contracts/database/schema"
-
+	"github.com/elcomware/edupilot-os/database/edumigrations"
 	"github.com/elcomware/edupilot-os/database/migrations"
+	"github.com/elcomware/edupilot-os/modules"
+	students "github.com/elcomware/edupilot-os/modules/students/migrations"
+	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot-os/platform/identity"
+	"github.com/goravel/framework/contracts/database/schema"
 )
 
 func Migrations() []schema.Migration {
-	return []schema.Migration{
-		&migrations.M20210101000001CreateJobsTable{},
+	settings, err := database.ConfiguredSettings()
+	if err != nil {
+		panic(err)
 	}
+	plans := []edumigrations.Plan{
+		edumigrations.PlacementPlan(), edumigrations.OutboxPlan(),
+		{ID: "20260101000003_school_accounts", ControlOnly: true, Up: identity.SchemaUp, Down: identity.SchemaDown},
+		{ID: "20260101000004_students", Up: students.SchemaUp, Down: students.SchemaDown},
+	}
+	for _, d := range modules.Definitions() {
+		if d.Migration != nil {
+			plans = append(plans, d.Migration())
+		}
+	}
+	return append([]schema.Migration{&migrations.M20210101000001CreateJobsTable{}}, edumigrations.Register(settings, plans...)...)
 }
