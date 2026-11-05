@@ -3,12 +3,12 @@
 package catalog
 
 type Title struct {
- EN string `json:"en"`
- FR string `json:"fr"`
+	EN string `json:"en"`
+	FR string `json:"fr"`
 }
 type Descriptor struct {
- Key string `json:"key"`
- Group string `json:"group"`
- Title Title `json:"title"`
- Capabilities []string `json:"capabilities"`
+	Key          string   `json:"key"`
+	Group        string   `json:"group"`
+	Title        Title    `json:"title"`
+	Capabilities []string `json:"capabilities"`
 }

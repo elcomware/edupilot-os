@@ -1,0 +1,42 @@
+platform	tenancy	Schools	Établissements
+platform	identity	Identity	Identité
+platform	users	User profiles	Profils utilisateurs
+platform	permissions	Permissions	Autorisations
+platform	school_settings	School settings	Paramètres scolaires
+platform	subscriptions	Subscriptions	Abonnements
+lifecycle	admissions	Admissions	Admissions
+lifecycle	students	Students	Élèves
+lifecycle	guardians	Guardians	Responsables légaux
+lifecycle	enrollment	Enrollment and transfers	Inscriptions et transferts
+lifecycle	attendance	Attendance	Assiduité
+lifecycle	discipline	Discipline and wellbeing	Discipline et bien-être
+academics	academics	Academic planning	Organisation pédagogique
+academics	curriculum	Curriculum	Programmes
+academics	classes	Classes and sections	Classes et sections
+academics	timetables	Timetables	Emplois du temps
+academics	assessments	Assessments	Évaluations
+academics	gradebook	Gradebook	Carnet de notes
+academics	examinations	Examinations	Examens
+academics	transcripts	Transcripts	Relevés de notes
+academics	learning	Learning	Apprentissages
+finance	fees	Fee policies	Politique tarifaire
+finance	billing	Billing	Facturation
+finance	payments	Payments	Paiements
+finance	accounting	Accounting	Comptabilité
+finance	scholarships	Scholarships	Bourses
+finance	procurement	Procurement	Achats
+finance	inventory	Inventory	Stocks
+operations	staff	Staff	Personnel
+operations	hr	Human resources	Ressources humaines
+operations	payroll	Payroll	Paie
+operations	library	Library	Bibliothèque
+operations	transport	Transport	Transport
+operations	facilities	Facilities and assets	Locaux et équipements
+engagement	notifications	Notifications	Notifications
+engagement	messaging	Messaging	Messagerie
+engagement	documents	Documents	Documents
+engagement	workflows	Workflows	Circuits de validation
+engagement	reporting	Reports	Rapports
+engagement	analytics	Analytics	Analyses
+engagement	audit	Audit	Audit
+engagement	portal	Family and student portal	Portail familles et élèves
