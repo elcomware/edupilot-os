@@ -8,7 +8,7 @@ func init() {
 	config := facades.Config()
 	config.Add("queue", map[string]any{
 		// Default Queue Connection Name
-		"default": "sync",
+		"default": config.Env("QUEUE_CONNECTION", "database"),
 
 		// Queue Connections
 		//
