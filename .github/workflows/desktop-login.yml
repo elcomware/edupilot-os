@@ -1,0 +1,65 @@
+name: Native desktop sign-in
+on:
+  push:
+    branches: [main, 'verify/desktop-login']
+    paths:
+      - '.github/workflows/desktop-login.yml'
+      - '.github/ci/desktop-window.apparmor'
+      - 'clients/desktop/**'
+      - 'clients/web/**'
+      - 'packages/api-client/**'
+      - 'platform/identity/**'
+      - 'modules/students/**'
+      - 'scripts/setup.py'
+      - 'tests/desktop/**'
+      - 'tests/e2e/desktop-webview2.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  sign-in:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            clients/desktop/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install Linux desktop prerequisites
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev libx11-dev xvfb xauth xdotool dbus-x11 imagemagick tesseract-ocr tesseract-ocr-eng
+      - run: npm ci --ignore-scripts
+      - run: npm run build:web
+      - run: node clients/desktop/scripts/build.mjs
+      - name: Prepare isolated Linux executable
+        if: runner.os == 'Linux'
+        run: |
+          sudo install -D -o root -g root -m 0755 clients/desktop/bin/edupilot /opt/edupilot-ci-window/edupilot
+          sudo apparmor_parser -a .github/ci/desktop-window.apparmor
+      - name: Install Windows WebView2 test driver
+        if: runner.os == 'Windows'
+        working-directory: tests/e2e
+        run: npm ci --workspaces=false --ignore-scripts
+      - name: Sign in and register a synthetic student in the native window
+        run: python tests/desktop/run.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: desktop-${{ runner.os }}-screenshots
+          path: ${{ runner.temp }}/desktop-screens/*.png
+          if-no-files-found: warn
+          retention-days: 14

@@ -40,14 +40,16 @@ if app_key is None:
         app_key = re.split(r"[ \t]+#", app_key, maxsplit=1)[0].strip()
 if len(app_key.encode("utf-8")) != 32:
     raise SystemExit("APP_KEY must contain exactly 32 bytes. Correct its existing value before starting.")
-# NamedTemporaryFile uses mode 0600; replacement is atomic inside the same directory.
-with tempfile.NamedTemporaryFile("w", dir=root, prefix=".env.setup-", delete=False) as out:
-    temp = Path(out.name)
-    try:
+# Windows requires the temporary handle to close before the atomic rename.
+temp = None
+try:
+    with tempfile.NamedTemporaryFile("w", dir=root, prefix=".env.setup-", delete=False) as out:
+        temp = Path(out.name)
         out.write(contents)
         out.flush()
         os.fsync(out.fileno())
-        os.replace(temp, env_path)
-    finally:
+    os.replace(temp, env_path)
+finally:
+    if temp is not None:
         temp.unlink(missing_ok=True)
 print("Local .env is ready. Existing nonempty values were preserved.")
