@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { captureWorkspace } from "./ui-evidence";
 import { account, loginForm } from "./accounts";
 
 async function openNavigation(page: Page) {
@@ -24,6 +25,8 @@ test("personal pins reorder, survive reload and reset only the current workspace
   await expect(page.getByLabel("Accent", { exact: true })).toHaveValue("pine");
   await expect(page.getByRole("list", { name: "Pinned navigation", exact: true })).toHaveCount(0);
   await page.getByRole("link", { name: "Back to directory", exact: true }).click();
+  await expect(page.getByRole("button", {name:"Pin Students",exact:true})).toBeVisible();
+  await captureWorkspace(page, "directory-desktop");
   for (const title of ["Students", "Library", "Family and student portal"]) {
     await page.getByRole("button", { name: "Pin " + title, exact: true }).click();
   }
@@ -40,6 +43,7 @@ test("personal pins reorder, survive reload and reset only the current workspace
   await loginForm(page, primary);
   await expect(rail).toHaveText(["Library", "Students", "Family and student portal"]);
 
+  await captureWorkspace(page, "preferences-desktop");
   await page.getByLabel("Appearance", { exact: true }).selectOption("dark");
   await page.getByLabel("Density", { exact: true }).selectOption("compact");
   await page.getByLabel("Reading width", { exact: true }).selectOption("wide");
@@ -49,6 +53,7 @@ test("personal pins reorder, survive reload and reset only the current workspace
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await expect(page.locator("html")).toHaveAttribute("data-density", "compact");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await captureWorkspace(page, "preferences-mobile-fr");
   const reset = page.getByRole("button", { name: "Réinitialiser cet espace", exact: true });
   await reset.click();
   let dialog = page.getByRole("dialog", { name: "Réinitialiser cet espace ?", exact: true });

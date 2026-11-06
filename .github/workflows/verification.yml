@@ -85,6 +85,7 @@ jobs:
         env:
           E2E_BASE_URL: http://127.0.0.1:5173
           EDUPILOT_E2E_MODE: native
+          EDUPILOT_CAPTURE_FIXTURE_UI: "1"
         run: |
           set -euo pipefail
           python3 scripts/setup.py
@@ -96,6 +97,13 @@ jobs:
           }
           trap cleanup EXIT
           bash scripts/ci-e2e.sh
+      - name: Save disposable workspace layout evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: workspace-layouts
+          path: tests/e2e/test-results/**/qa-*.png
+          if-no-files-found: error
+          retention-days: 14
       - name: Show startup diagnostics on failure
         if: failure()
         run: tail -100 "$RUNNER_TEMP/edupilot-native.log" 2>/dev/null || true

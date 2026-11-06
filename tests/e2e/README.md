@@ -14,3 +14,5 @@ The suite exercises the real HTTP API and React UI: school isolation and forged 
 To supply disposable accounts yourself, set `E2E_SCHOOL_<slot>`, `E2E_EMAIL_<slot>`, and `E2E_PASSWORD_<slot>` for each slot used by the selected tests. Use different schools for A/B (API isolation), ROSTER (student UI), PREFS/PREFS_OTHER (appearance), NAV/NAV_OTHER (navigation). Then run `make e2e`. The native base URL defaults to `http://127.0.0.1:5173`; set `E2E_BASE_URL` for another proxy. Remote test deployments require `E2E_ALLOW_REMOTE=1`.
 
 On Linux CI use `npm exec --workspaces=false -- playwright install --with-deps chromium` from `tests/e2e`. If Chromium is already installed, set `E2E_CHROMIUM_EXECUTABLE` to its absolute path.
+
+Native CI saves three explicit screenshots from disposable successful sign-ins: the desktop directory, desktop preferences and the narrow French preferences page. It captures only these two routes on loopback, with the generated school identifier hidden. Find them in the `workspace-layouts` artifact for 14 days.
