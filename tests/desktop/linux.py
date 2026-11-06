@@ -1,8 +1,10 @@
 """Drive the shipped Linux executable via WebKitGTK accessibility on an isolated X display."""
 from collections import deque
 import os
+import re
 from pathlib import Path
 import subprocess
+import tempfile
 import time
 
 import pyatspi
@@ -52,27 +54,39 @@ def main():
             if not action.doAction(0):
                 raise RuntimeError("Could not activate " + label)
 
-        def capture(state):
-            time.sleep(0.35)
+        def capture(state, marker):
+            # Accessibility events can precede WebKit's first visible frame.
+            # Publish the exact frame that contains the expected rendered label.
             path = Path(os.environ["DESKTOP_SCREEN_DIR"]) / ("linux-" + state + ".png")
-            subprocess.run(["import", "-window", window, str(path)], check=True, timeout=12)
+            with tempfile.TemporaryDirectory() as directory:
+                frame = Path(directory) / "frame.png"
+                deadline = time.monotonic() + 20
+                while time.monotonic() < deadline:
+                    subprocess.run(["import", "-window", window, str(frame)], check=True, timeout=10)
+                    words = subprocess.check_output(["tesseract", str(frame), "stdout", "--psm", "11"],
+                                                    text=True, timeout=8, stderr=subprocess.DEVNULL)
+                    if marker in re.findall(r"\w+", words.casefold()):
+                        path.write_bytes(frame.read_bytes())
+                        return
+                    time.sleep(0.2)
+            raise RuntimeError("Native display did not paint the " + state + " screen")
 
         buttons = {"push button", "button"}
         element("Email", {"entry", "text"})
-        capture("signin")
+        capture("signin", "email")
         type_into("School ID", os.environ["EDUPILOT_SEED_SCHOOL"])
         type_into("Email", os.environ["EDUPILOT_SEED_EMAIL"])
         type_into("Password", os.environ["EDUPILOT_SEED_PASSWORD"])
         activate("Sign in", buttons)
         element("Students", {"link"})
-        capture("directory")
+        capture("directory", "identity")
         activate("Students", {"link"})
         activate("Add student", buttons)
         type_into("Given name", "Jamie")
         type_into("Family name", "Demo")
         activate("Save student", buttons)
         element("Edit Jamie Demo", buttons)
-        capture("students")
+        capture("students", "jamie")
         activate("Sign out", buttons)
         element("School ID", {"entry", "text"})
     finally:

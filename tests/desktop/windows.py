@@ -1,10 +1,15 @@
 """Drive the shipped Windows executable via UI Automation and capture its native window."""
 import os
+import re
 from pathlib import Path
 import subprocess
+import tempfile
 import time
 
-from PIL import ImageGrab, ImageStat
+from PIL import ImageGrab
+import win32api
+import win32con
+import win32gui
 from pywinauto import Desktop
 from pywinauto.keyboard import send_keys
 
@@ -18,7 +23,12 @@ def main():
         # level HWND to our exe, then search its descendants across that boundary.
         window = Desktop(backend="uia").window(process=app.pid, title="EduPilot OS")
         window.wait("visible", timeout=45)
+        screen_w, screen_h = win32api.GetSystemMetrics(0), win32api.GetSystemMetrics(1)
+        win32gui.SetWindowPos(window.handle, win32con.HWND_TOP, 0, 0, min(1280, screen_w),
+                              min(830, screen_h), win32con.SWP_SHOWWINDOW)
         window.set_focus()
+        failed_paints = []
+
         def control(label, kind):
             item = window.child_window(title=label, control_type=kind)
             item.wait("exists enabled", timeout=20)
@@ -28,32 +38,55 @@ def main():
             control(label, "Edit").set_focus()
             send_keys(value, pause=0.025, with_spaces=True)
 
-        def capture(state):
-            time.sleep(0.4)
-            frame = ImageGrab.grab(window=window.handle)
-            width, height = frame.size
-            content = frame.crop((width // 8, height // 6, width * 7 // 8, height * 5 // 6))
-            if min(width, height) < 450 or max(ImageStat.Stat(content).stddev) < 10:
-                raise RuntimeError("Windows returned an empty or undersized window capture.")
-            frame.save(Path(os.environ["DESKTOP_SCREEN_DIR"]) / ("windows-" + state + ".png"))
+        def capture(state, marker):
+            # Some WebView2 surfaces paint via the compositor rather than the
+            # HWND device context. Read the foreground app rectangle in that case.
+            deadline = time.monotonic() + 18
+            with tempfile.TemporaryDirectory() as scratch:
+                sample = Path(scratch) / "frame.png"
+                while time.monotonic() < deadline:
+                    rect = win32gui.GetWindowRect(window.handle)
+                    visible = (max(0, rect[0]), max(0, rect[1]), min(screen_w, rect[2]), min(screen_h, rect[3]))
+                    readers = [lambda: ImageGrab.grab(window=window.handle)]
+                    if win32gui.GetForegroundWindow() == window.handle:
+                        readers.append(lambda: ImageGrab.grab(bbox=visible, all_screens=True))
+                    for read in readers:
+                        frame = read()
+                        if min(frame.size) < 450 or len(set(frame.resize((64, 48)).getdata())) < 16:
+                            continue
+                        frame.save(sample)
+                        words = subprocess.check_output([os.environ["DESKTOP_TESSERACT"], str(sample), "stdout",
+                                                         "--psm", "11"], text=True, errors="replace",
+                                                        stderr=subprocess.DEVNULL, timeout=10)
+                        if marker in re.findall(r"\w+", words.casefold()):
+                            frame.save(Path(os.environ["DESKTOP_SCREEN_DIR"]) / ("windows-" + state + ".png"))
+                            return
+                    time.sleep(0.25)
+            failed_paints.append(state)
+            print(f"No validated {state} frame on {screen_w}x{screen_h} display; window bounds {rect}", flush=True)
 
         control("School ID", "Edit")
-        capture("signin")
+        capture("signin", "email")
         type_into("School ID", os.environ["EDUPILOT_SEED_SCHOOL"])
         type_into("Email", os.environ["EDUPILOT_SEED_EMAIL"])
         type_into("Password", os.environ["EDUPILOT_SEED_PASSWORD"])
         control("Sign in", "Button").invoke()
         students = control("Students", "Hyperlink")
-        capture("directory")
+        capture("directory", "identity")
         students.invoke()
         control("Add student", "Button").invoke()
         type_into("Given name", "Jamie")
         type_into("Family name", "Demo")
         control("Save student", "Button").invoke()
         control("Edit Jamie Demo", "Button")
-        capture("students")
+        capture("students", "jamie")
+        navigation = window.child_window(title="Navigation", control_type="Button")
+        if navigation.exists(timeout=0.5):
+            navigation.wrapper_object().invoke()
         control("Sign out", "Button").invoke()
         control("School ID", "Edit")
+        if failed_paints:
+            raise RuntimeError("Native journey completed; missing validated frames: " + ", ".join(failed_paints))
     finally:
         app.terminate()
         app.wait(timeout=10)
