@@ -4,7 +4,7 @@ appId: org.edupilot.mobile
 - extendedWaitUntil:
     visible: { id: "school-id" }
     timeout: 60000
-- takeScreenshot: ${PLATFORM}-signin
+- takeScreenshot: edupilot-signin
 - tapOn: { id: "school-id" }
 - inputText: ${SCHOOL}
 - tapOn: { id: "email" }
@@ -18,7 +18,7 @@ appId: org.edupilot.mobile
 - extendedWaitUntil:
     visible: "Identity"
     timeout: 20000
-- takeScreenshot: ${PLATFORM}-directory
+- takeScreenshot: edupilot-directory
 - scrollUntilVisible:
     element: "Students"
     direction: DOWN
@@ -33,7 +33,7 @@ appId: org.edupilot.mobile
     element: Active
     direction: DOWN
 - assertVisible: Jamie Demo
-- takeScreenshot: ${PLATFORM}-students
+- takeScreenshot: edupilot-students
 - scrollUntilVisible:
     element: Sign out
     direction: UP

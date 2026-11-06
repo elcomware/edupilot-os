@@ -32,20 +32,35 @@ if [[ "$platform" = android ]]; then
 fi
 output="$RUNNER_TEMP/mobile-screens"
 mkdir -p "$output"
-maestro test -e "PLATFORM=$platform" -e "SCHOOL=$EDUPILOT_SEED_SCHOOL" -e "PASSWORD=$EDUPILOT_SEED_PASSWORD" \
-  --test-output-dir "$output" tests/mobile/flow.yml
-python3 - "$platform" "$output" <<'PY'
-import sqlite3, sys
+root=$PWD
+driver="$RUNNER_TEMP/mobile-maestro"
+mkdir "$driver"
+result=0
+(cd "$driver" && maestro test -e "SCHOOL=$EDUPILOT_SEED_SCHOOL" -e "PASSWORD=$EDUPILOT_SEED_PASSWORD" \
+  --test-output-dir "$driver" "$root/tests/mobile/flow.yml") || result=$?
+python3 - "$platform" "$driver" "$output" "$result" <<'PYTHON'
+import shutil, sqlite3, sys
 from pathlib import Path
-platform, directory = sys.argv[1:]
+
+platform, driver, output, result = sys.argv[1:]
+# Maestro nests named screenshots beneath its per-flow output. Keep debug
+# screenshots and command records private; only these blank/authenticated views qualify.
+roots = [Path(driver), Path("tests/mobile"), Path.home() / ".maestro/tests"]
+for state in ("signin", "directory", "students"):
+    matches = {p.resolve() for root in roots for p in root.rglob(f"edupilot-{state}.png")}
+    if len(matches) == 1:
+        source = matches.pop()
+        if source.stat().st_size < 1024 or source.read_bytes()[:8] != b"\x89PNG\r\n\x1a\n":
+            raise SystemExit(f"Invalid native screenshot: {state}")
+        shutil.copyfile(source, Path(output) / f"{platform}-{state}.png")
+    elif result == "0" or matches:
+        raise SystemExit(f"Expected one named native screenshot for {state}, found {len(matches)}")
+if result != "0":
+    raise SystemExit(int(result))
 with sqlite3.connect("file:database/edupilot.sqlite?mode=ro", uri=True) as db:
     rows = db.execute("SELECT school_id, given_name, family_name, status FROM students_records").fetchall()
     sessions = db.execute("SELECT count(*) FROM identity_sessions").fetchone()[0]
 if rows != [("demo-" + platform, "Jamie", "Demo", "active")] or sessions:
     raise SystemExit("Unexpected student or remaining session in the fixture database")
-for state in ("signin", "directory", "students"):
-    path = Path(directory) / "takeScreenshot" / f"{platform}-{state}.png"
-    if not path.is_file() or path.stat().st_size < 1024:
-        raise SystemExit(f"Missing screenshot: {state}")
 print(f"{platform}: native sign-in and registration verified, one active school record, zero remaining sessions.")
-PY
+PYTHON

@@ -103,8 +103,8 @@ jobs:
         with:
           name: mobile-${{ matrix.platform }}-screenshots
           path: |
-            ${{ runner.temp }}/mobile-screens/takeScreenshot/${{ matrix.platform }}-signin.png
-            ${{ runner.temp }}/mobile-screens/takeScreenshot/${{ matrix.platform }}-directory.png
-            ${{ runner.temp }}/mobile-screens/takeScreenshot/${{ matrix.platform }}-students.png
+            ${{ runner.temp }}/mobile-screens/${{ matrix.platform }}-signin.png
+            ${{ runner.temp }}/mobile-screens/${{ matrix.platform }}-directory.png
+            ${{ runner.temp }}/mobile-screens/${{ matrix.platform }}-students.png
           if-no-files-found: warn
           retention-days: 14
