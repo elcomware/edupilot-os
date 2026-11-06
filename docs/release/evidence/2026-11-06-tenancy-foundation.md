@@ -47,3 +47,7 @@ Local mount-table tests covered an escaped directory name, a mismatched device o
 ### Declared systemd writer fleet
 
 The operator probe samples each inventoried host and returns counts only after all hosts pass. Local verification: 21 Python tests passed, including two-host aggregation, duplicate identities, unsafe unit names, timeout on the second host and a repeated machine response. The native CI service drill additionally starts a key-only loopback SSH server and checks the masked services, a wrong machine ID, an absent service and a wrong host key. This drill exercises one real SSH endpoint; separate physical hosts, continuous exclusion and object storage remain unqualified.
+
+### Restored S3 document reconciliation
+
+A compiled native CLI inspected a synthetic HTTPS S3 protocol fixture using the existing S3 client. The valid restored record reproduced the local version 2 report byte for byte. A missing record, an unexpected key on the second listing page, corrupt content, an HTTP 412 on the conditional object read and a wrong pre-backup digest each failed with empty standard output. The fixture checked that requests used signed GETs and that the object read used the listed ETag. This exercises the protocol and verifier; provider-operated backup/restore, real credential-policy enforcement and continuous fencing remain open.

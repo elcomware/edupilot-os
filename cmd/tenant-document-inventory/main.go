@@ -1,5 +1,4 @@
-// Command tenant-document-inventory privately inspects a frozen local starter backup.
-// It never boots the server, opens a database, loads credentials, or creates a root.
+// Command tenant-document-inventory inspects a frozen local backup or restored S3 bucket.
 package main
 
 import (
@@ -9,12 +8,13 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"github.com/elcomware/edupilot/modules/documents/adapters/outbound/blob"
 	"github.com/elcomware/edupilot/platform/tenantupgrade"
 )
 
-const usage = "Usage: tenant-document-inventory -manifest=PRIVATE_JSON -root=EXISTING_PRIVATE_ROOT [-expected-sha256=APPROVED_DIGEST] [-references=PRIVATE_JSON]"
+const usage = "Usage: tenant-document-inventory -manifest=PRIVATE_JSON -root=EXISTING_PRIVATE_ROOT [-expected-sha256=APPROVED_DIGEST] [-references=PRIVATE_JSON] | -s3-restore -manifest=PRIVATE_JSON -references=PRIVATE_JSON -expected-sha256=APPROVED_DIGEST"
 
 func run(args []string, output, diagnostics io.Writer) int {
 	flags := flag.NewFlagSet("tenant-document-inventory", flag.ContinueOnError)
@@ -22,6 +22,7 @@ func run(args []string, output, diagnostics io.Writer) int {
 	flags.SetOutput(io.Discard)
 	manifestPath := flags.String("manifest", "", "private approved version 1 mapping manifest")
 	referencesPath := flags.String("references", "", "private preserved version 1 object reference manifest")
+	s3Restore := flags.Bool("s3-restore", false, "inspect an isolated frozen recovery bucket")
 	root := flags.String("root", "", "existing private frozen local document root")
 	expected := flags.String("expected-sha256", "", "optional approved aggregate SHA-256")
 	if err := flags.Parse(args); err != nil {
@@ -46,7 +47,8 @@ func run(args []string, output, diagnostics io.Writer) int {
 		fmt.Fprintln(diagnostics, "Expected inventory digest must not be empty.")
 		return 2
 	}
-	if *manifestPath == "" || *root == "" || flags.NArg() != 0 {
+	validSource := *root != "" && !*s3Restore || *root == "" && *s3Restore && *referencesPath != ""
+	if *manifestPath == "" || !validSource || flags.NArg() != 0 {
 		fmt.Fprintln(diagnostics, usage)
 		return 2
 	}
@@ -108,9 +110,20 @@ func run(args []string, output, diagnostics io.Writer) int {
 			fmt.Fprintln(diagnostics, "Invalid preserved object reference manifest.")
 			return 1
 		}
-		result, err = blob.ReconcileLocal(context.Background(), *root, manifest, references, *expected)
+		if *s3Restore {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+			defer cancel()
+			result, err = blob.ReconcileS3Restore(ctx, func(key, fallback string) string {
+				if value := os.Getenv("EDUPILOT_RESTORE_" + key); value != "" {
+					return value
+				}
+				return fallback
+			}, manifest, references, *expected)
+		} else {
+			result, err = blob.ReconcileLocal(context.Background(), *root, manifest, references, *expected)
+		}
 		if err != nil {
-			fmt.Fprintln(diagnostics, "Local document reconciliation failed; check the frozen private backup, preserved references, approved mapping and inventory digest.")
+			fmt.Fprintln(diagnostics, "Document reconciliation failed; check the frozen backup, preserved references, approved mapping and inventory digest.")
 			return 1
 		}
 	}

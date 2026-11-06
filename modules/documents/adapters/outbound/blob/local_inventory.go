@@ -94,6 +94,10 @@ func ReconcileLocal(ctx context.Context, path string, manifest tenantupgrade.Man
 	if err != nil {
 		return ReconciledLocalInventory{}, err
 	}
+	return reconciledInventory(inventory, references)
+}
+
+func reconciledInventory(inventory LocalInventory, references tenantupgrade.ObjectReferences) (ReconciledLocalInventory, error) {
 	referenceDigest, err := references.Fingerprint()
 	if err != nil {
 		return ReconciledLocalInventory{}, ErrLocalInventory
@@ -161,7 +165,6 @@ func inventoryLocal(ctx context.Context, path string, manifest tenantupgrade.Man
 		return LocalInventory{}, ErrLocalInventory
 	}
 	scan := localInspection{ctx: ctx, result: LocalInventory{Version: LocalInventoryVersion, Schools: len(manifest.Schools)}, digest: sha256.New(), expected: expected}
-	frame(scan.digest, []byte("EDUPILOT-LOCAL-DOCUMENT-INVENTORY/1"))
 	legacySchools := make([]string, len(manifest.Schools))
 	allowed := make(map[string]bool, len(manifest.Schools))
 	for i, mapping := range manifest.Schools {
@@ -169,13 +172,7 @@ func inventoryLocal(ctx context.Context, path string, manifest tenantupgrade.Man
 		allowed[mapping.LegacySchool] = true
 	}
 	slices.Sort(legacySchools)
-	frame(scan.digest, []byte("schools"))
-	var schoolCount [8]byte
-	binary.BigEndian.PutUint64(schoolCount[:], uint64(len(legacySchools)))
-	scan.digest.Write(schoolCount[:])
-	for _, school := range legacySchools {
-		frame(scan.digest, []byte(school))
-	}
+	scan.beginSchools(legacySchools)
 	if err = scan.root(root, allowed); err != nil {
 		return LocalInventory{}, err
 	}
@@ -185,6 +182,21 @@ func inventoryLocal(ctx context.Context, path string, manifest tenantupgrade.Man
 	if err = ctx.Err(); err != nil {
 		return LocalInventory{}, err
 	}
+	return scan.finish(expectedSHA256)
+}
+
+func (scan *localInspection) beginSchools(legacySchools []string) {
+	frame(scan.digest, []byte("EDUPILOT-LOCAL-DOCUMENT-INVENTORY/1"))
+	frame(scan.digest, []byte("schools"))
+	var schoolCount [8]byte
+	binary.BigEndian.PutUint64(schoolCount[:], uint64(len(legacySchools)))
+	scan.digest.Write(schoolCount[:])
+	for _, school := range legacySchools {
+		frame(scan.digest, []byte(school))
+	}
+}
+
+func (scan *localInspection) finish(expectedSHA256 string) (LocalInventory, error) {
 	frame(scan.digest, []byte("totals"))
 	for _, count := range []uint64{uint64(scan.result.Schools), uint64(scan.result.Documents), uint64(scan.result.ContentBytes)} {
 		var raw [8]byte
@@ -340,6 +352,10 @@ func (s *localInspection) document(root *os.Root, school, id string) error {
 	if err != nil || after.Size() != info.Size() || !after.ModTime().Equal(info.ModTime()) {
 		return ErrLocalInventory
 	}
+	return s.addDocument(k, document)
+}
+
+func (s *localInspection) addDocument(k application.FileKey, document application.Download) error {
 	if int64(len(document.Content)) > MaxInventoryContentBytes-s.result.ContentBytes {
 		return ErrLocalInventoryLimit
 	}

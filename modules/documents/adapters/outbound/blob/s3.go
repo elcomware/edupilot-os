@@ -33,19 +33,11 @@ func Configured(get func(string, string) string) (application.BlobStore, error) 
 		}
 		return local{abs}, nil
 	case "s3":
-		endpoint, err := url.Parse(get("S3_ENDPOINT", ""))
-		if err != nil || endpoint.Hostname() == "" || (endpoint.Scheme != "http" && endpoint.Scheme != "https") || endpoint.User != nil || endpoint.RawQuery != "" || endpoint.Fragment != "" || (endpoint.Path != "" && endpoint.Path != "/") {
-			return nil, errors.New("invalid S3 endpoint")
-		}
-		bucket, access, secret := get("S3_BUCKET", ""), get("S3_ACCESS_KEY_ID", ""), get("S3_SECRET_ACCESS_KEY", "")
-		if s3utils.CheckValidBucketNameStrict(bucket) != nil || access == "" || secret == "" {
-			return nil, errors.New("invalid S3 bucket or missing credentials")
-		}
-		client, err := minio.New(endpoint.Host, &minio.Options{Creds: credentials.NewStaticV4(access, secret, ""), Secure: endpoint.Scheme == "https", Region: get("S3_REGION", "us-east-1")})
+		store, err := configuredS3(get)
 		if err != nil {
 			return nil, err
 		}
-		return s3Store{client, bucket}, nil
+		return store, nil
 	default:
 		return nil, errors.New("unknown document storage driver")
 	}
@@ -79,4 +71,20 @@ func s3ReadError(err error) error {
 	default:
 		return err
 	}
+}
+
+func configuredS3(get func(string, string) string) (s3Store, error) {
+	endpoint, err := url.Parse(get("S3_ENDPOINT", ""))
+	if err != nil || endpoint.Hostname() == "" || (endpoint.Scheme != "http" && endpoint.Scheme != "https") || endpoint.User != nil || endpoint.RawQuery != "" || endpoint.Fragment != "" || (endpoint.Path != "" && endpoint.Path != "/") {
+		return s3Store{}, errors.New("invalid S3 endpoint")
+	}
+	bucket, access, secret := get("S3_BUCKET", ""), get("S3_ACCESS_KEY_ID", ""), get("S3_SECRET_ACCESS_KEY", "")
+	if s3utils.CheckValidBucketNameStrict(bucket) != nil || access == "" || secret == "" {
+		return s3Store{}, errors.New("invalid S3 bucket or missing credentials")
+	}
+	client, err := minio.New(endpoint.Host, &minio.Options{Creds: credentials.NewStaticV4(access, secret, ""), Secure: endpoint.Scheme == "https", Region: get("S3_REGION", "us-east-1")})
+	if err != nil {
+		return s3Store{}, err
+	}
+	return s3Store{client, bucket}, nil
 }

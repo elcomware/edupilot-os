@@ -125,6 +125,7 @@ Delivered preflight increments are recorded individually. Completion of Task 4 s
 - [x] Add read-only verification for inventoried PostgreSQL writer logins on one primary and a disposable cluster regression for new logins, surviving sessions, grants and prepared transactions.
 - [x] Add a local Linux ext4 document-volume probe that checks the independently inventoried device and rejects a read-only bind view of a writable filesystem. Keep fleet, provider and coordinator gates separate.
 - [x] Sample inventoried systemd writer hosts via pinned SSH, verifying machine identity and every declared unit. Continuous maintenance ownership remains open.
+- [x] Reconcile a frozen S3 recovery bucket’s current records against independent references and the retained document digest. Exercise conditional object reads and paginated listing through the compiled CLI. Deployment-provider recovery and continuous write exclusion remain open.
 
 
 **Create:** `platform/tenantupgrade/{inventory,manifest,service,verify}.go`, `service_test.go`; `cmd/tenant-upgrade/{main,main_test}.go`; `database/edumigrations/legacy_upgrade_test.go`; `docs/operations/tenant-foundation-upgrade.md`. **Modify:** `database/edumigrations/readiness.go`, `cmd/migrate/main.go`.

@@ -258,3 +258,14 @@ python3 scripts/verify-systemd-fleet.py --inventory /private/writers.json --logi
 ```
 
 Each host runs the same read-only service probe from the operator checkout via Python 3 over SSH. Require exit 0 and reconcile the aggregate counts. An incomplete inventory can omit writers. Success samples hosts sequentially and cannot establish continuous exclusion or authorize copy/resume. Maintain deployment access controls throughout downtime, including controls on unmanaged processes, database credentials and object storage.
+
+## Check current document bytes in an isolated S3 restore
+
+Use a dedicated frozen recovery bucket, an independently preserved reference manifest and the approved pre-backup version 1 document-byte digest. Supply a trusted HTTPS endpoint, bucket and least-privilege list/read credentials through an operator secret environment: `EDUPILOT_RESTORE_S3_ENDPOINT`, `EDUPILOT_RESTORE_S3_BUCKET`, `EDUPILOT_RESTORE_S3_ACCESS_KEY_ID`, `EDUPILOT_RESTORE_S3_SECRET_ACCESS_KEY` and optionally `EDUPILOT_RESTORE_S3_REGION`. The verifier ignores the application's ordinary S3 environment.
+
+```sh
+tenant-document-inventory -s3-restore -manifest=/private/mapping.json \
+  -references=/private/object-references.json -expected-sha256="$approved_document_sha256"
+```
+
+The verifier enumerates the entire current key set, including all pages, then reads each approved record with the listed ETag as an HTTP precondition. It checks each record against its original school and key and reproduces the local verifier's version 2 aggregate. Compare this with the retained document evidence before proceeding to database verification. A mismatch or unreadable object causes exit 1 with no report. Freeze both the source used for the baseline and the recovery bucket for their respective checks. This procedure covers visible current versions only. Backup creation, version history, delete markers, provider retention, write exclusion and SQL recovery need their own evidence.

@@ -117,6 +117,7 @@ func TestCommandReconcilesPreservedReferencesBeforeCopyEvidence(t *testing.T) {
 	if strings.Contains(output.String()+diagnostics.String(), id) || strings.Contains(output.String()+diagnostics.String(), referencesPath) {
 		t.Fatal("reconciled output disclosed a private object reference")
 	}
+	exerciseRestoredBucket(t, root, id, manifestPath, referencesPath, baseline.SHA256, output.Bytes())
 	if err := os.Remove(filepath.Join(root, "schools", "north", "documents", id)); err != nil {
 		t.Fatal(err)
 	}
