@@ -95,6 +95,7 @@ describe("scoped workspace reset", () => {
     store.update({ appearance: "dark", accent: "clay", density: "compact", width: "wide" });
     workspace();
     const user = userEvent.setup();
+    const liveRegion = screen.getByRole("status");
     const trigger = screen.getByRole("button", { name: "Reset this workspace" });
     await user.click(trigger);
     let dialog = screen.getByRole("dialog", { name: "Reset this workspace?" });
@@ -110,6 +111,7 @@ describe("scoped workspace reset", () => {
     expect(localStorage.getItem(preferenceKey(person))).toBeNull();
     expect([otherUser, otherSchool].map(p => localStorage.getItem(preferenceKey(p)))).toEqual(savedOther);
     expect(localStorage.getItem("unrelated-session-marker")).toBe("untouched");
+    expect(screen.getByRole("status")).toBe(liveRegion);
     expect(screen.getByRole("status").textContent).toBe("This workspace’s preferences were reset on this device.");
   });
   it("keeps settings and confirmation available when removal is denied", async () => {
@@ -121,7 +123,7 @@ describe("scoped workspace reset", () => {
     const dialog = screen.getByRole("dialog", { name: "Reset this workspace?" });
     await user.click(within(dialog).getByRole("button", { name: "Reset preferences" }));
     expect(usePreferences.getState().value).toEqual(before);
-    expect(within(dialog).getByRole("status").textContent).toBe("Couldn’t remove saved preferences. Your settings are unchanged. Try again.");
+    expect(within(dialog).getByRole("alert").textContent).toBe("Couldn’t remove saved preferences. Your settings are unchanged. Try again.");
     expect(screen.getAllByRole("status")).toHaveLength(1);
   });
 });

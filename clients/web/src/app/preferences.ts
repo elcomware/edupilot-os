@@ -83,7 +83,10 @@ export const usePreferences = create<Settings>((set, get) => ({
   stored: true,
   activate(p) {
     const scope = p ? preferenceKey(p) : null;
-    const fallback = get().value.locale;
+    // Only an explicit language choice on the signed-out screen carries into a
+    // new workspace. An authenticated account's locale belongs to that account.
+    const previous = get();
+    const fallback = previous.scope ? defaults().locale : previous.value.locale;
     let value = { ...defaults(), locale: fallback },
       stored = true;
     if (scope) {

@@ -13,6 +13,27 @@ const person = (school: string, id = "staff") => ({
   permissions: [],
 });
 describe("shared workstation", () => {
+  it("keeps an administrator's language out of the next account's defaults", () => {
+    const store = usePreferences.getState();
+    store.activate(person("lang-reset"));
+    store.update({ locale: "fr" });
+    store.reset();
+    store.activate(person("lang-a"));
+    store.update({ locale: "fr" });
+    store.activate(person("lang-reset"));
+    expect(usePreferences.getState().value.locale).toBe("en");
+    store.activate(person("lang-b"));
+    expect(usePreferences.getState().value.locale).toBe("en");
+    store.activate(person("lang-a"));
+    expect(usePreferences.getState().value.locale).toBe("fr");
+    store.activate(null);
+    expect(usePreferences.getState().value.locale).toBe("en");
+    // An explicit signed-out choice may seed a new workspace.
+    store.update({ locale: "fr" });
+    store.activate(person("lang-c"));
+    expect(usePreferences.getState().value.locale).toBe("fr");
+    store.activate(null);
+  });
   it("isolates pins and appearance by both school and staff member", () => {
     const store = usePreferences.getState();
     store.activate(person("one"));

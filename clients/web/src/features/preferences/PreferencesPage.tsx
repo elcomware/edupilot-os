@@ -72,7 +72,6 @@ export function PreferencesPage({ modules, catalogStatus }: {
     : !stored ? t(l, "storageUnavailable")
     : feedback === "reset" ? t(l, "resetDone")
     : feedback === "saved" ? t(l, "prefsSaved") : "";
-  const status = <p className="save-message" role="status">{message}</p>;
   function move(key: string, direction: -1 | 1) {
     focusKey.current = key;
     update({ pins: movePinnedModule(pref.pins, modules, key, direction) });
@@ -148,9 +147,9 @@ export function PreferencesPage({ modules, catalogStatus }: {
           <button type="button" className="btn danger" onClick={() => { setFeedback(null); setConfirmReset(true); }}>{t(l, "resetWorkspace")}</button>
         </div>
       </section>
-      {!confirmReset && status}
+      <p className="save-message" role="status">{confirmReset ? "" : message}</p>
       {confirmReset && <Dialog title={t(l, "resetQuestion")} description={t(l, "resetInfo")} onClose={() => { setConfirmReset(false); setFeedback(null); }}>
-        {status}
+        <p className="save-message" role="alert">{feedback === "resetFailed" ? t(l, "resetFailed") : ""}</p>
         <div className="dialog-actions">
           <button type="button" className="btn" onClick={() => { setConfirmReset(false); setFeedback(null); }}>{t(l, "cancel")}</button>
           <button type="button" className="btn danger" onClick={() => {
