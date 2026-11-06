@@ -49,6 +49,10 @@ export function Register({
     [api, module.key, offset, canRead],
   );
   const { state, refresh } = useResource(load);
+  // Seed each native editor once. Sending the draft back to iOS on every
+  // keystroke can overwrite newer text while native input events are in flight.
+  const initialTitle = useRef(draft.title);
+  const [editorVersion, resetEditor] = useState(0);
   const gate = useRef(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{
@@ -68,7 +72,9 @@ export function Register({
     setMessage(undefined);
     try {
       await api.createEntry(module.key, { title });
+      initialTitle.current = "";
       setDraft(blank);
+      resetEditor((version) => version + 1);
       setMessage({ key: "added", error: false });
       setOffset(0);
       refresh();
@@ -88,7 +94,8 @@ export function Register({
           <Field
             testID="entry-title"
             label={t("entryTitle")}
-            value={draft.title}
+            key={editorVersion}
+            defaultValue={initialTitle.current}
             onChangeText={(title) => setDraft({ ...draft, title })}
             editable={!saving}
           />
