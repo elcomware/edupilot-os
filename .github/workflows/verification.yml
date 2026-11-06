@@ -75,6 +75,21 @@ jobs:
       - name: Desktop gateway tests
         working-directory: clients/desktop
         run: go test -count=1 ./internal/gateway
+      - name: Build and open the native Linux desktop
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev libx11-dev xvfb xauth xdotool dbus-x11
+          node clients/desktop/scripts/build.mjs
+          bash scripts/check-desktop-window.sh clients/desktop/bin/edupilot
+      - name: Build the Windows desktop executable
+        working-directory: clients/desktop
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: '0'
+        run: go build -trimpath -tags production -ldflags="-H windowsgui" -o "$RUNNER_TEMP/edupilot.exe" .
       - name: Install browser runner
         working-directory: tests/e2e
         run: |

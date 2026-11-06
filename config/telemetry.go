@@ -14,7 +14,7 @@ func init() {
 		// data by service name, version, and environment.
 		// Reference: https://opentelemetry.io/docs/specs/semconv/resource/
 		"service": map[string]any{
-			"name":        config.Env("APP_NAME", "goravel"),
+			"name":        config.Env("APP_NAME", "edupilot-os"),
 			"version":     config.Env("APP_VERSION", ""),
 			"environment": config.Env("APP_ENV", ""),
 		},

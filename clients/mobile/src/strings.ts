@@ -1,6 +1,8 @@
+const productName = "EduPilot OS";
+
 export const copy = {
   en: {
-    brand: "EduPilot",
+    brand: productName,
     register: "School register",
     signIn: "Sign in",
     school: "School ID",
@@ -64,7 +66,7 @@ export const copy = {
     closed: "Closed",
   },
   fr: {
-    brand: "EduPilot",
+    brand: productName,
     register: "Registre scolaire",
     signIn: "Se connecter",
     school: "Identifiant de l’école",

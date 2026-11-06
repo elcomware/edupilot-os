@@ -1,4 +1,4 @@
-# EduPilot desktop
+# EduPilot OS desktop
 
 This is a native Wails v3.1.0 host for the **same compiled web UI** served by Goravel. It uses the same login, language, navigation, module pages and student forms. It has no Go business services, listener, local school database, or separately maintained frontend.
 
@@ -19,6 +19,6 @@ A bounded, same-origin asset handler forwards only `/api/v1/` to that single ori
 
 **Native prerequisites:** Go 1.26+, a native C toolchain and the dependencies described in [Wails installation](https://wails.io/quick-start/installation/). On Linux install GTK 4 and WebKitGTK 6 development packages and run in a graphical session; macOS needs Xcode command-line tools, Windows needs WebView2. This script builds a local executable for the host OS. Distribution installers, platform signing and notarization require your release identities.
 
-The native Go module is deliberately separate from the Goravel server. For an assets-only preparation use `node clients/desktop/scripts/build.mjs --assets-only` after the web build. The gateway test sources can later be run inside this directory with `go test ./internal/gateway`; they require no display or GUI dependencies.
+The native Go module is deliberately separate from the Goravel server. For an assets-only preparation use `node clients/desktop/scripts/build.mjs --assets-only` after the web build. Run gateway tests in this directory with `go test ./internal/gateway`. Native CI also builds the Linux desktop with its web assets, checks the branded window on a disposable X11 display, and cross-compiles the Windows executable. Windows interaction, macOS builds, installers and signing have separate release checks.
 
 Sources: [Wails asset routing](https://v3.wails.io/contributing/asset-server/) · [versioned Go API](https://pkg.go.dev/github.com/wailsapp/wails/v3@v3.1.0/pkg/application).

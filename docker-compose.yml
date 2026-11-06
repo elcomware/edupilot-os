@@ -1,7 +1,7 @@
 name: edupilot
 
 x-runtime-env: &runtime-env
-  APP_NAME: EduPilot
+  APP_NAME: ${APP_NAME:-EduPilot OS}
   APP_ENV: ${APP_ENV:-local}
   APP_DEBUG: ${APP_DEBUG:-false}
   QUEUE_CONNECTION: ${QUEUE_CONNECTION:-sync}

@@ -13,6 +13,8 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
+const productName = "EduPilot OS"
+
 //go:embed all:frontend/dist
 var assets embed.FS
 
@@ -28,8 +30,8 @@ func main() {
 	api, closeIdle := gateway.New(origin)
 	defer closeIdle()
 	app := application.New(application.Options{
-		Name:        "EduPilot",
-		Description: "EduPilot school workspace",
+		Name:        productName,
+		Description: "EduPilot OS school workspace",
 		// Do not allow a development-server environment variable to swap the
 		// application supplying credentials. Serve only the embedded bundle.
 		Assets: application.AssetOptions{
@@ -41,7 +43,7 @@ func main() {
 		Mac: application.MacOptions{ApplicationShouldTerminateAfterLastWindowClosed: true},
 	})
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title: "EduPilot", Width: 1280, Height: 830,
+		Title: productName, Width: 1280, Height: 830,
 		MinWidth: 720, MinHeight: 530, URL: "/",
 	})
 	if err := app.Run(); err != nil {
