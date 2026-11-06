@@ -42,8 +42,7 @@ func openSourceDB(ctx context.Context, node database.Connection, fence bool) (*s
 		if fence {
 			params = url.Values{"mode": {"rw"}, "_pragma": {"busy_timeout(0)"}}
 		}
-		uri := url.URL{Scheme: "file", Path: path, RawQuery: params.Encode()}
-		db, err = sql.Open("sqlite3", uri.String())
+		db, err = sql.Open("sqlite3", database.SQLiteFileDSN(path, params))
 		if err != nil {
 			return nil, errors.New("source unavailable")
 		}

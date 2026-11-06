@@ -1,0 +1,82 @@
+name: Native desktop sign-in
+on:
+  push:
+    branches: [main, 'verify/desktop-login']
+    paths:
+      - '.github/workflows/desktop-login.yml'
+      - '.github/ci/desktop-window.apparmor'
+      - 'clients/desktop/**'
+      - 'clients/web/**'
+      - 'packages/api-client/**'
+      - 'go.mod'
+      - 'go.sum'
+      - 'package*.json'
+      - 'bootstrap/**'
+      - 'config/**'
+      - 'routes/**'
+      - 'cmd/seed-admin/**'
+      - 'platform/identity/**'
+      - 'platform/database/**'
+      - 'modules/students/**'
+      - 'scripts/setup.py'
+      - 'tests/desktop/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  sign-in:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            clients/desktop/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install Linux desktop prerequisites
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev libx11-dev xvfb xauth xdotool dbus-x11 imagemagick tesseract-ocr tesseract-ocr-eng at-spi2-core python3-pyatspi gsettings-desktop-schemas
+      - run: npm ci --ignore-scripts
+      - run: npm run build:web
+      - run: node clients/desktop/scripts/build.mjs
+      - name: Prepare isolated Linux executable
+        if: runner.os == 'Linux'
+        run: |
+          sudo install -D -o root -g root -m 0755 clients/desktop/bin/edupilot /opt/edupilot-ci-window/edupilot
+          sudo apparmor_parser -a .github/ci/desktop-window.apparmor
+      - name: Install Windows native UI automation and capture tools
+        if: runner.os == 'Windows'
+        run: |
+          python -m pip install pywinauto==0.6.9 Pillow==12.3.0
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $tesseract = "$env:ProgramFiles\Tesseract-OCR\tesseract.exe"
+          if (!(Test-Path $tesseract)) {
+            choco install tesseract -y --no-progress
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
+          if (!(Test-Path $tesseract)) { throw "Tesseract executable missing" }
+          "DESKTOP_TESSERACT=$tesseract" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+      - name: Verify native SQLite filenames and options
+        run: go test -run TestSQLiteFileDSNOpensExactFile -count=1 ./platform/database
+      - name: Sign in and register a synthetic student in the native window
+        run: python tests/desktop/run.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: desktop-${{ runner.os }}-screenshots
+          path: ${{ runner.temp }}/desktop-screens/*.png
+          if-no-files-found: warn
+          retention-days: 14

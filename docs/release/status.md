@@ -14,7 +14,7 @@ The starter and the increments below are on `main`. Production qualification rem
 | S03 institution/access administration | Planned | Activate the verified hierarchy through provisioning, sessions, scoped authorizations, inherited configuration and client context switching. |
 | S04–S17 business domains | Planned | Deliver each module's workflows and professional pages against its acceptance tests. A generic work list covers follow-up work only. |
 | S18 operations and mobility | Planned | Implement database-enforced fencing, copy, digest verification, cutover, recovery and the operator UI for whole-tenant moves. Drill shared↔dedicated before cross-engine conversion. |
-| S19 native clients | In progress | EduPilot OS is the installed display name on desktop and mobile. The Linux GUI opened on the hosted X11 display. The Windows GUI binary cross-compiled and both Expo bundles exported. Native device testing, installers, signing and task parity remain open. |
+| S19 native clients | In progress | EduPilot OS is the installed display name on desktop and mobile. The native Ubuntu 24.04 and Windows Server 2025 desktop clients signed in, loaded the module directory, saved a synthetic student and signed out. An independent SQLite read verified the school, names and active status on each OS. [Both runs and six native screenshots](https://github.com/elcomware/edupilot-os/actions/runs/42188131485). Both Expo bundles exported. Physical-device testing, installers, signing and task parity remain open. |
 | S20 release qualification | Open | Performance/accessibility review, provider and recovery drills, deployment configuration, signing, physical devices and operator acceptance. |
 
 ## Runtime boundaries
