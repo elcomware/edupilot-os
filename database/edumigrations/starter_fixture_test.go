@@ -18,6 +18,7 @@ import (
 
 	"github.com/elcomware/edupilot-os/app/facades"
 	"github.com/elcomware/edupilot-os/bootstrap"
+	"github.com/elcomware/edupilot-os/database/edumigrations"
 	"github.com/elcomware/edupilot-os/modules"
 	"github.com/elcomware/edupilot-os/modules/documents/adapters/outbound/blob"
 	files "github.com/elcomware/edupilot-os/modules/documents/application"
@@ -25,7 +26,6 @@ import (
 	"github.com/elcomware/edupilot-os/platform/database"
 	"github.com/elcomware/edupilot-os/platform/identity"
 	goraveldatabase "github.com/goravel/framework/database"
-	"github.com/goravel/framework/database/migration"
 	"github.com/goravel/framework/log"
 	"github.com/goravel/postgres"
 	"github.com/goravel/sqlite"
@@ -164,8 +164,7 @@ func starterFixtureDriver(t *testing.T, mode, driver string) StarterFixture {
 	for _, n := range settings.Dedicated {
 		f.Dedicated[n.Tenant] = catalog.Named()[n.Name]
 	}
-	migrator := migration.NewMigrator(nil, schema, "migrations")
-	migrate := func() error { return migrator.Run() }
+	migrate := func() error { return edumigrations.Run(t.Context(), catalog) }
 	if driver == "postgres" {
 		// Inspect the exact Goravel handles used by native DDL, not only the admin
 		// helpers that allocated schemas. Keep one verified connection per pool.
@@ -312,6 +311,24 @@ func TestStarterFixturePostgres(t *testing.T) {
 	for _, mode := range []string{"shared", "dedicated", "mixed"} {
 		t.Run(mode, func(t *testing.T) { verifyStarterFixture(t, starterFixtureDriver(t, mode, "postgres"), mode) })
 	}
+}
+
+func TestStarterFixturePostgresIgnoresLedgerInOtherSchema(t *testing.T) {
+	dsn := os.Getenv("EDUPILOT_TEST_POSTGRES_DSN")
+	if dsn == "" {
+		t.Skip("EDUPILOT_TEST_POSTGRES_DSN unavailable; PostgreSQL schema-isolation verification remains open")
+	}
+	decoy := postgresPool(t, dsn)
+	if _, err := decoy.Exec(`CREATE TABLE migrations (
+		id BIGSERIAL PRIMARY KEY,
+		migration VARCHAR(255) NOT NULL,
+		batch INTEGER NOT NULL
+	)`); err != nil {
+		t.Fatal(err)
+	}
+	// The fixture allocates different fresh schemas. Their native ledgers must
+	// be created even while another schema in the same database has this name.
+	starterFixtureDriver(t, "mixed", "postgres")
 }
 func verifyStarterFixture(t *testing.T, f StarterFixture, mode string) {
 	t.Helper()

@@ -24,6 +24,9 @@ func historyTable() (string, error) {
 
 // Run invokes the native migrator directly so its real error reaches the deployment process.
 func Run(ctx context.Context, catalog *database.Catalog) error {
+	if catalog == nil || catalog.Control.DB == nil {
+		return errors.New("database catalog unavailable")
+	}
 	s := facades.Schema()
 	if s == nil || len(s.Migrations()) == 0 {
 		return errors.New("no Goravel schema migrations registered")
@@ -32,10 +35,55 @@ func Run(ctx context.Context, catalog *database.Catalog) error {
 	if err != nil {
 		return err
 	}
+	// Goravel's PostgreSQL HasTable implementation enumerates every schema and
+	// then compares only the unqualified table name. A migrations table in an
+	// unrelated schema can therefore suppress creation in the selected schema.
+	// Resolve and, when necessary, create the repository against the verified
+	// control handle before handing execution to the native migrator.
+	if err := ensureHistoryRepository(ctx, catalog.Control, s, table); err != nil {
+		return err
+	}
 	if err := migration.NewMigrator(facades.Artisan(), s, table).Run(); err != nil {
 		return fmt.Errorf("apply Goravel migrations: %w", err)
 	}
 	return CheckReady(ctx, catalog, s.Migrations())
+}
+
+func ensureHistoryRepository(ctx context.Context, control database.Pool, s schema.Schema, table string) error {
+	exists, err := historyRepositoryExists(ctx, control, table)
+	if err != nil {
+		return fmt.Errorf("inspect Goravel migration ledger: %w", err)
+	}
+	if exists {
+		return nil
+	}
+
+	createErr := migration.NewRepository(s, table).CreateRepository()
+	exists, inspectErr := historyRepositoryExists(ctx, control, table)
+	if inspectErr != nil {
+		return fmt.Errorf("verify Goravel migration ledger: %w", inspectErr)
+	}
+	if exists {
+		// A concurrent native migrator may win table creation. The exact-schema
+		// recheck makes that race safe without accepting another schema's table.
+		return nil
+	}
+	if createErr != nil {
+		return fmt.Errorf("create Goravel migration ledger: %w", createErr)
+	}
+	return errors.New("Goravel migration ledger was not created in the control schema")
+}
+
+func historyRepositoryExists(ctx context.Context, control database.Pool, table string) (bool, error) {
+	query := "SELECT count(*) FROM sqlite_master WHERE type='table' AND name=?"
+	if control.Driver == "postgres" {
+		query = "SELECT count(*) FROM information_schema.tables WHERE table_schema=current_schema() AND table_name=?"
+	}
+	var count int
+	if err := control.DB.QueryRowContext(ctx, control.Bind(query), table).Scan(&count); err != nil {
+		return false, err
+	}
+	return count == 1, nil
 }
 
 // CheckReady checks the default Goravel ledger for *every* registered migration,
