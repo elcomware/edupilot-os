@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"net/http/httptest"
 	"net/url"
 	"os"
@@ -190,6 +191,36 @@ func exerciseFoundation(t *testing.T) {
 	if _, err := db.Control.DB.Exec(db.Control.Bind("DELETE FROM migrations WHERE migration=?"), key); err != nil {
 		t.Fatal(err)
 	}
+	// A restored dedicated pool can carry the same physical ID as the shared
+	// pool even when its owner label is correct. Reject it before repairing
+	// the pending control ledger entry.
+	var dedicatedID, sharedID string
+	for _, marker := range []struct {
+		pool database.Pool
+		id   *string
+	}{{west, &dedicatedID}, {db.Control, &sharedID}} {
+		if err := marker.pool.DB.QueryRow("SELECT pool_id FROM edu_pool_marker WHERE singleton=1").Scan(marker.id); err != nil {
+			t.Fatal(err)
+		}
+	}
+	setDedicatedID := func(id string) {
+		t.Helper()
+		if _, err := west.DB.Exec(west.Bind("UPDATE edu_pool_marker SET pool_id=? WHERE singleton=1"), id); err != nil {
+			t.Fatal(err)
+		}
+	}
+	setDedicatedID(sharedID)
+	if err := db.CheckReady(ctx); !errors.Is(err, database.ErrPlacement) {
+		t.Fatalf("readiness accepted duplicate physical IDs: %v", err)
+	}
+	if err := edumigrations.Run(ctx, db); !errors.Is(err, database.ErrPlacement) {
+		t.Fatalf("installer accepted duplicate physical IDs: %v", err)
+	}
+	var recorded int
+	if err := db.Control.DB.QueryRow(db.Control.Bind("SELECT count(*) FROM migrations WHERE migration=?"), key).Scan(&recorded); err != nil || recorded != 0 {
+		t.Fatalf("installer advanced pending migration on ambiguous placement: %d, %v", recorded, err)
+	}
+	setDedicatedID(dedicatedID)
 	if err := edumigrations.Run(ctx, db); err != nil {
 		t.Fatal("retry after pool commit", err)
 	}

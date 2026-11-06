@@ -37,3 +37,13 @@ references. All 40 Go tests and subtests and the native HTTP school-isolation
 journey passed locally. Hierarchy administration and scoped sessions remain open.
 
 Follow-up iPhone runs failed at different directory labels immediately after the keyboard submitted sign-in. The login inputs now retain native text and submit their latest values without sending a controlled value back on every keystroke. The simulator fixture waits for the real scoped session in disposable SQLite; the cold-launch UI check verifies the restored school. The exact workspace title, status, durable row and revocation checks remain required. Mobile type checking and all ten mobile unit tests passed locally.
+
+### Physical pool identity
+
+Readiness and migration preflight require distinct physical IDs across all
+configured, initialized pools. The disposable SQLite and PostgreSQL drills
+copied the shared ID onto a dedicated database with the correct owner label.
+Both checks rejected it, and the missing control ledger entry stayed absent.
+Restoring the dedicated ID allowed the interrupted migration to reconcile.
+This covers configured pools at inspection time. Writer fencing, verified
+copy and cutover are still required for tenant moves.

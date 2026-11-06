@@ -38,16 +38,24 @@ func Run(ctx context.Context, catalog *database.Catalog) error {
 	// Inspect every selected target before creating any tables. Refuse a nonempty
 	// unrecognized database, including a dedicated target on a fresh control.
 	pools := catalog.Named()
+	identities := make(map[string]string, len(pools))
 	for _, step := range s.Migrations() {
 		if m, ok := step.(*registered); ok && m.baseline {
 			pool, exists := pools[m.node.Name]
 			if !exists {
 				return fmt.Errorf("configured pool %s unavailable", m.node.Name)
 			}
-			if err := checkBaseline(ctx, pool, table, m); err != nil {
+			id, err := checkBaseline(ctx, pool, table, m)
+			if err != nil {
 				return fmt.Errorf("inspect pool %s: %w", m.node.Name, err)
 			}
+			if id != "" {
+				identities[m.node.Owner()] = id
+			}
 		}
+	}
+	if err := database.ValidatePoolIdentities(identities); err != nil {
+		return err
 	}
 	// Goravel's PostgreSQL HasTable implementation enumerates every schema and
 	// then compares only the unqualified table name. A migrations table in an
@@ -177,54 +185,54 @@ func signatures(ctx context.Context, pool database.Pool, sql string) (map[string
 	return result, rows.Err()
 }
 
-func checkBaseline(ctx context.Context, p database.Pool, ledger string, baseline *registered) error {
+func checkBaseline(ctx context.Context, p database.Pool, ledger string, baseline *registered) (string, error) {
 	found, err := historyRepositoryExists(ctx, p, receiptTable)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if found {
 		var owner, poolID string
 		err = p.DB.QueryRowContext(ctx, "SELECT owner, pool_id FROM edu_pool_marker WHERE singleton=1").Scan(&owner, &poolID)
 		if err != nil {
-			return fmt.Errorf("read pool marker: %w", err)
+			return "", fmt.Errorf("read pool marker: %w", err)
 		}
 		if owner != baseline.node.Owner() || poolID == "" {
-			return database.ErrPlacement
+			return "", database.ErrPlacement
 		}
 		var recorded int
 		err = p.DB.QueryRowContext(ctx, p.Bind("SELECT count(*) FROM "+receiptTable+" WHERE signature=?"), baseline.Signature()).Scan(&recorded)
 		if err != nil {
-			return err
+			return "", err
 		}
 		if recorded != 1 {
-			return errors.New("missing pool baseline receipt")
+			return "", errors.New("missing pool baseline receipt")
 		}
-		return nil
+		return poolID, nil
 	}
 	objects := applicationRelations(p.Driver)
 	query := "SELECT count(*) FROM " + objects.catalog + " WHERE " + objects.filter
 	var n int
 	if err := p.DB.QueryRowContext(ctx, query).Scan(&n); err != nil {
-		return err
+		return "", err
 	}
 	if n == 0 {
-		return nil
+		return "", nil
 	}
 	// A crash before the first migration may leave an empty native history table.
 	if n == 1 && baseline.node.Tenant == "" {
 		exists, err := historyRepositoryExists(ctx, p, ledger)
 		if err != nil {
-			return err
+			return "", err
 		}
 		if exists {
 			var count int
 			if err := p.DB.QueryRowContext(ctx, `SELECT count(*) FROM "`+ledger+`"`).Scan(&count); err != nil {
-				return err
+				return "", err
 			}
 			if count == 0 {
-				return nil
+				return "", nil
 			}
 		}
 	}
-	return errors.New("unrecognized database schema; select a new empty database for this installation")
+	return "", errors.New("unrecognized database schema; select a new empty database for this installation")
 }

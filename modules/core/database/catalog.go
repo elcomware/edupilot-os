@@ -165,6 +165,19 @@ func (t target) identity(ctx context.Context) (string, error) {
 	return identity, nil
 }
 
+// ValidatePoolIdentities checks that physical IDs distinguish the configured
+// owners. During installation the map contains only initialized pools.
+func ValidatePoolIdentities(identities map[string]string) error {
+	seen := make(map[string]bool, len(identities))
+	for _, id := range identities {
+		if id == "" || seen[id] {
+			return fmt.Errorf("%w: physical pool identities must be nonempty and distinct", ErrPlacement)
+		}
+		seen[id] = true
+	}
+	return nil
+}
+
 // CheckReady checks marker ownership, connectivity and all durable placement pins
 // before serving. A removed dedicated route or restored DB with a new identity
 // fails readiness immediately, even before that school makes its next request.
@@ -179,6 +192,9 @@ func (c *Catalog) CheckReady(ctx context.Context) error {
 			return err
 		}
 		identities[target.owner] = identity
+	}
+	if err := ValidatePoolIdentities(identities); err != nil {
+		return err
 	}
 	rows, err := c.Control.DB.QueryContext(ctx, "SELECT tenant_id, pool_id FROM edu_tenant_placement")
 	if err != nil {
