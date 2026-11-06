@@ -51,3 +51,7 @@ The operator probe samples each inventoried host and returns counts only after a
 ### Restored S3 document reconciliation
 
 A compiled native CLI inspected a synthetic HTTPS S3 protocol fixture using the existing S3 client. The valid restored record reproduced the local version 2 report byte for byte. A missing record, an unexpected key on the second listing page, corrupt content, an HTTP 412 on the conditional object read and a wrong pre-backup digest each failed with empty standard output. The fixture checked that requests used signed GETs and that the object read used the listed ETag. This exercises the protocol and verifier; provider-operated backup/restore, real credential-policy enforcement and continuous fencing remain open.
+
+### Database-wide PostgreSQL fence drill
+
+The PostgreSQL matrix runs the compiled database server on an isolated Unix socket. The regression in scripts/tests/postgres-writer-drill.sh holds an unlisted login open, disables connections, attempts a fresh login and checks a second database with an unresolved prepared transaction. It also exercises a reopened database, missing database, wrong cluster identifier and clean two-database inventory. The local sandbox denied creation of the Unix socket, so execution evidence for this drill comes from the hosted PostgreSQL job.

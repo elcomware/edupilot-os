@@ -269,3 +269,13 @@ tenant-document-inventory -s3-restore -manifest=/private/mapping.json \
 ```
 
 The verifier enumerates the entire current key set, including all pages, then reads each approved record with the listed ETag as an HTTP precondition. It checks each record against its original school and key and reproduces the local verifier's version 2 aggregate. Compare this with the retained document evidence before proceeding to database verification. A mismatch or unreadable object causes exit 1 with no report. Freeze both the source used for the baseline and the recovery bucket for their respective checks. This procedure covers visible current versions only. Backup creation, version history, delete markers, provider retention, write exclusion and SQL recovery need their own evidence.
+
+## Verify frozen PostgreSQL originals during a copy from a restore
+
+Use this check when the copy reads from a separately verified offline restore. On each original primary, use a trusted maintenance connection to a separate database. Supply libpq connection settings through the site's secret environment. Independently inventory the cluster system identifier and every original control, shared and dedicated database. Restrict privileged administration, failover and physical access throughout maintenance. A physical clone shares the system identifier, so authenticate the intended primary endpoint independently.
+
+After taking and validating the quiescent backup, the administrator must resolve prepared transactions, disable connections on every original database and drain existing sessions under the approved maintenance procedure. Run the read-only probe on that primary:
+
+    python3 scripts/verify-postgres-database-fence.py --cluster-id "$approved_cluster_id" source_shared source_dedicated
+
+Use an auditor with access to the catalog views and permission to execute pg_control_system(). The report gives only a count. Check again before resume or cutover. A pass confirms the catalog state at inspection time. Continuous maintenance ownership, cluster inventory completeness and restored-copy integrity require independent evidence. The probe never reopens a database or terminates a session.

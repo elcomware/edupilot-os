@@ -41,3 +41,34 @@ sql 'ALTER ROLE legacy_worker NOLOGIN'
 reject
 sql "ROLLBACK PREPARED 'fence_drill'"
 check
+
+# Database-wide exclusion is checked from the maintenance database, including
+# connections whose login does not appear in the legacy writer inventory.
+cluster=$(sql 'SELECT system_identifier FROM pg_control_system()')
+dbcheck() { pg python3 scripts/verify-postgres-database-fence.py --cluster-id "$@"; }
+must_fail() { if "$@"; then echo 'Unexpected database fence acceptance' >&2; exit 1; fi; }
+sql 'CREATE DATABASE source_shared'
+sql 'CREATE DATABASE source_dedicated'
+pg env PGDATABASE=source_dedicated psql -XqAtw -v ON_ERROR_STOP=1 -c "BEGIN; SELECT 1; PREPARE TRANSACTION 'pending_copy'"
+pg env PGDATABASE=source_shared PGUSER=delegate_role PGAPPNAME=unknown_writer psql -XqAtw -c 'SELECT pg_sleep(120)' >/dev/null 2>&1 &
+other=$!
+for i in {1..100}; do
+  [[ $(sql "SELECT count(*) FROM pg_stat_activity WHERE application_name='unknown_writer'") == 1 ]] && break
+  sleep .1
+done
+[[ $(sql "SELECT count(*) FROM pg_stat_activity WHERE application_name='unknown_writer'") == 1 ]]
+sql 'ALTER DATABASE source_shared ALLOW_CONNECTIONS false'
+sql 'ALTER DATABASE source_dedicated ALLOW_CONNECTIONS false'
+must_fail dbcheck "$cluster" source_shared
+must_fail dbcheck "$cluster" source_dedicated
+if pg env PGDATABASE=source_shared PGUSER=delegate_role psql -XqAtw -c 'SELECT 1' >/dev/null 2>&1; then exit 1; fi
+sql "SELECT pg_terminate_backend(pid, 5000) FROM pg_stat_activity WHERE application_name='unknown_writer'" >/dev/null
+wait "$other" || true
+dbcheck "$cluster" source_shared
+sql 'ALTER DATABASE source_dedicated ALLOW_CONNECTIONS true'
+pg env PGDATABASE=source_dedicated psql -XqAtw -v ON_ERROR_STOP=1 -c "ROLLBACK PREPARED 'pending_copy'"
+must_fail dbcheck "$cluster" source_shared source_dedicated
+sql 'ALTER DATABASE source_dedicated ALLOW_CONNECTIONS false'
+dbcheck "$cluster" source_shared source_dedicated
+must_fail dbcheck wrong_cluster source_shared source_dedicated
+must_fail dbcheck "$cluster" source_shared missing_database
