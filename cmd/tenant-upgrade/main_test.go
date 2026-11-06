@@ -31,3 +31,29 @@ func TestValidatorIsOfflineAndRedactsInputs(t *testing.T) {
 		t.Fatal("unexpected database creation", err)
 	}
 }
+
+func TestInspectPlacementIsExplicitAndMissingDatabaseIsNotCreated(t *testing.T) {
+	missing := filepath.Join(t.TempDir(), "missing.sqlite")
+	t.Setenv("APP_KEY", "12345678901234567890123456789012")
+	t.Setenv("DB_CONNECTION", "sqlite")
+	t.Setenv("DB_DATABASE", missing)
+	t.Setenv("EDUPILOT_DEDICATED_DATABASES", "[]")
+	var out, diag bytes.Buffer
+	if status := run([]string{"-mode=inspect-placement"}, &out, &diag); status != 1 {
+		t.Fatalf("inspection must report unavailable input: status %d diagnostics %s", status, diag.String())
+	}
+	if !strings.Contains(out.String(), `"classification":"inspect-only"`) || !strings.Contains(out.String(), `"code":"pool_unavailable"`) {
+		t.Fatalf("missing read-only inspection report: %s", out.String())
+	}
+	if strings.Contains(out.String()+diag.String(), missing) {
+		t.Fatal("database path leaked")
+	}
+	if _, err := os.Stat(missing); !os.IsNotExist(err) {
+		t.Fatalf("missing database was created: %v", err)
+	}
+	out.Reset()
+	diag.Reset()
+	if status := run(nil, &out, &diag); status != 2 {
+		t.Fatal("default mode performed inspection")
+	}
+}

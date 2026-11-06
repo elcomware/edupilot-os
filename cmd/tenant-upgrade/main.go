@@ -1,4 +1,4 @@
-// Command tenant-upgrade currently validates an offline mapping manifest.
+// Command tenant-upgrade validates mapping manifests and inspects legacy SQL placement.
 package main
 
 import (
@@ -20,7 +20,7 @@ type result struct {
 func run(args []string, output, diagnostics io.Writer) int {
 	flags := flag.NewFlagSet("tenant-upgrade", flag.ContinueOnError)
 	flags.SetOutput(diagnostics)
-	mode := flags.String("mode", "", "operation: validate-manifest")
+	mode := flags.String("mode", "", "operation: validate-manifest or inspect-placement")
 	path := flags.String("manifest", "", "path to the private JSON mapping manifest")
 	if err := flags.Parse(args); err != nil {
 		if err == flag.ErrHelp {
@@ -28,8 +28,11 @@ func run(args []string, output, diagnostics io.Writer) int {
 		}
 		return 2
 	}
+	if *mode == "inspect-placement" && *path == "" && flags.NArg() == 0 {
+		return inspectPlacement(output, diagnostics)
+	}
 	if *mode != "validate-manifest" || *path == "" || flags.NArg() != 0 {
-		fmt.Fprintln(diagnostics, "Usage: tenant-upgrade -mode=validate-manifest -manifest=PATH")
+		fmt.Fprintln(diagnostics, "Usage: tenant-upgrade -mode=validate-manifest -manifest=PATH | -mode=inspect-placement")
 		return 2
 	}
 	file, err := os.Open(*path)
