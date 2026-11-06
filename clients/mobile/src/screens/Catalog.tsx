@@ -48,6 +48,7 @@ export function Catalog({
           {state.data.items.map((m) => (
             <Action
               key={m.key}
+              testID={`module-${m.key}`}
               label={m.title[locale]}
               onPress={() => open(m)}
             />

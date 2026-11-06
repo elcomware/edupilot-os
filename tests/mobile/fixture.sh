@@ -6,7 +6,7 @@ case "$platform" in android|ios) ;; *) exit 2 ;; esac
 test "${RUNNER_ENVIRONMENT:-}" = github-hosted
 test ! -e .env && test ! -e database/edupilot.sqlite || exit 1
 export APP_HOST=127.0.0.1 APP_PORT=3000 DB_CONNECTION=sqlite DB_DATABASE=database/edupilot.sqlite
-export EDUPILOT_DEDICATED_DATABASES='[]' EDUPILOT_DOCUMENTS_DRIVER=local EDUPILOT_ENABLED_MODULES=''
+export EDUPILOT_DEDICATED_DATABASES='[]' EDUPILOT_DOCUMENTS_DRIVER=local EDUPILOT_ENABLED_MODULES='tenancy,identity,students,guardians,enrollment,attendance,documents'
 export EDUPILOT_SEED_SCHOOL="demo-$platform" EDUPILOT_SEED_EMAIL=registrar@example.test
 EDUPILOT_SEED_PASSWORD=$(openssl rand -hex 12)
 export EDUPILOT_SEED_PASSWORD

@@ -26,10 +26,7 @@ appId: org.edupilot.mobile
     visible: "Identity"
     timeout: 20000
 - takeScreenshot: edupilot-directory
-- scrollUntilVisible:
-    element: "Students"
-    direction: DOWN
-- tapOn: Students
+- tapOn: { id: "module-students" }
 - tapOn: { id: "given-name" }
 - inputText: Jamie
 - tapOn: { id: "family-name" }
