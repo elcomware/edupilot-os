@@ -19,6 +19,32 @@ A bounded, same-origin asset handler forwards only `/api/v1/` to that single ori
 
 **Native prerequisites:** Go 1.26+, a native C toolchain and the dependencies described in [Wails installation](https://wails.io/quick-start/installation/). On Linux install GTK 4 and WebKitGTK 6 development packages and run in a graphical session; macOS needs Xcode command-line tools, Windows needs WebView2. This script builds a local executable for the host OS. Distribution installers, platform signing and notarization require your release identities.
 
+## Run on Windows
+
+Install Go 1.26.10 or newer, Node 24.3+ in the 24.x series, Python 3, and the Microsoft Edge WebView2 Runtime. In PowerShell, from the repository root:
+
+```powershell
+npm ci --ignore-scripts
+npm run build:web
+node clients/desktop/scripts/build.mjs
+```
+
+To connect to an existing school server, set `$env:EDUPILOT_API_ORIGIN` to its HTTPS origin, run `.\clients\desktop\bin\edupilot.exe`, and enter your provisioned school ID, email and password.
+
+For a fresh **local development school**, prepare the SQLite API once. In PowerShell 7:
+
+```powershell
+python scripts/setup.py
+go run ./cmd/migrate
+$env:EDUPILOT_SEED_SCHOOL = Read-Host "School ID"
+$env:EDUPILOT_SEED_EMAIL = Read-Host "Administrator email"
+$env:EDUPILOT_SEED_PASSWORD = Read-Host "Password (12–72 bytes)" -MaskInput
+try { go run ./cmd/seed-admin } finally { Remove-Item Env:EDUPILOT_SEED_PASSWORD }
+go run .
+```
+
+Leave the API running. From a second PowerShell in the repository root, start `.\clients\desktop\bin\edupilot.exe` and sign in to the local school. The desktop uses port 3000 on loopback by default. For workflows that consume background events, run `go run ./cmd/worker` from another terminal in the same directory.
+
 The native Go module is deliberately separate from the Goravel server. For an assets-only preparation use `node clients/desktop/scripts/build.mjs --assets-only` after the web build. Run gateway tests in this directory with `go test ./internal/gateway`. Native CI also builds the Linux desktop with its web assets, checks the branded window on a disposable X11 display, and cross-compiles the Windows executable. Windows interaction, macOS builds, installers and signing have separate release checks.
 
 Sources: [Wails asset routing](https://v3.wails.io/contributing/asset-server/) · [versioned Go API](https://pkg.go.dev/github.com/wailsapp/wails/v3@v3.1.0/pkg/application).

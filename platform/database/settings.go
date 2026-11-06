@@ -168,6 +168,13 @@ func (c Connection) targetKey() (string, error) {
 	}
 }
 
+// SQLiteFileDSN passes an absolute filesystem path unchanged to SQLite's VFS.
+// Escaping the filename separately keeps Windows drive letters out of a URL
+// authority and literal percent signs out of SQLite's query parameters.
+func SQLiteFileDSN(absolutePath string, options url.Values) string {
+	return "file:" + url.PathEscape(filepath.ToSlash(absolutePath)) + "?" + options.Encode()
+}
+
 func (s Settings) Connections() map[string]any {
 	all := make(map[string]any)
 	for _, node := range s.Nodes() {
@@ -175,8 +182,7 @@ func (s Settings) Connections() map[string]any {
 		if node.Driver == "sqlite" {
 			// The driver's URI options apply to every connection in the pool.
 			path, _ := filepath.Abs(node.Database)
-			uri := url.URL{Scheme: "file", Path: path, RawQuery: "_pragma=foreign_keys(ON)&_pragma=busy_timeout(5000)"}
-			config["dsn"] = uri.String()
+			config["dsn"] = SQLiteFileDSN(path, url.Values{"_pragma": {"foreign_keys(ON)", "busy_timeout(5000)"}})
 			config["via"] = func() (driver.Driver, error) { return sqlitefacades.Sqlite(node.Name) }
 		} else {
 			uri := url.URL{Scheme: "postgres", User: url.UserPassword(node.Username, node.Password),

@@ -19,8 +19,8 @@ import (
 
 func fixture(t *testing.T) *Service {
 	t.Helper()
-	f := url.URL{Scheme: "file", Path: filepath.Join(t.TempDir(), "identity.sqlite"), RawQuery: "_pragma=foreign_keys(ON)"}
-	db, err := driver.Open(f.String())
+	dsn := database.SQLiteFileDSN(filepath.Join(t.TempDir(), "identity.sqlite"), url.Values{"_pragma": {"foreign_keys(ON)"}})
+	db, err := driver.Open(dsn)
 	if err != nil {
 		t.Fatal(err)
 	}

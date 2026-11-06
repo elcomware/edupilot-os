@@ -33,7 +33,7 @@ def main():
             subprocess.run(["import", "-window", window, str(path)], check=True, timeout=12)
 
         # Locate the text users actually see, without instrumenting the production webview.
-        def locate(words, last=False):
+        def locate(words):
             wanted = words.lower().split()
             deadline = time.monotonic() + 18
             while time.monotonic() < deadline:
@@ -45,13 +45,17 @@ def main():
                 labels = [re.sub(r"^\W+|\W+$", "", r["text"].lower()) for r in records]
                 matches = [i for i in range(len(labels)) if labels[i:i+len(wanted)] == wanted]
                 if matches:
-                    r = records[matches[-1] if last else matches[0]]
+                    r = records[matches[0]]
                     return str(int(r["left"]) + int(r["width"]) // 2), str(int(r["top"]) + int(r["height"]) // 2)
                 time.sleep(0.2)
+            # Report only known interface labels, never captured values or pixels.
+            known = {"students", "identity", "register", "given", "family", "save", "student", "add",
+                     "name", "active", "directory", "entries", "status", "email", "preferences", "try"}
+            print("Visible interface labels:", sorted(known.intersection(labels)), flush=True)
             raise RuntimeError("Native window did not display expected label: " + words)
 
-        def click(words, last=False):
-            x, y = locate(words, last)
+        def click(words):
+            x, y = locate(words)
             xdo("mousemove", "--window", window, x, y, "click", "1")
 
         with tempfile.TemporaryDirectory() as scratch:
@@ -68,9 +72,7 @@ def main():
             xdo("key", "Return")
             locate("Identity")
             capture(output / "linux-directory.png")
-            click("Find a module", last=True)
-            type_text("Students")
-            click("Students", last=True)
+            click("Students")
             click("Add student")
             click("Given name")
             type_text("Jamie")

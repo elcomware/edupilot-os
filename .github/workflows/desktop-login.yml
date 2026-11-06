@@ -9,6 +9,7 @@ on:
       - 'clients/web/**'
       - 'packages/api-client/**'
       - 'platform/identity/**'
+      - 'platform/database/**'
       - 'modules/students/**'
       - 'scripts/setup.py'
       - 'tests/desktop/**'
@@ -54,6 +55,8 @@ jobs:
         if: runner.os == 'Windows'
         working-directory: tests/e2e
         run: npm ci --workspaces=false --ignore-scripts
+      - name: Verify native SQLite filenames and options
+        run: go test -run TestSQLiteFileDSNOpensExactFile -count=1 ./platform/database
       - name: Sign in and register a synthetic student in the native window
         run: python tests/desktop/run.py
       - uses: actions/upload-artifact@v4
