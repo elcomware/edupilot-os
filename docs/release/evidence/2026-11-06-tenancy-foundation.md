@@ -55,3 +55,7 @@ A compiled native CLI inspected a synthetic HTTPS S3 protocol fixture using the 
 ### Database-wide PostgreSQL fence drill
 
 The PostgreSQL matrix runs the compiled database server on an isolated Unix socket. The regression in scripts/tests/postgres-writer-drill.sh holds an unlisted login open, disables connections, attempts a fresh login and checks a second database with an unresolved prepared transaction. It also exercises a reopened database, missing database, wrong cluster identifier and clean two-database inventory. The local sandbox denied creation of the Unix socket, so execution evidence for this drill comes from the hosted PostgreSQL job.
+
+### Seeded school awaiting first placement
+
+The mixed SQLite fixture now exercises a third synthetic school with a control identity and no placement pin. Before the change the version 2 inventory failed with `placement_unpinned_school`. The same source now produces a dry-run with one initial placement when the mapping selects the configured pool and physical marker. Selecting the other valid pool fails. Raw inspection still reports the absent pin after the dry-run. Adding a student to the unpinned school makes even a freshly computed inventory fail. Run `go test ./database/edumigrations -run TestLegacyUpgradeDryRunSeededSchoolWithoutPin -count=1` to reproduce. The future prepare transaction must revalidate under maintenance before writing its first placement and journal receipt.

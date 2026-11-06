@@ -65,10 +65,21 @@ type inspectionState struct {
 // from composition's actual module registrations; platform imports no modules.
 // Each pool has a repeatable snapshot, without a cross-database snapshot claim.
 func InspectPlacement(ctx context.Context, settings database.Settings, workspaceKeys []string) PlacementInspection {
-	return inspectPlacement(ctx, settings, workspaceKeys, readSnapshots(openInspectionDB))
+	return inspectPlacement(ctx, settings, workspaceKeys, readSnapshots(openInspectionDB), requireRecordedPin)
 }
 
-func inspectPlacement(ctx context.Context, settings database.Settings, workspaceKeys []string, snapshot sourceSnapshots) PlacementInspection {
+type pinPolicy bool
+
+const (
+	requireRecordedPin    pinPolicy = false
+	allowInitialPlacement pinPolicy = true
+)
+
+func (school InspectedSchool) eligibleForFirstPlacement() bool {
+	return school.Identity && !school.Pinned && len(school.Rows) == 0
+}
+
+func inspectPlacement(ctx context.Context, settings database.Settings, workspaceKeys []string, snapshot sourceSnapshots, pins pinPolicy) PlacementInspection {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	state := inspectionState{report: PlacementInspection{Version: 1, Classification: "inspect-only", Complete: true, Pools: []InspectedPool{}, Schools: []InspectedSchool{}, Issues: []InspectionIssue{}}, schools: map[string]*InspectedSchool{}, pins: map[string]string{}, markers: map[string][]string{}, owners: map[string][]string{}, observed: map[string]map[string]bool{}, issueKeys: map[InspectionIssue]bool{}, markersRead: map[string]bool{}}
@@ -96,7 +107,7 @@ func inspectPlacement(ctx context.Context, settings database.Settings, workspace
 	for _, node := range nodes {
 		state.inspectPool(ctx, node, tables, now, snapshot)
 	}
-	state.reconcile(settings)
+	state.reconcile(settings, pins)
 	for _, school := range state.schools {
 		state.report.Schools = append(state.report.Schools, *school)
 	}
@@ -339,7 +350,7 @@ func validLegacyOwner(value string) bool {
 	scope, ok := strings.CutPrefix(value, "tenant:")
 	return ok && database.ValidTenant(scope)
 }
-func (s *inspectionState) reconcile(settings database.Settings) {
+func (s *inspectionState) reconcile(settings database.Settings, pins pinPolicy) {
 	markersComplete := true
 	for _, node := range settings.Nodes() {
 		if !s.markersRead[node.Name] {
@@ -378,7 +389,7 @@ func (s *inspectionState) reconcile(settings database.Settings) {
 				s.problem("unknown_scope", "", id, "", false)
 			}
 		}
-		if !school.Pinned && s.pinsRead {
+		if !school.Pinned && s.pinsRead && !(pins == allowInitialPlacement && school.eligibleForFirstPlacement()) {
 			s.problem("unpinned_school", "", id, "edu_tenant_placement", false)
 		} else if school.Pinned {
 			pools := s.markers[s.pins[id]]

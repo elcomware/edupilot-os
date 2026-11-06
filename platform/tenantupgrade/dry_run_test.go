@@ -90,10 +90,10 @@ func TestLegacyUpgradeDryRunRejectsIncompleteOrChangedSource(t *testing.T) {
 					Pools: []InspectedPool{{Name: "shared"}}, Schools: []InspectedSchool{{School: "north", Identity: true, Pinned: true, ExpectedPool: "dedicated"}, {School: "west", Identity: true, Pinned: true, ExpectedPool: "shared"}}, Issues: []InspectionIssue{}}
 			}
 		}, "source_pool_mismatch"},
-		"unpinned placement": {func(u *Upgrade) {
+		"unpinned placement with existing records": {func(u *Upgrade) {
 			u.placement = func(context.Context, database.Settings, []string) PlacementInspection {
 				return PlacementInspection{Version: 1, Classification: "inspect-only", Complete: true,
-					Pools: []InspectedPool{{Name: "shared"}}, Schools: []InspectedSchool{{School: "north", Identity: true, ExpectedPool: "shared"}, {School: "west", Identity: true, Pinned: true, ExpectedPool: "shared"}}, Issues: []InspectionIssue{}}
+					Pools: []InspectedPool{{Name: "shared"}}, Schools: []InspectedSchool{{School: "north", Identity: true, ExpectedPool: "shared", Rows: []InspectedScopeRows{{Table: "students_records", Rows: 1}}}, {School: "west", Identity: true, Pinned: true, ExpectedPool: "shared"}}, Issues: []InspectionIssue{}}
 			}
 		}, "source_pool_mismatch"},
 		"marker read failure": {func(u *Upgrade) {

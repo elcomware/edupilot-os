@@ -488,7 +488,11 @@ func inventorySource(ctx context.Context, settings database.Settings, workspaceK
 
 	// Placement reconciliation has its own qualified, bounded reader. Reduce
 	// its details to safe issue codes; never copy historical school IDs.
-	placement := inspectPlacement(ctx, settings, workspaceKeys, snapshot)
+	pins := requireRecordedPin
+	if selection.Version == 2 {
+		pins = allowInitialPlacement
+	}
+	placement := inspectPlacement(ctx, settings, workspaceKeys, snapshot, pins)
 	if !placement.Complete || len(placement.Issues) > 0 {
 		for _, issue := range placement.Issues {
 			problem("placement_"+issue.Code, issue.Pool, issue.Table)

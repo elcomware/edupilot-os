@@ -139,7 +139,7 @@ func TestInspectionPostgresFrozenSQLReadOnlyAndDetection(t *testing.T) {
 	t.Run("source write fence", func(t *testing.T) {
 		exercisePostgresSQLFences(t, settings, keys, open, writers)
 	})
-	report := inspectPlacement(t.Context(), settings, keys, readSnapshots(open))
+	report := inspectPlacement(t.Context(), settings, keys, readSnapshots(open), requireRecordedPin)
 	if !report.Complete || len(report.Issues) != 0 || len(report.Schools) != 2 {
 		t.Fatalf("native PostgreSQL read failed: %#v", report)
 	}
@@ -183,7 +183,7 @@ func TestInspectionPostgresFrozenSQLReadOnlyAndDetection(t *testing.T) {
 	if _, err := west.Exec("INSERT INTO edu_outbox(event_id,tenant_id,event_type,aggregate_id,payload,created_at,available_at,lease_id,lease_until) VALUES ('leased','west','students.registered.v1','same-record','{}',1,1,'lease',4102444800000)"); err != nil {
 		t.Fatal(err)
 	}
-	damaged := inspectPlacement(t.Context(), settings, keys, readSnapshots(open))
+	damaged := inspectPlacement(t.Context(), settings, keys, readSnapshots(open), requireRecordedPin)
 	codes := map[string]bool{}
 	for _, issue := range damaged.Issues {
 		codes[issue.Code] = true

@@ -11,15 +11,16 @@ import (
 // DryRunReport is safe to archive as pre-prepare evidence. It deliberately
 // omits every legacy school name, target identity and physical marker.
 type DryRunReport struct {
-	Version         int           `json:"version"`
-	Classification  string        `json:"classification"`
-	Complete        bool          `json:"complete"`
-	ReadyForPrepare bool          `json:"readyForPrepare"`
-	Schools         int           `json:"schools"`
-	Pools           int           `json:"pools"`
-	ManifestSHA256  string        `json:"manifestSha256,omitempty"`
-	SourceSHA256    string        `json:"sourceSha256,omitempty"`
-	Issues          []DryRunIssue `json:"issues"`
+	Version           int           `json:"version"`
+	Classification    string        `json:"classification"`
+	Complete          bool          `json:"complete"`
+	ReadyForPrepare   bool          `json:"readyForPrepare"`
+	InitialPlacements int           `json:"initialPlacements,omitempty"`
+	Schools           int           `json:"schools"`
+	Pools             int           `json:"pools"`
+	ManifestSHA256    string        `json:"manifestSha256,omitempty"`
+	SourceSHA256      string        `json:"sourceSha256,omitempty"`
+	Issues            []DryRunIssue `json:"issues"`
 }
 
 type DryRunIssue struct {
@@ -56,7 +57,7 @@ func (u Upgrade) withSnapshots(snapshot sourceSnapshots) Upgrade {
 		return inventorySource(ctx, settings, keys, selection, snapshot)
 	}
 	u.placement = func(ctx context.Context, settings database.Settings, keys []string) PlacementInspection {
-		return inspectPlacement(ctx, settings, keys, snapshot)
+		return inspectPlacement(ctx, settings, keys, snapshot, allowInitialPlacement)
 	}
 	u.markers = func(ctx context.Context, settings database.Settings) (map[string]string, error) {
 		return inspectSourceMarkers(ctx, settings, snapshot)
@@ -118,13 +119,17 @@ func (u Upgrade) DryRun(ctx context.Context) (DryRunReport, error) {
 		problem("source_school_mismatch")
 		return report, nil
 	}
+	initialPlacements := 0
 	for _, school := range placement.Schools {
 		if expected, ok := expectedPools[school.School]; !ok {
 			problem("source_school_mismatch")
 			return report, nil
-		} else if !school.Identity || !school.Pinned || school.ExpectedPool != expected {
+		} else if !school.Identity || school.ExpectedPool != expected || (!school.Pinned && !school.eligibleForFirstPlacement()) {
 			problem("source_pool_mismatch")
 			return report, nil
+		}
+		if !school.Pinned {
+			initialPlacements++
 		}
 	}
 	markers, err := u.markers(ctx, u.settings)
@@ -143,6 +148,7 @@ func (u Upgrade) DryRun(ctx context.Context) (DryRunReport, error) {
 	}
 	report.Complete = true
 	report.ReadyForPrepare = true
+	report.InitialPlacements = initialPlacements
 	report.ManifestSHA256 = manifestSHA
 	report.SourceSHA256 = source.SHA256
 	return report, nil

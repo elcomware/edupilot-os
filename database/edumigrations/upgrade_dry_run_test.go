@@ -237,3 +237,46 @@ func restoreFixtureDocuments(t *testing.T, fixture StarterFixture, root string) 
 	}
 	return objectPath
 }
+
+func TestLegacyUpgradeDryRunSeededSchoolWithoutPin(t *testing.T) {
+	fixture := starterFixture(t, "mixed")
+	settings := inspectionSettings(t)
+	if _, err := fixture.Control.DB.Exec("INSERT INTO identity_schools(school_id) VALUES ('new-school')"); err != nil {
+		t.Fatal(err)
+	}
+	fixture.Schools = append(fixture.Schools, starterSchool{School: "new-school"})
+	manifest, selection, _ := approveMixedSource(t, fixture, settings)
+	keys := inspectionKeys()
+	check := func(m tenantupgrade.Manifest, ready bool) {
+		t.Helper()
+		report, err := tenantupgrade.NewUpgrade(settings, keys, m, selection).DryRun(t.Context())
+		if err != nil || report.ReadyForPrepare != ready || report.Complete != ready || (ready && report.InitialPlacements != 1) {
+			t.Fatalf("unexpected dry-run readiness: %#v, %v", report, err)
+		}
+	}
+	check(manifest, true)
+	wrong := manifest
+	wrong.Schools = slices.Clone(manifest.Schools)
+	for i, mapping := range wrong.Schools {
+		if mapping.LegacySchool == "new-school" {
+			for _, candidate := range manifest.Schools {
+				if candidate.SourcePool != mapping.SourcePool {
+					wrong.Schools[i].SourcePool = candidate.SourcePool
+					wrong.Schools[i].SourceMarker = candidate.SourceMarker
+					break
+				}
+			}
+		}
+	}
+	check(wrong, false)
+	if !issueCodes(inspectFixture(t))["unpinned_school"] {
+		t.Fatal("raw inspection must continue to flag the missing pin")
+	}
+	if _, err := fixture.Control.DB.Exec("INSERT INTO students_records VALUES ('new-school','sample','Test','Only','active',1)"); err != nil {
+		t.Fatal(err)
+	}
+	inventory := tenantupgrade.InventorySource(t.Context(), settings, keys, selection)
+	if inventory.ReadyForCopy || inventory.Complete {
+		t.Fatal("accepted records without a recorded placement")
+	}
+}
