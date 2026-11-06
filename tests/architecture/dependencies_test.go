@@ -71,6 +71,10 @@ func TestHexagonalImports(t *testing.T) {
 }
 func forbidden(area string, parts []string, name string) bool {
 	modulePath := project + "modules/"
+	if area == "platform" && len(parts) > 1 && parts[1] == "scope" {
+		// Scope is the bottom of the authorization dependency graph.
+		return strings.HasPrefix(name, project) || strings.HasPrefix(name, "github.com/goravel/") || strings.HasPrefix(name, "gorm.io/") || name == "database/sql" || name == "net/http"
+	}
 	if area == "platform" {
 		return strings.HasPrefix(name, modulePath)
 	}
