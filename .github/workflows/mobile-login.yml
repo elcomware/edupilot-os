@@ -25,6 +25,7 @@ jobs:
     env:
       EXPO_PUBLIC_API_ORIGIN: https://localhost:4443
       EXPO_NO_TELEMETRY: '1'
+      MAESTRO_DRIVER_STARTUP_TIMEOUT: '240000'
       MAESTRO_CLI_NO_ANALYTICS: 'true'
     steps:
       - uses: actions/checkout@v4
@@ -91,18 +92,19 @@ jobs:
           pod install
           workspace=$(find . -maxdepth 1 -name '*.xcworkspace' -type d)
           scheme=$(basename "$workspace" .xcworkspace)
-          FORCE_BUNDLING=1 xcodebuild -workspace "$workspace" -scheme "$scheme" -configuration Release -destination "id=$IPHONE_UDID" -derivedDataPath "$RUNNER_TEMP/mobile-build" CODE_SIGNING_ALLOWED=NO build > "$RUNNER_TEMP/xcode.log" || { tail -100 "$RUNNER_TEMP/xcode.log"; exit 1; }
+          FORCE_BUNDLING=1 xcodebuild -workspace "$workspace" -scheme "$scheme" -configuration Release -destination "id=$IPHONE_UDID" -derivedDataPath "$RUNNER_TEMP/mobile-build" build > "$RUNNER_TEMP/xcode.log" || { tail -100 "$RUNNER_TEMP/xcode.log"; exit 1; }
           xcrun simctl install "$IPHONE_UDID" "$RUNNER_TEMP/mobile-build/Build/Products/Release-iphonesimulator/$scheme.app"
       - name: Sign in on the iPhone simulator
         if: matrix.platform == 'ios'
         run: bash tests/mobile/fixture.sh ios
       - name: Save native screen evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: mobile-${{ matrix.platform }}-screenshots
           path: |
-            ${{ runner.temp }}/mobile-screens/${{ matrix.platform }}-signin.png
-            ${{ runner.temp }}/mobile-screens/${{ matrix.platform }}-directory.png
-            ${{ runner.temp }}/mobile-screens/${{ matrix.platform }}-students.png
-          if-no-files-found: error
+            ${{ runner.temp }}/mobile-screens/takeScreenshot/${{ matrix.platform }}-signin.png
+            ${{ runner.temp }}/mobile-screens/takeScreenshot/${{ matrix.platform }}-directory.png
+            ${{ runner.temp }}/mobile-screens/takeScreenshot/${{ matrix.platform }}-students.png
+          if-no-files-found: warn
           retention-days: 14

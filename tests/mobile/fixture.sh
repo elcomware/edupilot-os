@@ -44,7 +44,7 @@ with sqlite3.connect("file:database/edupilot.sqlite?mode=ro", uri=True) as db:
 if rows != [("demo-" + platform, "Jamie", "Demo", "active")] or sessions:
     raise SystemExit("Unexpected student or remaining session in the fixture database")
 for state in ("signin", "directory", "students"):
-    path = Path(directory) / f"{platform}-{state}.png"
+    path = Path(directory) / "takeScreenshot" / f"{platform}-{state}.png"
     if not path.is_file() or path.stat().st_size < 1024:
         raise SystemExit(f"Missing screenshot: {state}")
 print(f"{platform}: native sign-in and registration verified, one active school record, zero remaining sessions.")

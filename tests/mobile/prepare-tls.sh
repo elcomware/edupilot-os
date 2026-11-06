@@ -27,7 +27,7 @@ if [[ "$1" = android ]]; then
   cat > "$src/res/xml/mobile_fixture_trust.xml" <<'XML'
 <network-security-config>
   <domain-config cleartextTrafficPermitted="false">
-    <domain>localhost</domain>
+    <domain includeSubdomains="false">localhost</domain>
     <trust-anchors><certificates src="@raw/fixture_ca"/></trust-anchors>
   </domain-config>
 </network-security-config>
