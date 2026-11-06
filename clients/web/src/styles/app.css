@@ -834,3 +834,12 @@ label > select {
     outline: 2px solid Highlight;
   }
 }
+
+.table-columns { margin-block-end: .55rem; color: var(--ink); }
+.table-columns summary { width: fit-content; cursor: pointer; font-size: .875rem; font-weight: 600; padding: .45rem .15rem; }
+.table-columns fieldset { display: flex; flex-wrap: wrap; gap: .2rem 1rem; margin: .25rem 0 .75rem; padding: .4rem .75rem; border: 1px solid var(--line); border-radius: .4rem; }
+.table-columns legend { padding-inline: .3rem; font-size: .8rem; }
+.table-columns label { display: inline-flex; gap: .4rem; align-items: center; min-height: 2.5rem; }
+.table-columns input[type="checkbox"] { width: 1.1rem; height: 1.1rem; margin: 0; accent-color: var(--accent); }
+
+.table-save-status:empty { min-height: 0; margin: 0; }

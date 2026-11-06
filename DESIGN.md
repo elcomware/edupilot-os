@@ -12,6 +12,8 @@ The school register is our model: clear section tabs, calm writing surfaces and 
 | Display, body, utility | Same tokens | Georgia headings, system sans controls, platform mono identifiers |
 | Structure | Shell, PageHeading, StatePanel, Dialog, CollectionTable | One navigation frame, visible heading hierarchy, simple tables and reusable forms |
 
+Student registers, work lists and enrollment placements supply typed columns, rows and actions to `components/WorkspaceTable.tsx`. Edit its disclosure and table markup once to update all three. Display labels come from the active catalog and language.
+
 Runtime CSS is canonical. Its named tokens define light and dark palettes; user preferences change semantic roles, never isolated controls. Use the primary accent once per action group. Long French labels wrap, name columns are allowed to expand, and keyboard focus stays visible. Native selects are intentional. Icons accompany words unless individually named.
 
 The directory is a grouped index, not a dashboard of unmeasured trends. Group order and accessible records come from the API. Student rows have real names, status and archival actions. Other modules share a clearly labeled workspace-entry list; new domain screens replace that adapter only when corresponding use cases exist. Web and Wails use the same React shell. Expo shares the contract but uses native interaction patterns.

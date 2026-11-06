@@ -10,7 +10,7 @@ import {
   type Preferences,
 } from "../../app/preferences";
 import { Dialog, PageHeading } from "../../components/primitives";
-type Name = Exclude<keyof Preferences, "pins">;
+type Name = Exclude<keyof Preferences, "pins" | "columns">;
 const choices: {
   key: Name;
   label: CopyKey;

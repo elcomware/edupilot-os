@@ -212,6 +212,8 @@ const strings = {
     "Add the first entry to this workspace.",
     "Ajoutez une première entrée dans cet espace.",
   ],
+  columns: ["Columns", "Colonnes"],
+  shownColumns: ["Visible columns", "Colonnes visibles"],
   actions: ["Actions", "Actions"],
   previous: ["Previous", "Précédent"],
   next: ["Next", "Suivant"],

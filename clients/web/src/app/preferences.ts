@@ -7,6 +7,7 @@ export interface Preferences {
   density: "comfortable" | "compact";
   width: "standard" | "wide";
   pins: string[];
+  columns: Record<string, string[]>;
 }
 const defaults = (): Preferences => ({
   locale:
@@ -18,9 +19,16 @@ const defaults = (): Preferences => ({
   density: "comfortable",
   width: "standard",
   pins: [],
+  columns: {},
 });
 export function preferenceKey(p: Pick<Principal, "school" | "id">) {
   return "edupilot:prefs:v1:" + JSON.stringify([p.school, p.id]);
+}
+const viewKey = /^(?:collection:[a-z][a-z0-9_]{0,39}|enrollment:placements)$/;
+function allowedColumns(view: string, value: unknown): string[] {
+  if (!viewKey.test(view) || !Array.isArray(value)) return [];
+  const allowed = view === "enrollment:placements" ? ["status", "year", "grade"] : ["status"];
+  return allowed.filter(key => value.includes(key));
 }
 export function parsePreferences(
   raw: string | null,
@@ -38,6 +46,12 @@ export function parsePreferences(
     };
     for (const [k, valid] of Object.entries(choices))
       if (valid.includes(value?.[k])) Object.assign(prefs, { [k]: value[k] });
+    if (value?.columns && typeof value.columns === "object" && !Array.isArray(value.columns)) {
+      for (const [view, keys] of Object.entries(value.columns).slice(0, 128)) {
+        const hidden = allowedColumns(view, keys);
+        if (hidden.length) prefs.columns[view] = hidden;
+      }
+    }
     if (Array.isArray(value?.pins))
       prefs.pins = [
         ...new Set<string>(
@@ -76,6 +90,7 @@ interface Settings {
   update: (changes: Partial<Preferences>) => void;
   pin: (key: string) => void;
   reset: () => boolean;
+  setColumns: (view: string, hidden: string[]) => void;
 }
 export const usePreferences = create<Settings>((set, get) => ({
   scope: null,
@@ -109,6 +124,14 @@ export const usePreferences = create<Settings>((set, get) => ({
         stored = false;
       }
     set({ value: next, stored });
+  },
+  setColumns(view, hidden) {
+    if (!viewKey.test(view)) return;
+    const columns = { ...get().value.columns };
+    const keys = allowedColumns(view, hidden);
+    if (keys.length) columns[view] = keys;
+    else delete columns[view];
+    get().update({ columns });
   },
   reset() {
     const { scope } = get();

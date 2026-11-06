@@ -146,6 +146,7 @@ export function WorkspacePage({
           />
         ) : data?.items.length ? (
           <CollectionTable
+            moduleKey={moduleKey}
             rows={data.items}
             students={students}
             canEdit={access.edit}

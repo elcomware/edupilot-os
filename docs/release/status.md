@@ -50,3 +50,5 @@ Personal navigation ordering and reset are implemented in the shared web/desktop
 [Tenancy and UI verification record](evidence/2026-11-06-tenancy-foundation.md). Offline copy/resume is the next tenancy implementation dependency.
 
 Tasks 1–3 of the tenant plan have passed hosted SQLite, PostgreSQL and browser qualification. Task 4 has begun with [offline mapping validation](../operations/tenant-foundation-upgrade.md). Source inspection, manifest preparation, copy, resume and post-copy verification remain open.
+
+The shared table now accepts typed columns from Students, module work lists and enrollment placements. Each register saves its optional column visibility under the existing user/school preference key. The real student workflow tests column changes, persistence after reload and access to existing row actions. Personal saved views and server-managed inheritance are separate outstanding stories.

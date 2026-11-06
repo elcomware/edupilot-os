@@ -1,8 +1,10 @@
+import { WorkspaceTable, type Column } from "../../components/WorkspaceTable";
 import { Archive, Pencil } from "lucide-react";
 import { t } from "../../app/copy";
 import { useLocale } from "../../app/preferences";
 import { rowName, type RegisterRow } from "./model";
 type Props = {
+  moduleKey: string;
   rows: RegisterRow[];
   students: boolean;
   canEdit: boolean;
@@ -11,6 +13,7 @@ type Props = {
   onArchive: (r: RegisterRow) => void;
 };
 export function CollectionTable({
+  moduleKey,
   rows,
   students,
   canEdit,
@@ -19,85 +22,79 @@ export function CollectionTable({
   onArchive,
 }: Props) {
   const l = useLocale();
-  return (
-    <div
-      className="table-wrap"
-      role="region"
-      aria-label={t(l, students ? "studentRegister" : "entries")}
-      tabIndex={0}
-    >
-      <table className="collection-table">
-        <thead>
-          <tr>
-            <th scope="col">{t(l, students ? "name" : "title")}</th>
-            <th scope="col">{t(l, "status")}</th>
-            {(canEdit || canArchive) && (
-              <th scope="col" className="action-col">
-                {t(l, "actions")}
-              </th>
+  const columns: Column<RegisterRow>[] = [
+    {
+      key: "name",
+      label: t(l, students ? "name" : "title"),
+      rowHeader: true,
+      render: rowName,
+    },
+    {
+      key: "status",
+      label: t(l, "status"),
+      optional: true,
+      render: (row) => {
+        const status = row.status;
+        const known =
+          status === "open" ||
+          status === "closed" ||
+          status === "active" ||
+          status === "archived";
+        return (
+          <span
+            className={
+              "badge " +
+              (status === "active" || status === "open" ? "active" : "")
+            }
+          >
+            <span aria-hidden="true" />
+            {known ? t(l, status) : status}
+          </span>
+        );
+      },
+    },
+  ];
+  if (canEdit || canArchive)
+    columns.push({
+      key: "actions",
+      label: t(l, "actions"),
+      className: "action-col",
+      render: (row) => {
+        if (row.status === "archived") return null;
+        const label = rowName(row);
+        return (
+          <div className="row-actions">
+            {canEdit && (
+              <button
+                className="icon-button"
+                aria-label={t(l, "edit") + " " + label}
+                title={t(l, "edit")}
+                onClick={() => onEdit(row)}
+              >
+                <Pencil size={16} />
+              </button>
             )}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => {
-            const label = rowName(r),
-              known = ["open", "closed", "active", "archived"].includes(
-                r.status,
-              );
-            return (
-              <tr key={r.id}>
-                <th scope="row">{label}</th>
-                <td>
-                  <span
-                    className={
-                      "badge " +
-                      (r.status === "active" || r.status === "open"
-                        ? "active"
-                        : "")
-                    }
-                  >
-                    <span aria-hidden="true" />
-                    {known
-                      ? t(
-                          l,
-                          r.status as "open" | "closed" | "active" | "archived",
-                        )
-                      : r.status}
-                  </span>
-                </td>
-                {(canEdit || canArchive) && (
-                  <td className="action-col">
-                    {r.status !== "archived" && (
-                      <div className="row-actions">
-                        {canEdit && (
-                          <button
-                            className="icon-button"
-                            aria-label={t(l, "edit") + " " + label}
-                            title={t(l, "edit")}
-                            onClick={() => onEdit(r)}
-                          >
-                            <Pencil size={16} />
-                          </button>
-                        )}
-                        {canArchive && (
-                          <button
-                            className="icon-button"
-                            aria-label={t(l, "archive") + " " + label}
-                            title={t(l, "archive")}
-                            onClick={() => onArchive(r)}
-                          >
-                            <Archive size={16} />
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </td>
-                )}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+            {canArchive && (
+              <button
+                className="icon-button"
+                aria-label={t(l, "archive") + " " + label}
+                title={t(l, "archive")}
+                onClick={() => onArchive(row)}
+              >
+                <Archive size={16} />
+              </button>
+            )}
+          </div>
+        );
+      },
+    });
+  return (
+    <WorkspaceTable
+      view={"collection:" + moduleKey}
+      label={t(l, students ? "studentRegister" : "entries")}
+      rows={rows}
+      rowKey={(row) => row.id}
+      columns={columns}
+    />
   );
 }

@@ -30,10 +30,26 @@ test("an admin registers, edits and archives a student through the web app", asy
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await expect(edit("Jules " + family)).toBeVisible();
 
+  const columns = page.locator("details.table-columns");
+  await columns.locator("summary").click();
+  await columns
+    .getByRole("checkbox", { name: "Status", exact: true })
+    .uncheck();
+  await expect(
+    page.getByRole("columnheader", { name: "Status", exact: true }),
+  ).toHaveCount(0);
   // A new browser load must recover the saved record from the real backend.
   await page.reload();
   await loginForm(page, user);
   await expect(edit("Jules " + family)).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "Status", exact: true }),
+  ).toHaveCount(0);
+  await columns.locator("summary").click();
+  await columns.getByRole("checkbox", { name: "Status", exact: true }).check();
+  await expect(
+    page.getByRole("columnheader", { name: "Status", exact: true }),
+  ).toBeVisible();
 
   await page
     .getByRole("button", { name: "Archive Jules " + family, exact: true })

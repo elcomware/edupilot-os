@@ -1,3 +1,4 @@
+import { WorkspaceTable } from "../../components/WorkspaceTable";
 import { useState, type FormEvent } from "react";
 import {
   useQuery,
@@ -386,53 +387,59 @@ export function EnrollmentPanel({ principal }: { principal: Principal }) {
       ) : !list.data?.items.length ? (
         <StatePanel type="empty" title={sx(l, "empty")} />
       ) : (
-        <div
-          className="table-wrap"
-          role="region"
-          aria-label={sx(l, "placements")}
-          tabIndex={0}
-        >
-          <table className="collection-table">
-            <thead>
-              <tr>
-                <th scope="col">{sx(l, "student")}</th>
-                <th scope="col">{sx(l, "year")}</th>
-                <th scope="col">{sx(l, "grade")}</th>
-                <th scope="col">{t(l, "status")}</th>
-                {canWrite && <th scope="col">{t(l, "actions")}</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {list.data.items.map((r) => (
-                <tr key={r.id}>
-                  <th scope="row">{studentLabel(r.studentId)}</th>
-                  <td>{r.academicYear}</td>
-                  <td>{r.grade}</td>
-                  <td>
-                    {r.status === "active"
-                      ? t(l, "active")
-                      : sx(l, "withdrawn")}
-                  </td>
-                  {canWrite && (
-                    <td>
-                      {r.status === "active" && (
+        <WorkspaceTable<Placement>
+          view="enrollment:placements"
+          label={sx(l, "placements")}
+          rows={list.data.items}
+          rowKey={(row) => row.id}
+          columns={[
+            {
+              key: "student",
+              label: sx(l, "student"),
+              rowHeader: true,
+              render: (row) => studentLabel(row.studentId),
+            },
+            {
+              key: "year",
+              label: sx(l, "year"),
+              optional: true,
+              render: (row) => row.academicYear,
+            },
+            {
+              key: "grade",
+              label: sx(l, "grade"),
+              optional: true,
+              render: (row) => row.grade,
+            },
+            {
+              key: "status",
+              label: t(l, "status"),
+              optional: true,
+              render: (row) =>
+                row.status === "active" ? t(l, "active") : sx(l, "withdrawn"),
+            },
+            ...(canWrite
+              ? [
+                  {
+                    key: "actions",
+                    label: t(l, "actions"),
+                    render: (row: Placement) =>
+                      row.status === "active" && (
                         <button
                           className="btn"
                           onClick={() => {
-                            setWithdraw(r);
+                            setWithdraw(row);
                             setMessage(null);
                           }}
                         >
                           {sx(l, "withdraw")}
                         </button>
-                      )}
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                      ),
+                  },
+                ]
+              : []),
+          ]}
+        />
       )}
       {list.data && list.data.total > SIZE && (
         <nav className="pager" aria-label={sx(l, "placements")}>
