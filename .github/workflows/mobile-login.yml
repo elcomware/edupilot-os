@@ -26,7 +26,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     env:
-      EXPO_PUBLIC_API_ORIGIN: https://localhost:4443
+      EXPO_PUBLIC_API_ORIGIN: ${{ matrix.platform == 'ios' && 'https://127.0.0.1:4443' || 'https://localhost:4443' }}
       EXPO_NO_TELEMETRY: '1'
       MAESTRO_DRIVER_STARTUP_TIMEOUT: '240000'
       MAESTRO_CLI_NO_ANALYTICS: 'true'
@@ -53,7 +53,6 @@ jobs:
       - name: Build Android app with embedded release bundle
         if: matrix.platform == 'android'
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y socat
           sudo chmod 666 /dev/kvm
           bash tests/mobile/prepare-tls.sh android
           cd clients/mobile/android
@@ -70,7 +69,6 @@ jobs:
       - name: Start an iPhone simulator
         if: matrix.platform == 'ios'
         run: |
-          brew list socat >/dev/null 2>&1 || brew install socat
           command -v xcodegen >/dev/null || brew install xcodegen
           xcodebuild -version
           python3 - <<'PY'

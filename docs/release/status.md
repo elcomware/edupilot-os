@@ -108,3 +108,10 @@ workspace interaction now use XCTest. The login test checks the school and
 email as typed and checks only the length of the secure password field before
 tapping Sign in. The runner checks the persisted session before starting the
 separate cold-launch workspace test. Only named fixture screenshots are uploaded.
+
+On the [first XCTest login run](https://github.com/elcomware/edupilot-os/actions/runs/42287046326/job/128130451801),
+all field checks and the button tap completed, but the school label did not
+appear. The synthetic fixture now serves HTTPS through a loopback Go reverse
+proxy and records the HTTP status of session creation. The iPhone uses the
+certificate's IPv4 loopback address and waits for the authenticated Sign out
+control before the independent database and cold-launch identity checks.

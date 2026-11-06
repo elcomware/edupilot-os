@@ -18,7 +18,8 @@ go build -o "$RUNNER_TEMP/mobile-api" .
 "$RUNNER_TEMP/mobile-api" >"$RUNNER_TEMP/mobile-api.log" 2>&1 &
 api_pid=$!
 tls="$RUNNER_TEMP/mobile-tls"
-socat "OPENSSL-LISTEN:4443,bind=127.0.0.1,reuseaddr,fork,cert=$tls/server.pem,key=$tls/server.key,verify=0" TCP:127.0.0.1:3000 &
+go build -o "$RUNNER_TEMP/mobile-tls-relay" ./tests/mobile/tlsfixture
+"$RUNNER_TEMP/mobile-tls-relay" "$tls/server.pem" "$tls/server.key" &
 proxy_pid=$!
 trap 'kill "$proxy_pid" "$api_pid" 2>/dev/null || true' EXIT
 for _ in {1..60}; do
@@ -73,7 +74,7 @@ CREDENTIALS
   }
   if ! run_iphone_test testSignIn; then
     # Input-driver errors can contain typed characters. Emit known markers only.
-    grep -Eo 'Input diverged for (school-id|email|password) at character [0-9]+|Keyboard unavailable for (school-id|email|password)|Missing field (school-id|email|password)|Sign in button unavailable|School directory missing after sign-in|Timed out waiting for visible labels: School ID, Show password' \
+    grep -Eo 'Input diverged for (school-id|email|password) at character [0-9]+|Keyboard unavailable for (school-id|email|password)|Missing field (school-id|email|password)|Sign in button unavailable|Sign-in outcome: (incomplete|credentials|network|storage|guest|unknown)|Timed out waiting for visible labels: School ID, Show password' \
       "$RUNNER_TEMP/testSignIn.log" | tail -4 || true
     echo 'iPhone sign-in XCTest failed'
     exit 1

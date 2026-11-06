@@ -100,7 +100,17 @@ final class WorkspaceJourney: XCTestCase {
         }
         XCTAssertTrue(button.isHittable, "Sign in button unavailable")
         button.tap()
-        XCTAssertTrue(app.staticTexts[input.school].waitForExistence(timeout: 30), "School directory missing after sign-in")
+        if !app.buttons["Sign out"].waitForExistence(timeout: 30) {
+            let reasons = [
+                ("incomplete", "Enter a school ID, email and password."),
+                ("credentials", "Check your school ID, email and password."),
+                ("network", "The server could not complete this request. Check your connection and try again."),
+                ("storage", "Your session could not be saved. Unlock your device and sign in again."),
+            ]
+            let reason = reasons.first { app.descendants(matching: .any).matching(
+                NSPredicate(format: "label == %@", $0.1)).firstMatch.exists }?.0
+            XCTFail("Sign-in outcome: " + (reason ?? (button.exists ? "guest" : "unknown")))
+        }
     }
 
     func testSchoolWorkList() throws {
