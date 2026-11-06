@@ -119,6 +119,7 @@ clients/web/src/tests/editor.test.tsx
 clients/web/src/tests/field-contrast.test.ts
 clients/web/src/tests/navigation-preferences.test.tsx
 clients/web/src/tests/preferences.test.ts
+clients/web/src/tests/shared-semantics.test.tsx
 clients/web/src/tests/specialized.test.ts
 clients/web/src/tests/table-layout.test.tsx
 clients/web/tsconfig.json

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { captureWorkspace } from "./ui-evidence";
 import { account, loginForm } from "./accounts";
-import { expectAccessible, expectPageReflow } from "./accessibility";
+import { expectAccessible, expectDialogDescriptionContrast, expectPageReflow } from "./accessibility";
 
 async function openNavigation(page: Page) {
   const toggle = page.getByRole("button", { name: "Navigation", exact: true });
@@ -19,6 +19,7 @@ test("personal pins reorder, survive reload and reset only the current workspace
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/#/settings");
   await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(page.getByRole("img", { name: "EduPilot OS", exact: true })).toBeVisible();
   await expectAccessible(page, "sign-in-desktop");
   await page.getByLabel("Language", { exact: true }).selectOption("fr");
   await page.emulateMedia({ colorScheme: "dark" });
@@ -43,6 +44,7 @@ test("personal pins reorder, survive reload and reset only the current workspace
   await page.getByRole("link", { name: "Back to directory", exact: true }).click();
   await expect(page.getByRole("button", {name:"Pin Students",exact:true})).toBeVisible();
   await captureWorkspace(page, "directory-desktop");
+  await expect(page.getByRole("link", { name: "EduPilot OS", exact: true }).getByRole("img", { name: "EduPilot OS", exact: true })).toBeVisible();
   await expectAccessible(page, "directory-desktop");
   for (const title of ["Students", "Library", "Family and student portal"]) {
     await page.getByRole("button", { name: "Pin " + title, exact: true }).click();
@@ -92,6 +94,7 @@ test("personal pins reorder, survive reload and reset only the current workspace
   await expect(close).toBeFocused();
   await expectPageReflow(page);
   await expectAccessible(page, "reset-dialog-narrow-fr");
+  await expectDialogDescriptionContrast(page, dialog);
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
   await expect(reset).toBeFocused();

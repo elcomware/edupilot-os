@@ -10,7 +10,7 @@ import { useLocale } from "../app/preferences";
 import { t } from "../app/copy";
 export function Brand({ wordmark = true }: { wordmark?: boolean }) {
   return (
-    <span className="brand" aria-label="EduPilot OS">
+    <span className="brand" role="img" aria-label="EduPilot OS">
       <svg aria-hidden="true" viewBox="0 0 38 38" width="36" height="36">
         <path d="M4 10.5h9l3-5h17v24H19l-4 5H4z" fill="currentColor" />
         <path
@@ -114,6 +114,7 @@ export function Dialog({
     <dialog
       className="dialog"
       aria-labelledby={id}
+      aria-describedby={description ? id + "-description" : undefined}
       ref={ref}
       onKeyDown={(event) => {
         if (
@@ -172,7 +173,7 @@ export function Dialog({
           <X size={19} />
         </button>
       </div>
-      {description && <p>{description}</p>}
+      {description && <p id={id + "-description"}>{description}</p>}
       {children}
     </dialog>
   );

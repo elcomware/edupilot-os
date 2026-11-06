@@ -13,7 +13,7 @@ Run local checks from the repository root. `make test-native test-go test-web te
 
 The combined local Go run recorded 159 passing test/subtest events and 11 service-dependent skips. Ten need PostgreSQL fixtures, including one database-creation opt-in. One needs a private S3 test bucket. Local vet and build passed. Both the SQL inspector and document verifier were exercised with the race detector. A disposable native end-to-end run also passed all three API journeys.
 
-The web component suite passed 31 tests, and the mobile suite passed ten. Web production build, both Expo JavaScript exports, desktop gateway tests and the Windows GUI cross-build passed. See the [release board](release/status.md) for hosted Linux window, Chromium and accessibility evidence.
+The web component suite passed 34 tests, and the mobile suite passed ten. Web production build, both Expo JavaScript exports, desktop gateway tests and the Windows GUI cross-build passed. See the [release board](release/status.md) for hosted Linux window, Chromium and accessibility evidence.
 
 ## Service and device requirements
 

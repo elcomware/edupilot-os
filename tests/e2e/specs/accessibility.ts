@@ -1,7 +1,7 @@
 import { createRequire } from "node:module";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import type * as axeCore from "axe-core";
 
 const require = createRequire(import.meta.url);
@@ -15,6 +15,25 @@ type Checkpoint =
   | "reset-dialog-narrow-fr"
   | "student-columns-desktop"
   | "student-columns-narrow-fr";
+
+async function writeFixtureEvidence(
+  page: Page,
+  checkpoint: Checkpoint | "reset-description-contrast",
+  summary: object,
+) {
+  if (
+    process.env.EDUPILOT_CAPTURE_FIXTURE_UI !== "1" ||
+    process.env.GITHUB_ACTIONS !== "true"
+  ) return;
+  if (new URL(page.url()).hostname !== "127.0.0.1")
+    throw new Error("Accessibility fixture artifacts require loopback");
+  // Buffer attachments are reporter-owned and need not become files with
+  // the list reporter. Persist only the already-redacted report explicitly.
+  const path = test.info().outputPath("accessibility-" + checkpoint + ".json");
+  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
+  await writeFile(path, JSON.stringify(summary, null, 2), { encoding: "utf8", mode: 0o600 });
+  await test.info().attach("accessibility-" + checkpoint, { path, contentType: "application/json" });
+}
 
 // Run against the whole real page, including exposed disclosures/dialogs.
 // Return only rule IDs and structural targets: axe's HTML, selectors, text,
@@ -64,23 +83,7 @@ export async function expectAccessible(page: Page, checkpoint: Checkpoint) {
         throw new Error("Automated accessibility scan could not complete");
       }
     });
-    const report = JSON.stringify(summary, null, 2);
-    if (
-      process.env.EDUPILOT_CAPTURE_FIXTURE_UI === "1" &&
-      process.env.GITHUB_ACTIONS === "true"
-    ) {
-      if (new URL(page.url()).hostname !== "127.0.0.1")
-        throw new Error("Accessibility fixture artifacts require loopback");
-      // Buffer attachments are reporter-owned and need not become files with
-      // the list reporter. Persist the already-redacted report explicitly.
-      const path = test.info().outputPath("accessibility-" + checkpoint + ".json");
-      await mkdir(dirname(path), { recursive: true, mode: 0o700 });
-      await writeFile(path, report, { encoding: "utf8", mode: 0o600 });
-      await test.info().attach("accessibility-" + checkpoint, {
-        path,
-        contentType: "application/json",
-      });
-    }
+    await writeFixtureEvidence(page, checkpoint, summary);
     if (summary.needsReview.length)
       test.info().annotations.push({
         type: "accessibility-manual-review",
@@ -88,6 +91,54 @@ export async function expectAccessible(page: Page, checkpoint: Checkpoint) {
       });
     expect(summary.passedRules, "Accessibility engine evaluated tagged rules").toBeGreaterThan(0);
     expect(summary.violations, "WCAG A/AA violations at " + checkpoint).toEqual([]);
+  });
+}
+
+// This measures the actual opaque fixture pairing independently of axe's
+// incomplete findings; it never edits or suppresses the original scan report.
+export async function expectDialogDescriptionContrast(page: Page, dialog: Locator) {
+  await test.step("Rendered reset dialog description contrast", async () => {
+    const measurement = await dialog.evaluate((element) => {
+      const id = element.getAttribute("aria-describedby");
+      const description = id ? document.getElementById(id) : null;
+      if (!description || description.parentElement !== element)
+        throw new Error("Expected a direct dialog description reference");
+      const text = getComputedStyle(description), surface = getComputedStyle(element);
+      function rgba(value: string) {
+        const channels = /^rgba?\(/.test(value) ? value.match(/[\d.]+/g)?.map(Number) : null;
+        if (!channels || channels.length < 3 || channels.length > 4)
+          throw new Error("Expected computed sRGB fixture colors");
+        return [channels[0], channels[1], channels[2], channels[3] ?? 1];
+      }
+      function luminance(channels: number[]) {
+        const linear = channels.slice(0, 3).map((value) => {
+          const channel = value / 255;
+          return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+        });
+        return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+      }
+      const foreground = rgba(text.color), background = rgba(surface.backgroundColor);
+      const ink = luminance(foreground), plane = luminance(background);
+      return {
+        foreground,
+        background,
+        inheritsDialogInk: text.color === surface.color,
+        descriptionBackgroundTransparent: rgba(text.backgroundColor)[3] === 0,
+        noBackgroundImages: text.backgroundImage === "none" && surface.backgroundImage === "none",
+        fullyVisible: text.visibility === "visible" && surface.visibility === "visible" &&
+          Number(text.opacity) === 1 && Number(surface.opacity) === 1 &&
+          description.getBoundingClientRect().width > 0 && description.getBoundingClientRect().height > 0,
+        contrast: (Math.max(ink, plane) + 0.05) / (Math.min(ink, plane) + 0.05),
+      };
+    });
+    await writeFixtureEvidence(page, "reset-description-contrast", measurement);
+    expect(measurement.fullyVisible, "Description is visibly rendered").toBe(true);
+    expect(measurement.inheritsDialogInk, "Description inherits dialog text color").toBe(true);
+    expect(measurement.descriptionBackgroundTransparent, "Description exposes the dialog surface").toBe(true);
+    expect(measurement.noBackgroundImages, "Measured fixture has no background image").toBe(true);
+    expect(measurement.foreground[3], "Description text is opaque").toBe(1);
+    expect(measurement.background[3], "Dialog surface is opaque").toBe(1);
+    expect(measurement.contrast, "Rendered normal description text contrast").toBeGreaterThanOrEqual(4.5);
   });
 }
 

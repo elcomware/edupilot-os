@@ -29,6 +29,12 @@ checkbox focus, dialog focus wrap/Escape/trigger restoration, and narrow page
 reflow. The original reload, scoped preferences and student lifecycle assertions
 still run on the same accounts.
 
+A separate Chromium assertion measures the rendered reset description's normal
+text against its opaque dialog surface, checks the inherited text color and
+transparent paragraph background, and requires 4.5:1. Its numeric fixture
+measurement is saved separately as `accessibility-reset-description-contrast.json`.
+It does not remove or replace any independent axe incomplete finding.
+
 Each checkpoint on disposable native fixture CI writes an explicit
 `accessibility-*.json` file to its test output directory, containing only
 the engine version, selected tags, passing-rule count, and violated/incomplete
