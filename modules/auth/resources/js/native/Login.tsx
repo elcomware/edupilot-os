@@ -15,15 +15,19 @@ export function Login({
 }) {
   const credentials = useRef({ school: "", email: "", password: "" });
   const [visible, show] = useState(false),
-    [invalid, setInvalid] = useState(false);
+    [missing, setMissing] = useState("");
   const pending = state.kind === "signingIn";
+  function record(field: keyof typeof credentials.current, value: string) {
+    credentials.current[field] = value;
+    setMissing("");
+  }
   const submit = () => {
     const { school, email, password } = credentials.current;
     if (!school.trim() || !email.trim() || !password) {
-      setInvalid(true);
+      setMissing(!school.trim() ? "school" : !email.trim() ? "email" : "password");
       return;
     }
-    setInvalid(false);
+    setMissing("");
     show(false);
     void model.login({ school: school.trim(), email: email.trim(), password });
   };
@@ -38,7 +42,8 @@ export function Login({
         <Field
           testID="school-id"
           label={t("school")}
-          onChangeText={(value) => { credentials.current.school = value; }}
+          onChangeText={(value) => record("school", value)}
+          onEndEditing={(event) => record("school", event.nativeEvent.text)}
           autoCorrect={false}
           autoCapitalize="none"
           editable={!pending}
@@ -46,7 +51,8 @@ export function Login({
         <Field
           testID="email"
           label={t("email")}
-          onChangeText={(value) => { credentials.current.email = value; }}
+          onChangeText={(value) => record("email", value)}
+          onEndEditing={(event) => record("email", event.nativeEvent.text)}
           keyboardType="email-address"
           autoComplete="username"
           autoCorrect={false}
@@ -56,13 +62,17 @@ export function Login({
         <Field
           testID="password"
           label={t("password")}
-          onChangeText={(value) => { credentials.current.password = value; }}
+          onChangeText={(value) => record("password", value)}
+          onEndEditing={(event) => record("password", event.nativeEvent.text)}
           secureTextEntry={!visible}
           autoComplete="current-password"
           autoCapitalize="none"
           editable={!pending}
           returnKeyType="go"
-          onSubmitEditing={submit}
+          onSubmitEditing={(event) => {
+            record("password", event.nativeEvent.text);
+            submit();
+          }}
         />
         <View style={s.row}>
           <Action
@@ -71,7 +81,7 @@ export function Login({
             disabled={pending}
           />
         </View>
-        {invalid && <Notice testID="login-error-incomplete" error>{t("incomplete")}</Notice>}
+        {missing !== "" && <Notice testID={`login-error-incomplete-${missing}`} error>{t("incomplete")}</Notice>}
         {state.kind === "guest" && state.reason && (
           <Notice testID={`login-error-${state.reason}`} error>{t(state.reason)}</Notice>
         )}

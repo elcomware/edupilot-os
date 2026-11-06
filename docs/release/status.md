@@ -120,3 +120,10 @@ The [instrumented iPhone run](https://github.com/elcomware/edupilot-os/actions/r
 remained on the guest form after tapping and recorded no session POST at the
 HTTPS fixture. On iOS, dragging the form now dismisses the keyboard. The drill
 requires the keyboard to disappear before it taps Sign in.
+
+The [iPhone form drill](https://github.com/elcomware/edupilot-os/actions/runs/42296795329/job/128164021506)
+observed incomplete-form feedback although the native fields retained the
+expected values after blur. The sign-in form now records the native field's
+final edit event as well as each change and uses the submitted password text
+for keyboard submission. The test requires edits to clear the initial
+validation message before attempting the authenticated journey.

@@ -117,7 +117,7 @@ final class WorkspaceJourney: XCTestCase {
         app.launch()
         try save(showing(["School ID", "Show password"]), "signin")
         try tapSignIn()
-        XCTAssertTrue(app.descendants(matching: .any)["login-error-incomplete"].waitForExistence(timeout: 8),
+        XCTAssertTrue(app.descendants(matching: .any)["login-error-incomplete-school"].waitForExistence(timeout: 8),
                       "Empty sign-in did not show field validation")
         _ = try enter("school-id", input.school)
         _ = try enter("email", input.email)
@@ -137,12 +137,13 @@ final class WorkspaceJourney: XCTestCase {
             XCTAssertEqual(XCTWaiter.wait(for: [hidden], timeout: 10), .completed, "Login keyboard still visible")
         }
         let field = app.descendants(matching: .any)
+        XCTAssertFalse(field["login-error-incomplete-school"].exists, "Credential edits did not clear validation")
         XCTAssertTrue(field["school-id"].value as? String == input.school, "School changed after focus left")
         XCTAssertTrue(field["email"].value as? String == input.email, "Email changed after focus left")
         XCTAssertTrue((field["password"].value as? String)?.count == input.password.count, "Secure length changed after focus left")
         try tapSignIn()
         if !app.buttons["Sign out"].waitForExistence(timeout: 30) {
-            let reasons = ["incomplete", "credentials", "network", "storage", "invalid", "forbidden", "expired", "conflict"]
+            let reasons = ["incomplete-school", "incomplete-email", "incomplete-password", "credentials", "network", "storage", "invalid", "forbidden", "expired", "conflict"]
             let reason = reasons.first { field["login-error-" + $0].exists }
             let system = XCUIApplication(bundleIdentifier: "com.apple.springboard")
             let fallback = system.alerts.firstMatch.exists ? "system-alert" : (field["sign-in"].exists ? "guest" : "unknown")
