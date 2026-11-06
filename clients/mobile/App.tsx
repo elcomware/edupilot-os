@@ -188,6 +188,7 @@ export default function App() {
         >
           <ScrollView
             contentContainerStyle={s.scroll}
+            keyboardDismissMode={Platform.OS === "ios" ? "on-drag" : "none"}
             keyboardShouldPersistTaps="handled"
           >
             <View style={s.body}>

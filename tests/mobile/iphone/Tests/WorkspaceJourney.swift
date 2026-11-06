@@ -93,6 +93,20 @@ final class WorkspaceJourney: XCTestCase {
         _ = try enter("school-id", input.school)
         _ = try enter("email", input.email)
         _ = try enter("password", input.password, secure: true)
+        // Drag inside the visible form, above the keyboard. A button whose
+        // frame intersects the keyboard can still report itself as hittable.
+        let scroll = app.scrollViews.firstMatch
+        let keyboard = app.keyboards.firstMatch
+        if keyboard.exists {
+            let area = scroll.frame.intersection(app.frame)
+            let bottom = min(area.maxY, keyboard.frame.minY) - 12
+            let origin = app.coordinate(withNormalizedOffset: .zero)
+            let start = origin.withOffset(CGVector(dx: area.midX, dy: bottom))
+            let end = origin.withOffset(CGVector(dx: area.midX, dy: area.minY + 16))
+            start.press(forDuration: 0.1, thenDragTo: end)
+            let hidden = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: keyboard)
+            XCTAssertEqual(XCTWaiter.wait(for: [hidden], timeout: 10), .completed, "Login keyboard still visible")
+        }
         let button = app.buttons["sign-in"]
         for _ in 0..<4 {
             if button.isHittable { break }

@@ -115,3 +115,8 @@ appear. The synthetic fixture now serves HTTPS through a loopback Go reverse
 proxy and records the HTTP status of session creation. The iPhone uses the
 certificate's IPv4 loopback address and waits for the authenticated Sign out
 control before the independent database and cold-launch identity checks.
+
+The [instrumented iPhone run](https://github.com/elcomware/edupilot-os/actions/runs/42290820538/job/128143471806)
+remained on the guest form after tapping and recorded no session POST at the
+HTTPS fixture. On iOS, dragging the form now dismisses the keyboard. The drill
+requires the keyboard to disappear before it taps Sign in.
