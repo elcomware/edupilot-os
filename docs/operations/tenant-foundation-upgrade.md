@@ -221,3 +221,11 @@ python3 scripts/verify-systemd-writer-fence.py legacy-api.service legacy-worker.
 Exit 0 confirms that systemd reports every supplied service inactive, dead and persistently masked, with zero main/control PIDs, an empty control group and a matching mask under /etc/systemd/system. The command only reads state. Recheck after restart or interrupted maintenance. Restore the recorded service state only after the operator has selected and verified the authorized runtime.
 
 This is a point-in-time check of named units. The operator must verify inventory completeness, prevent privileged changes, exclude unmanaged processes and other supervisors/hosts, drain leases, and fence database and object-store credentials separately. A mistyped name masked by the operator cannot prove that the intended writer was stopped. This check alone grants no copy or resume authority.
+
+## Check legacy PostgreSQL writer credentials
+
+Inventory the actual login roles used by legacy APIs, workers, jobs and document metadata writers on every control and dedicated database cluster. Connect directly to each expected primary with a separate operator identity and a trusted libpq service definition. Confirm the cluster identity independently. Record original role state, disable LOGIN for the inventoried roles and drain existing sessions under the site's maintenance procedure. Resolve outstanding prepared transactions according to their transaction coordinator's decision. Inventory and remove role memberships that would allow another identity to assume the writer role.
+
+    PGSERVICE=maintenance-primary python3 scripts/verify-postgres-writer-fence.py legacy_api legacy_worker
+
+The probe only reads PostgreSQL catalogs and prints a count on success. It rejects a standby, absent or login-enabled roles, surviving sessions, prepared transactions and grants of a listed role to any member. Repeat for each authoritative primary after quiescence and before resuming an interrupted upgrade. Keep the credentials fenced until the authorized runtime is ready. Independently exclude other writable identities, privileged changes, replication and external document-store access throughout maintenance. This check alone cannot authorize copy, resume or activation.

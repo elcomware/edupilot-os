@@ -40,6 +40,9 @@ jobs:
           sudo -u postgres createdb -O edupilot_test edupilot_test
           echo "EDUPILOT_TEST_POSTGRES_DSN=postgres://edupilot_test:$test_password@127.0.0.1:5432/edupilot_test?sslmode=disable" >> "$GITHUB_ENV"
           echo "EDUPILOT_TEST_POSTGRES_CREATE_DATABASES=1" >> "$GITHUB_ENV"
+      - name: Rehearse legacy PostgreSQL credential fencing
+        if: matrix.database == 'postgres'
+        run: bash scripts/tests/postgres-writer-drill.sh "$(pg_config --bindir)"
       - name: Unit, feature, integration and architecture tests
         run: go test -count=1 -p 4 ./...
       - name: Reachable Go vulnerability check
