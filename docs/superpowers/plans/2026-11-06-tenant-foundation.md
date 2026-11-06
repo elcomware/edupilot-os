@@ -1,6 +1,6 @@
 # Tenant Foundation Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. This document is a planning deliverable; its creation runs no services, migrations or tests and performs no commit or push.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. This plan tracks implementation. The [release board](../../release/status.md) links the verification evidence for each delivered increment.
 
 **Goal:** Establish distinct tenant and school ownership, upgrade the actual starter safely, and provide verified school-context operations for the existing workflows and explicit multi-school provisioning.
 
@@ -110,9 +110,19 @@ The type is a trusted-code discipline, not a cryptographic capability; authorita
 
 ## Task 4: Implement the resumable offline legacy upgrade
 
+Delivered preflight increments are recorded individually. Completion of Task 4 still requires the copy, restart and verification tests below.
+
+- [x] Validate an explicit school-to-tenant mapping offline and produce a canonical mapping fingerprint.
+- [x] Inspect original SQL placement and school ownership on shared and dedicated pools through a read-only native command.
+- [x] Verify a prepared local document backup against an independently retained digest. The native tool checks the approved legacy school, original key and record envelope before including its contents. [Operator guide](../../operations/legacy-local-document-inventory.md)
+- [ ] Assemble an authoritative frozen source inventory from actual SQL row contents, migration receipts, object references and verified document digests. Provide an initial source-preparation path before a final mapping exists.
+
+
 **Create:** `platform/tenantupgrade/{inventory,manifest,service,verify}.go`, `service_test.go`; `cmd/tenant-upgrade/{main,main_test}.go`; `database/edumigrations/legacy_upgrade_test.go`; `docs/operations/tenant-foundation-upgrade.md`. **Modify:** `database/edumigrations/readiness.go`, `cmd/migrate/main.go`.
 
 **Interfaces:** `Upgrade.DryRun(ctx) (Report,error)`, `Prepare(ctx, manifest Manifest) (RunID,error)`, `Resume(ctx, runID RunID) error`, `Verify(ctx, runID RunID) (Report,error)`. CLI `tenant-upgrade -mode=dry-run|prepare|resume|verify -manifest=<path>`; manifest contains explicit IDs/pool marker references and source fingerprint. `dry-run` and `verify` never mutate production data. Prepare stores random generated IDs once; retries reuse the journal rather than generating a new graph. Dry-run writes proposed mappings only to the requested report artifact.
+
+The next source-preparation increment should take an explicit frozen source and legitimate school identities before the final mapping exists. Bind each original physical pool, table and primary key to its logical row content in deterministic order. Exercise NULL/empty values, Unicode, historic timestamps, binary payloads, duplicate business IDs in separate schools and equivalent rows read through each supported driver. Reconcile document keys against expected external references and the preserved baseline. Verification reports expose aggregate results; operator output must omit credentials, private row values, SQL connection strings and student identifiers.
 
 - [ ] Write `TestLegacyUpgradeSharedDedicated`, `TestLegacyUpgradeResumeEveryCheckpoint`, `TestLegacyUpgradeUnknownSchoolRefusesActivation`, `TestLegacyUpgradeNoEmailMerge`, `TestLegacyUpgradePreservesAllIDs`, `TestLegacyUpgradeRejectsAmbiguousMapping`. A legacy school appearing in data/pin/blob inventory without identity records is reported as an orphan requiring explicit verified mapping; never silently discard it. A seeded school with no pin may acquire its first explicit placement only in this audited prepare operation after configured-target validation, never at login.
 - [ ] Run `go test ./platform/tenantupgrade ./database/edumigrations ./cmd/tenant-upgrade -run 'TestLegacyUpgrade|TestUpgradeCLI' -count=1 -v`; RED before coordinator implementation.

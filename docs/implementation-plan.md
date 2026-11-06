@@ -2,6 +2,8 @@
 
 The repository starts from Goravel v1.18.0 and keeps its facades, configuration, bootstrap, Artisan and migration conventions. EduPilot OS uses strict Go module boundaries, a versioned HTTP API, a shared React web/desktop shell, and a React Native mobile client. SQLite and PostgreSQL share domain contracts. School-owned queries always include the authenticated school, including on dedicated databases.
 
+The following checkpoints describe the original starter phase. Current implementation and verification follow the [production release plan](superpowers/plans/2026-11-06-production-release.md) and [release board](release/status.md).
+
 ## Checkpoints
 
 | Iteration | Deliverable |
@@ -27,4 +29,4 @@ The repository starts from Goravel v1.18.0 and keeps its facades, configuration,
 | 19 | Feature, architecture, integration and end-to-end specifications |
 | 20 | Cross-package review, operational handoff and adapter inventory |
 
-A successful handoff includes a concrete implementation for shared infrastructure, a working-path design from sign-in to school-scoped Student mutations, a module-owned adapter boundary for every other module and honest API descriptions of available actions. No push-triggered test jobs. All automated tests are authored for later execution at the owner's request.
+A successful handoff includes a concrete implementation for shared infrastructure, a working-path design from sign-in to school-scoped Student mutations, a module-owned adapter boundary for every other module and honest API descriptions of available actions. During this phase the owner requested test authoring before execution. Production-phase checks now run on pushes and pull requests.

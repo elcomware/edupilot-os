@@ -23,7 +23,7 @@ Each school has pending/dead/published student lifecycle events, byte-exact v1 p
 Run from repository root:
 
 ```sh
-PATH=/workspace/scratch/6e88dfe4c76a/tools-local/go/bin:$PATH GOTOOLCHAIN=go1.26.10 GOMAXPROCS=4 go test ./tests/architecture ./database/edumigrations -run 'TestTenantOwnershipInventory|TestStarterFixture' -count=1 -v
+go test ./tests/architecture ./database/edumigrations -run 'TestTenantOwnershipInventory|TestStarterFixture' -count=1 -v
 ```
 
 Tests change process-global framework configuration and must not run in parallel. Each test closes/drops only its own handles/schemas/files. A task-local GOCACHE may be used where the default cache filesystem is full.

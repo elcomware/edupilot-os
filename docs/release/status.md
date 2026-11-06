@@ -1,54 +1,34 @@
-# EduPilot OS release execution status
+# EduPilot OS release board
 
-Plan: [Production release backlog](../superpowers/plans/2026-11-06-production-release.md). Spec: [Production scope](../product/production-scope.md).
+The starter and the increments below are on `main`. Production qualification remains open. The [original Scrum plan](https://github.com/elcomware/edupilot-os/commit/2c7228036f204d5a81d52e2989e842ac33b24657) and [group tenancy expansion](https://github.com/elcomware/edupilot-os/commit/2e03da67a76c084863b3ae877888609a82a8e001) were published before the implementation increments. The backlog contains the epics, dependencies, acceptance tests and full client deliverables for all 42 modules. [Scrum plan](../superpowers/plans/2026-11-06-production-release.md) · [Frontend matrix](../product/frontend-matrix.md) · [Group tenancy specification](../product/tenancy-and-placement.md)
 
-## Baseline
-
-- Starter: `ae7a791cdbbdc1bf76be7f1a166e9a226c3da177`.
-- Original 20 starter checkpoints pushed. Build checks passed; original instruction deferred tests.
-- New authorization: write/run tests, plan and implement the full product including full professional UI, native-first operation and optional Docker, then push implementation checkpoints.
-- Product naming ruling: **EduPilot OS** in copy, **edupilot-os** in technical identifiers. The provider is now `EduPilotOS`; tenant and school are distinct entities; existing conflation is a migration task.
-- Release state: **not production ready**. Full domain backlog and external qualification gates remain open.
-
-## Board
-
-| Increment | State | Evidence / next action |
+| Increment | State | Demonstrable result or next dependency |
 |---|---|---|
-| Plan / Task 1 | Verified/pushed | Remote commits `2c72280`, `2e03da6`; all 42 modules mapped to full UI stories; independent scope reviews incorporated |
-| S01 Native/test baseline | In progress | Native launcher and dependency checks reviewed. Hosted SQLite and PostgreSQL baseline passed; [patched native CI](https://github.com/elcomware/edupilot-os/actions/runs/42143303446) passed all three jobs, including full Chromium journeys and PostgreSQL |
-| S02 Group tenancy + full frontend foundation | In progress | Scope/legacy migration, authorized context UI, inherited customization, multilingual records and browser qualification |
-| S03–S17 Domain delivery | Planned | Story-by-story backend + full UI + tests; see dependencies in plan |
-| S18 Operations + tenant mobility | Planned | Fenced shared/isolated/cross-engine moves, native packaging, backup/restore, upgrade and observability |
-| S19 Clients | Planned | Mobile feature completion and actual signed native release checks |
-| S20 Qualification | Planned / external gates | UAT, deployment/provider credentials, signing and hardware evidence required |
+| Original 20 starter iterations | Delivered | School identity, shared or dedicated placement, 42 module registrations, 41 work lists and specialized student, enrollment and document workflows. Baseline `ae7a791`. |
+| S01 native baseline | Core verified | Native SQLite startup, optional Docker, PostgreSQL tests, web/mobile builds, gateway tests and patched dependencies. [Hosted run](https://github.com/elcomware/edupilot-os/actions/runs/42143303446) |
+| S02 ownership and topology, tasks 1–2 | Verified | Real starter fixtures on shared, dedicated and mixed placements. Distinct tenant, organization, school and campus IDs. Sibling schools resolve separately. Active ancestry and hierarchy version survive storage round trips. [Fixture qualification](https://github.com/elcomware/edupilot-os/actions/runs/42146285885) |
+| S02 additive schema, task 3 | Verified | 48 new migration plans cover control, identity, topology and school data. The database checks dedicated-pool ownership, school-qualified rows and grants, unique event identities, and immutable physical pool registrations. Native PostgreSQL and SQLite passed receipt replay and rollback-protection tests. [Hosted run](https://github.com/elcomware/edupilot-os/actions/runs/42146773212) |
+| S02 offline upgrade, task 4 | In progress | Offline mapping validation and an inspect-only SQL CLI are available. The CLI reconciles schools, pins, physical pools, leases and per-school counts for 45 data tables on each pool. It detects misplaced control records, ambiguous pins and invalid legacy IDs. [SQLite and PostgreSQL qualification](https://github.com/elcomware/edupilot-os/actions/runs/42149445059). [Operator commands](../operations/tenant-foundation-upgrade.md) |
+| S02 local document verification, task 4 | Verified | A native CLI verifies a prepared, frozen local store against its original school, path, envelope and an independently retained digest. An end-to-end drill accepted two valid documents from separate schools and then rejected a missing document. [Operator command](../operations/legacy-local-document-inventory.md) · [Hosted verification](https://github.com/elcomware/edupilot-os/actions/runs/42151739855) |
+| S02 frontend foundation | In progress | Personal pins, saved order, confirmed reset, locale and layout settings are scoped to account and school. One shared table renders student records, work lists and placements with per-register optional columns. Web and Wails consume the same shell. Reviewed desktop and 320px French layouts. [Hosted browser evidence](https://github.com/elcomware/edupilot-os/actions/runs/42148038227). [UI contract](../../UX-CONTRACT.md) |
+| S03 institution/access administration | Planned | Activate the verified hierarchy through provisioning, sessions, scoped authorizations, inherited configuration and client context switching. |
+| S04–S17 business domains | Planned | Deliver each module's workflows and professional pages against its acceptance tests. A generic work list covers follow-up work only. |
+| S18 operations and mobility | Planned | Implement database-enforced fencing, copy, digest verification, cutover, recovery and the operator UI for whole-tenant moves. Drill shared↔dedicated before cross-engine conversion. |
+| S19 native clients | In progress | EduPilot OS is the installed display name on desktop and mobile. The Linux GUI opened on the hosted X11 display. The Windows GUI binary cross-compiled and both Expo bundles exported. Native device testing, installers, signing and task parity remain open. |
+| S20 release qualification | Open | Performance/accessibility review, provider and recovery drills, deployment configuration, signing, physical devices and operator acceptance. |
 
-## Decisions
+## Runtime boundaries
 
-- Native SQLite is the simplest default; PostgreSQL remains supported. Containers are explicitly optional.
-- Implement enabling staff, workflow and document slices before dependent domain stories; no placeholder satisfies a dependency.
-- Existing user authorization covers implementation and pushes, so proceed after publishing the plan without an extra approval checkpoint.
-- Use isolated branch `release/production-readiness` locally and lease-protected publication to the already-authorized repository branch.
+New group tables start empty. Business requests and sessions currently run under the starter's school scope. Activation depends on verified offline copy/resume, scoped grants and transactions, repository/worker/file cutover, and full client isolation tests. Teams, locations, concurrent curricula, multilingual records and inherited policies have explicit acceptance stories in the plan.
 
-- Group tenancy ruling: tenant is the customer/isolation/placement unit; schools, campuses, teams and curricula are scoped children/associations. Entire tenants move together. School ownership transfers are separate.
-- Initial tenant moves use bounded maintenance with database-enforced fencing and epochs; no dual-write/zero-downtime promise.
-- Architecture and frontend plan reviews requested independently; critical scope gaps incorporated before implementation.
+A placement move operates on the whole tenant. Starter migration allocates one new tenant per original school and preserves its identifiers through explicit mappings. Subsequent authorized provisioning can add organizations, schools and campuses to the same group. No automatic account merge uses matching email addresses.
 
-## Evidence
+Native installation is the default. Run `make install` and `make up` from a configured toolchain. Docker has separate `docker-*` targets. Production deployment, publication to app stores and signed artifacts require a release target and external qualification.
 
-See [verification](../verification.md) and [baseline evidence](evidence/2026-11-06-baseline.json). Chromium cannot launch here (Unix socket EPERM), PostgreSQL and S3 services are unavailable. Both backend jobs passed on [hosted native CI](https://github.com/elcomware/edupilot-os/actions/runs/42140789673); client job passed four of five journeys. The preference reload exposed a shared test identity hitting the real login limit.
+## Verification and execution
 
-[Dependency and fixture evidence](evidence/2026-11-06-dependencies.md): patched source and compiled API scans report zero affected vulnerabilities; root and E2E npm audits report zero. No release candidate is tagged.
+Use the [verification guide](../verification.md), [dependency evidence](evidence/2026-11-06-dependencies.md), [foundation evidence](evidence/2026-11-06-tenancy-foundation.md) and [ownership inventories](../architecture/foundation-ownership-inventory.md). Local Chromium has a socket restriction and local PostgreSQL needs an explicit disposable DSN. Native CI supplies both. The live S3 provider test requires a private disposable bucket and scoped credentials. The local document verifier uses an already prepared mapping, its original store paths and a frozen backup. A successful CI run qualifies the checked scope on that commit.
 
-The pure topology model resolves tenant, organization, school and campus ancestry, inherited active status and a persisted hierarchy revision. Snapshot tests exercise sibling schools, conflicting campus context, missing owners, team selection, optional ID serialization and independent snapshots. Production sign-in and placement still use the starter school scope. Multi-school activation waits for the offline upgrade, grant checks, scoped transaction boundary and end-to-end qualification in the [tenant implementation plan](../superpowers/plans/2026-11-06-tenant-foundation.md).
+The [combined native run](https://github.com/elcomware/edupilot-os/actions/runs/42151739855) passed all three jobs. It exercised the real PostgreSQL CLI, opened the Linux desktop, built the Windows GUI executable and passed six Chromium/API journeys. Inspect the [workspace layouts](https://github.com/elcomware/edupilot-os/actions/runs/42151739855/artifacts/13472429553) and [nine redacted accessibility reports](https://github.com/elcomware/edupilot-os/actions/runs/42151739855/artifacts/13472577869).
 
-The starter fixtures exercise 42 registered modules on shared, dedicated and mixed placements, including clean and deliberately damaged records. [Ownership inventory](../architecture/tenant-ownership-inventory.md).
-
-The new schema appends 48 plans to the original migrations. On a shared control/data pool plus one dedicated pool, that creates 94 additional migration registrations. Control retains identity and placements. Data pools enforce composite tenant/school ownership for topology, student and enrollment records, documents, outbox and all 41 work lists. Upgrading the schema creates empty tables. A separate verified offline upgrade is required before switching sessions or business reads to them. [Foundation table inventory](../architecture/foundation-ownership-inventory.md).
-
-Personal navigation ordering and reset are implemented in the shared web/desktop shell. Users can move pinned modules with a keyboard, reload their order, and reset this workspace's device settings. Account changes isolate language, pins, theme and spacing. The reset confirmation keeps focus and announces the result. Automated web tests and the production build pass. Saved view/column presets and group inheritance remain open under UI-03 and CFG.
-
-[Tenancy and UI verification record](evidence/2026-11-06-tenancy-foundation.md). Offline copy/resume is the next tenancy implementation dependency.
-
-Tasks 1–3 of the tenant plan have passed hosted SQLite, PostgreSQL and browser qualification. Task 4 has begun with [offline mapping validation](../operations/tenant-foundation-upgrade.md). Source inspection, manifest preparation, copy, resume and post-copy verification remain open.
-
-The shared table now accepts typed columns from Students, module work lists and enrollment placements. Each register saves its optional column visibility under the existing user/school preference key. The real student workflow tests column changes, persistence after reload and access to existing row actions. Personal saved views and server-managed inheritance are separate outstanding stories.
+The next executable backlog is [the tenant foundation plan](../superpowers/plans/2026-11-06-tenant-foundation.md). Complete a bounded increment, add its evidence here, push without force and check the resulting CI run. Keep full-product and release gates open until their acceptance evidence exists.
