@@ -12,9 +12,25 @@ import (
 )
 
 type TenancyServiceProvider struct{}
+type organizationWriterBinding struct{}
+
+func OrganizationWriter(app foundation.Application) (services.OrganizationWriter, error) {
+	value, err := app.Make(organizationWriterBinding{})
+	if err != nil {
+		return services.OrganizationWriter{}, err
+	}
+	return value.(services.OrganizationWriter), nil
+}
 
 func (*TenancyServiceProvider) Boot(foundation.Application) {}
 func (*TenancyServiceProvider) Register(app foundation.Application) {
+	app.Singleton(organizationWriterBinding{}, func(app foundation.Application) (any, error) {
+		pools, err := app.Make(database.CatalogBinding)
+		if err != nil {
+			return nil, err
+		}
+		return services.OrganizationWriter{Pools: pools.(*database.Catalog)}, nil
+	})
 	app.Singleton(contracts.DirectoryBinding, func(app foundation.Application) (any, error) {
 		pools, err := app.Make(database.CatalogBinding)
 		if err != nil {

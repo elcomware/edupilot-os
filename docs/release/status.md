@@ -71,3 +71,27 @@ a wrong gate pool ID and a lookup that left an unpinned tenant unregistered.
 The compiled CLI also returned the expected JSON on a synthetic SQLite pool.
 This is a local operator lookup for existing UUID-based hierarchies.
 Provisioning, versioned edits and user grant checks remain open.
+
+### Add an organization to an existing hierarchy
+
+A local operator can add a root organization or a child of an active organization
+in an initialized, pinned tenant. Supply a new UUID, the expected placement epoch
+and the current hierarchy version. For example:
+
+```sh
+go run ./cmd/add-organization -tenant "$tenant" -organization "$new_org" \
+  -parent "$parent_org" -name "Regional office" -epoch "$epoch" -version "$version"
+```
+
+Omit `-parent` for a root. The command returns the committed path and new version.
+After an interrupted response, inspect the same organization UUID before retrying.
+The organization, version increment and outbox event commit in one transaction.
+
+Disposable PostgreSQL and SQLite drills each accepted exactly one of two
+concurrent edits at the same version. They rejected an old epoch, a replay,
+a maintenance gate and an inactive parent. An injected outbox failure rolled
+back the organization and version. A separate native CLI drill read the result
+back from dedicated SQLite and verified that only the dedicated pool contained
+the organization and event. The native HTTP school-isolation journey passed.
+Initial tenant provisioning, user-facing administration, scoped grants and
+verified tenant moves remain open.
