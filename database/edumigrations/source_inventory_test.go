@@ -2,7 +2,6 @@ package edumigrations_test
 
 import (
 	"encoding/json"
-	"os"
 	"strings"
 	"testing"
 
@@ -13,13 +12,6 @@ import (
 
 func TestStarterFixtureSourceInventoryIsCompleteAndPrivate(t *testing.T) {
 	assertStarterFixtureSourceInventory(t, starterFixture(t, "mixed"))
-}
-
-func TestStarterFixturePostgresSourceInventory(t *testing.T) {
-	if os.Getenv("EDUPILOT_TEST_POSTGRES_DSN") == "" {
-		t.Skip("set EDUPILOT_TEST_POSTGRES_DSN for PostgreSQL source inventory")
-	}
-	assertStarterFixtureSourceInventory(t, starterFixtureDriver(t, "mixed", "postgres"))
 }
 
 func assertStarterFixtureSourceInventory(t *testing.T, fixture StarterFixture) {

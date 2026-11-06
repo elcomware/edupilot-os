@@ -84,6 +84,23 @@ func TestInspectionPostgresFrozenSQLReadOnlyAndDetection(t *testing.T) {
 			keySet[key] = true
 		}
 	}
+	for _, writer := range writers {
+		if _, err := writer.Exec("CREATE TABLE IF NOT EXISTS edu_migration_receipts (signature TEXT PRIMARY KEY NOT NULL)"); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := writer.Exec("INSERT INTO edu_migration_receipts VALUES ('fixture-receipt')"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, statement := range []string{
+		"CREATE TABLE migrations (id BIGSERIAL PRIMARY KEY, migration VARCHAR(255) NOT NULL, batch INTEGER NOT NULL)",
+		"CREATE TABLE jobs (id BIGSERIAL PRIMARY KEY, queue VARCHAR(255) NOT NULL, payload TEXT NOT NULL, attempts SMALLINT NOT NULL DEFAULT 0, reserved_at TIMESTAMPTZ, available_at TIMESTAMPTZ NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP)",
+		"CREATE TABLE failed_jobs (id BIGSERIAL PRIMARY KEY, uuid VARCHAR(255) NOT NULL UNIQUE, connection TEXT NOT NULL, queue TEXT NOT NULL, payload TEXT NOT NULL, exception TEXT NOT NULL, failed_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP)",
+	} {
+		if _, err := writers["postgres"].Exec(statement); err != nil {
+			t.Fatal(err)
+		}
+	}
 	keys := []string{}
 	for key := range keySet {
 		keys = append(keys, key)
@@ -122,6 +139,10 @@ func TestInspectionPostgresFrozenSQLReadOnlyAndDetection(t *testing.T) {
 		if len(pool.Tables) != 45 {
 			t.Fatal("PostgreSQL omitted registered table counts")
 		}
+	}
+	source := inventorySource(t.Context(), settings, keys, SourceSelection{Version: 1, Schools: []string{"east", "west"}}, open)
+	if !source.Complete || len(source.Issues) != 0 || len(source.SHA256) != 64 || len(source.Pools) != 2 || len(source.Pools[0].Tables)+len(source.Pools[1].Tables) != 102 {
+		t.Fatalf("registered PostgreSQL source inventory failed: %#v", source)
 	}
 	// Exercise the same transaction constructor used by every inspector source.
 	reader, err := open(t.Context(), settings.Control)
