@@ -136,3 +136,8 @@ school, wrote the expected row and signed out. SQLite contained exactly one
 matching workspace row and zero sessions afterward. Android passed using the
 form button. Successful submission by tapping the populated iPhone form and
 physical-device acceptance remain open.
+
+The [native stack run](https://github.com/elcomware/edupilot-os/actions/runs/42308143293/job/128202618684)
+stopped before browser execution because the pinned Playwright release could
+not install Chromium on Ubuntu 26.04. Both jobs that install this browser
+now select Ubuntu 24.04, including the optional manual Docker drill.

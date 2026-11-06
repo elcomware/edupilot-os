@@ -51,7 +51,7 @@ jobs:
           go build -p 4 ./...
 
   clients-and-native-stack:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
