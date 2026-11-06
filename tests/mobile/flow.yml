@@ -1,0 +1,44 @@
+appId: org.edupilot.mobile
+---
+- launchApp
+- extendedWaitUntil:
+    visible: { id: "school-id" }
+    timeout: 60000
+- takeScreenshot: ${PLATFORM}-signin
+- tapOn: { id: "school-id" }
+- inputText: ${SCHOOL}
+- tapOn: { id: "email" }
+- inputText: registrar@example.test
+- tapOn: { id: "password" }
+- inputText: ${PASSWORD}
+- hideKeyboard
+- tapOn: { id: "sign-in" }
+- assertVisible: School modules
+- assertVisible: ${SCHOOL}
+- extendedWaitUntil:
+    visible: "Identity"
+    timeout: 20000
+- takeScreenshot: ${PLATFORM}-directory
+- scrollUntilVisible:
+    element: "Students"
+    direction: DOWN
+- tapOn: Students
+- tapOn: { id: "given-name" }
+- inputText: Jamie
+- tapOn: { id: "family-name" }
+- inputText: Demo
+- hideKeyboard
+- tapOn: Register student
+- scrollUntilVisible:
+    element: Active
+    direction: DOWN
+- assertVisible: Jamie Demo
+- takeScreenshot: ${PLATFORM}-students
+- scrollUntilVisible:
+    element: Sign out
+    direction: UP
+- tapOn: Sign out
+- assertVisible: { id: "school-id" }
+- stopApp
+- launchApp
+- assertVisible: { id: "school-id" }
