@@ -46,7 +46,12 @@ def main():
             field = element(label, {"entry", "text", "password text"})
             if not field.queryComponent().grabFocus():
                 raise RuntimeError("Could not focus " + label)
-            subprocess.run(["xdotool", "type", "--clearmodifiers", "--file", "-"],
+            deadline = time.monotonic() + 5
+            while not field.getState().contains(pyatspi.STATE_FOCUSED):
+                if time.monotonic() >= deadline:
+                    raise RuntimeError("Native focus did not reach " + label)
+                time.sleep(0.05)
+            subprocess.run(["xdotool", "type", "--clearmodifiers", "--delay", "30", "--file", "-"],
                            input=value.encode(), check=True)
 
         def activate(label, roles):
@@ -83,6 +88,14 @@ def main():
         activate("Schools", {"link"})
         activate("Add entry", buttons)
         type_into("Title", "Campus review")
+        # Sending an X key event completes before WebKit necessarily processes
+        # it. Observe the synthetic title in the field before submitting it.
+        title = element("Title", {"entry", "text"}).queryText()
+        deadline = time.monotonic() + 5
+        while title.getText(0, -1) != "Campus review":
+            if time.monotonic() >= deadline:
+                raise RuntimeError("Synthetic title before submit: " + repr(title.getText(0, -1)))
+            time.sleep(0.05)
         activate("Save entry", buttons)
         element("Edit Campus review", buttons)
         capture("workspace", "campus")

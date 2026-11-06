@@ -47,3 +47,9 @@ Both checks rejected it, and the missing control ledger entry stayed absent.
 Restoring the dedicated ID allowed the interrupted migration to reconcile.
 This covers configured pools at inspection time. Writer fencing, verified
 copy and cutover are still required for tenant moves.
+
+The [Linux desktop drill](https://github.com/elcomware/edupilot-os/actions/runs/42264165326/job/128051578796)
+intermittently reached a populated table without finding the expected edit
+button after typing. The driver now waits for native keyboard focus and checks
+the synthetic title in WebKit before submitting. The window, accessible edit
+button, screenshot and independent database assertions still have to pass.
