@@ -35,7 +35,8 @@ jobs:
         with: { go-version-file: go.mod }
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '21' }
-      - name: Install native UI driver
+      - name: Install Android UI driver
+        if: matrix.platform == 'android'
         shell: bash
         run: |
           curl -fsSL --retry 3 https://github.com/mobile-dev-inc/maestro/releases/download/cli-2.12.1/maestro.zip -o "$RUNNER_TEMP/maestro.zip"
@@ -67,6 +68,7 @@ jobs:
         if: matrix.platform == 'ios'
         run: |
           brew list socat >/dev/null 2>&1 || brew install socat
+          command -v xcodegen >/dev/null || brew install xcodegen
           xcodebuild -version
           python3 - <<'PY'
           import json, os, subprocess

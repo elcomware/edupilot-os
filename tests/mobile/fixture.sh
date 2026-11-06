@@ -26,7 +26,26 @@ for _ in {1..60}; do
   sleep 1
 done
 curl -fsS --cacert "$tls/ca.pem" https://localhost:4443/api/v1/ready >/dev/null
+# Check the same API catalog independently, then revoke this preflight session.
+python3 - <<'PREFLIGHT'
+import json, os
+from urllib.request import Request, urlopen
+base = "http://127.0.0.1:3000/api/v1"
+credentials = {key: os.environ["EDUPILOT_SEED_" + key.upper()] for key in ("school", "email", "password")}
+with urlopen(Request(base + "/session", data=json.dumps(credentials).encode(), headers={"Content-Type": "application/json"}), timeout=10) as r:
+    auth = {"Authorization": "Bearer " + json.load(r)["token"]}
+try:
+    with urlopen(Request(base + "/modules", headers=auth), timeout=10) as r:
+        modules = [m["key"] for m in json.load(r)["items"]]
+    if set(modules) != set(os.environ["EDUPILOT_ENABLED_MODULES"].split(",")):
+        raise SystemExit("Fixture module catalog mismatch: " + ", ".join(modules))
+finally:
+    with urlopen(Request(base + "/session", headers=auth, method="DELETE"), timeout=10):
+        pass
+PREFLIGHT
 if [[ "$platform" = android ]]; then
+  adb shell input keyevent KEYCODE_WAKEUP
+  adb shell wm dismiss-keyguard
   adb reverse tcp:4443 tcp:4443
   adb install clients/mobile/android/app/build/outputs/apk/release/app-release.apk
 fi
@@ -36,16 +55,33 @@ root=$PWD
 driver="$RUNNER_TEMP/mobile-maestro"
 mkdir "$driver"
 result=0
-(cd "$driver" && maestro test -e "SCHOOL=$EDUPILOT_SEED_SCHOOL" -e "PASSWORD=$EDUPILOT_SEED_PASSWORD" \
-  --test-output-dir "$driver" "$root/tests/mobile/flow.yml") || result=$?
+if [[ "$platform" = ios ]]; then
+  cp -R tests/mobile/iphone "$driver/project"
+  (cd "$driver/project" && xcodegen generate &&
+    TEST_RUNNER_EDUPILOT_SEED_SCHOOL="$EDUPILOT_SEED_SCHOOL" \
+    TEST_RUNNER_EDUPILOT_SEED_EMAIL="$EDUPILOT_SEED_EMAIL" \
+    TEST_RUNNER_EDUPILOT_SEED_PASSWORD="$EDUPILOT_SEED_PASSWORD" \
+    xcodebuild test -quiet -project MobileProof.xcodeproj -scheme MobileProof \
+      -parallel-testing-enabled NO -destination "id=$IPHONE_UDID" \
+      -derivedDataPath "$RUNNER_TEMP/mobile-uitests" > "$RUNNER_TEMP/mobile-xctest.log" 2>&1) || result=$?
+  # XCTest logs can contain text entered into fields. Only surface assertion/build failure lines.
+  if [[ "$result" != 0 ]]; then
+    grep -E 'error:|Timed out waiting|Missing field|XCTUnwrap failed|TEST FAILED' "$RUNNER_TEMP/mobile-xctest.log" | tail -20 || true
+  fi
+  appdata=$(xcrun simctl get_app_container "$IPHONE_UDID" org.edupilot.proof.tests.xctrunner data)
+  driver="$appdata/Documents"
+else
+  (cd "$driver" && maestro test -e "SCHOOL=$EDUPILOT_SEED_SCHOOL" -e "PASSWORD=$EDUPILOT_SEED_PASSWORD" \
+    --test-output-dir "$driver" "$root/tests/mobile/flow.yml") || result=$?
+fi
 python3 - "$platform" "$driver" "$output" "$result" <<'PYTHON'
 import shutil, sqlite3, sys
 from pathlib import Path
 
 platform, driver, output, result = sys.argv[1:]
-# Maestro nests named screenshots beneath its per-flow output. Keep debug
-# screenshots and command records private; only these blank/authenticated views qualify.
-roots = [Path(driver), Path("tests/mobile"), Path.home() / ".maestro/tests"]
+# Keep test logs and debug screenshots private. Only the three explicitly captured
+# states can enter a published artifact.
+roots = [Path(driver)]
 for state in ("signin", "directory", "students"):
     matches = {p.resolve() for root in roots for p in root.rglob(f"edupilot-{state}.png")}
     if len(matches) == 1:
