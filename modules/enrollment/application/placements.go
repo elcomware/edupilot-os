@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/elcomware/edupilot-os/modules/enrollment/internal/domain"
-	"github.com/elcomware/edupilot-os/modules/students/contracts"
+	"github.com/elcomware/edupilot/modules/enrollment/internal/domain"
+	"github.com/elcomware/edupilot/modules/students/contracts"
 )
 
 // A new placement and its active-student check share a transaction. Identical

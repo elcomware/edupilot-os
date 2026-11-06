@@ -9,11 +9,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/elcomware/edupilot-os/modules/students/application/ports"
-	"github.com/elcomware/edupilot-os/modules/students/contracts"
-	"github.com/elcomware/edupilot-os/modules/students/domain"
-	"github.com/elcomware/edupilot-os/platform/database"
-	"github.com/elcomware/edupilot-os/platform/outbox"
+	"github.com/elcomware/edupilot/modules/students/application/ports"
+	"github.com/elcomware/edupilot/modules/students/contracts"
+	"github.com/elcomware/edupilot/modules/students/domain"
+	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/platform/outbox"
 )
 
 // Catalog is implemented by the hybrid tenant connection catalog. Production

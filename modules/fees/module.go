@@ -2,12 +2,12 @@
 package fees
 
 import (
-	"github.com/elcomware/edupilot-os/modules/fees/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot-os/modules/fees/application"
-	"github.com/elcomware/edupilot-os/modules/fees/migrations"
-	"github.com/elcomware/edupilot-os/modules/modulekit"
+	"github.com/elcomware/edupilot/modules/fees/adapters/outbound/persistence"
+	"github.com/elcomware/edupilot/modules/fees/application"
+	"github.com/elcomware/edupilot/modules/fees/migrations"
+	"github.com/elcomware/edupilot/modules/modulekit"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func Definition() modulekit.Definition {

@@ -13,8 +13,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/elcomware/edupilot-os/modules/documents/application"
-	"github.com/elcomware/edupilot-os/platform/tenantupgrade"
+	"github.com/elcomware/edupilot/modules/documents/application"
+	"github.com/elcomware/edupilot/platform/tenantupgrade"
 )
 
 const (

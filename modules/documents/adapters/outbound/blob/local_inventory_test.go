@@ -14,10 +14,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/elcomware/edupilot-os/modules/documents/adapters/outbound/blob"
-	"github.com/elcomware/edupilot-os/modules/documents/application"
-	"github.com/elcomware/edupilot-os/platform/access"
-	"github.com/elcomware/edupilot-os/platform/tenantupgrade"
+	"github.com/elcomware/edupilot/modules/documents/adapters/outbound/blob"
+	"github.com/elcomware/edupilot/modules/documents/application"
+	"github.com/elcomware/edupilot/platform/access"
+	"github.com/elcomware/edupilot/platform/tenantupgrade"
 	"github.com/google/uuid"
 )
 

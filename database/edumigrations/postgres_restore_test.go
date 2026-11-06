@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 // Exercise the real archive tools and the operator binary. The only mutable SQL

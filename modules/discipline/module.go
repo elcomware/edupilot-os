@@ -2,12 +2,12 @@
 package discipline
 
 import (
-	"github.com/elcomware/edupilot-os/modules/discipline/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot-os/modules/discipline/application"
-	"github.com/elcomware/edupilot-os/modules/discipline/migrations"
-	"github.com/elcomware/edupilot-os/modules/modulekit"
+	"github.com/elcomware/edupilot/modules/discipline/adapters/outbound/persistence"
+	"github.com/elcomware/edupilot/modules/discipline/application"
+	"github.com/elcomware/edupilot/modules/discipline/migrations"
+	"github.com/elcomware/edupilot/modules/modulekit"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func Definition() modulekit.Definition {

@@ -2,12 +2,12 @@
 package facilities
 
 import (
-	"github.com/elcomware/edupilot-os/modules/facilities/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot-os/modules/facilities/application"
-	"github.com/elcomware/edupilot-os/modules/facilities/migrations"
-	"github.com/elcomware/edupilot-os/modules/modulekit"
+	"github.com/elcomware/edupilot/modules/facilities/adapters/outbound/persistence"
+	"github.com/elcomware/edupilot/modules/facilities/application"
+	"github.com/elcomware/edupilot/modules/facilities/migrations"
+	"github.com/elcomware/edupilot/modules/modulekit"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func Definition() modulekit.Definition {

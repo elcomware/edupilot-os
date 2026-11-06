@@ -7,12 +7,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/elcomware/edupilot-os/database/edumigrations"
-	"github.com/elcomware/edupilot-os/modules"
-	enrollment "github.com/elcomware/edupilot-os/modules/enrollment/placements"
-	students "github.com/elcomware/edupilot-os/modules/students/migrations"
-	"github.com/elcomware/edupilot-os/platform/database"
-	"github.com/elcomware/edupilot-os/platform/identity"
+	"github.com/elcomware/edupilot/database/edumigrations"
+	"github.com/elcomware/edupilot/modules"
+	enrollment "github.com/elcomware/edupilot/modules/enrollment/placements"
+	students "github.com/elcomware/edupilot/modules/students/migrations"
+	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/platform/identity"
 )
 
 // Changing a registered schema or adding durable storage without an ownership

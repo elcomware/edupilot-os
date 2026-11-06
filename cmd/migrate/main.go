@@ -7,9 +7,9 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/elcomware/edupilot-os/bootstrap"
-	"github.com/elcomware/edupilot-os/database/edumigrations"
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/bootstrap"
+	"github.com/elcomware/edupilot/database/edumigrations"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func main() {

@@ -3,7 +3,7 @@ package config
 import (
 	"github.com/goravel/framework/support/path"
 
-	"github.com/elcomware/edupilot-os/app/facades"
+	"github.com/elcomware/edupilot/app/facades"
 )
 
 func init() {

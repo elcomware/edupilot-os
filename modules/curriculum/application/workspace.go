@@ -1,6 +1,6 @@
 package application
 
-import "github.com/elcomware/edupilot-os/platform/workspace"
+import "github.com/elcomware/edupilot/platform/workspace"
 
 // Entries is the public use case for this module's school work list.
 type Entries = workspace.Service

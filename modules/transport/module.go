@@ -2,12 +2,12 @@
 package transport
 
 import (
-	"github.com/elcomware/edupilot-os/modules/modulekit"
-	"github.com/elcomware/edupilot-os/modules/transport/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot-os/modules/transport/application"
-	"github.com/elcomware/edupilot-os/modules/transport/migrations"
+	"github.com/elcomware/edupilot/modules/modulekit"
+	"github.com/elcomware/edupilot/modules/transport/adapters/outbound/persistence"
+	"github.com/elcomware/edupilot/modules/transport/application"
+	"github.com/elcomware/edupilot/modules/transport/migrations"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func Definition() modulekit.Definition {

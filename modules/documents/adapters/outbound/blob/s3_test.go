@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/elcomware/edupilot-os/modules/documents/application"
-	"github.com/elcomware/edupilot-os/platform/identity"
+	"github.com/elcomware/edupilot/modules/documents/application"
+	"github.com/elcomware/edupilot/platform/identity"
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
 )

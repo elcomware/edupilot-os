@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/elcomware/edupilot-os/bootstrap"
-	"github.com/elcomware/edupilot-os/modules"
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/bootstrap"
+	"github.com/elcomware/edupilot/modules"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 const (

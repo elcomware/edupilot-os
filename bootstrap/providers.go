@@ -1,7 +1,7 @@
 package bootstrap
 
 import (
-	edupilot "github.com/elcomware/edupilot-os/app/providers"
+	edupilot "github.com/elcomware/edupilot/app/providers"
 	"github.com/goravel/framework/ai"
 	"github.com/goravel/framework/auth"
 	"github.com/goravel/framework/cache"

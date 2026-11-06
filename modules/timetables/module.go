@@ -2,12 +2,12 @@
 package timetables
 
 import (
-	"github.com/elcomware/edupilot-os/modules/modulekit"
-	"github.com/elcomware/edupilot-os/modules/timetables/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot-os/modules/timetables/application"
-	"github.com/elcomware/edupilot-os/modules/timetables/migrations"
+	"github.com/elcomware/edupilot/modules/modulekit"
+	"github.com/elcomware/edupilot/modules/timetables/adapters/outbound/persistence"
+	"github.com/elcomware/edupilot/modules/timetables/application"
+	"github.com/elcomware/edupilot/modules/timetables/migrations"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func Definition() modulekit.Definition {

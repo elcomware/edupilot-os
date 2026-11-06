@@ -41,6 +41,8 @@ The [Scrum backlog](docs/superpowers/plans/2026-11-06-production-release.md) and
 
 ## Develop and extend
 
+Clone `elcomware/edupilot-os` and use `github.com/elcomware/edupilot` as the import prefix for root Go packages.
+
 | Task | Start here |
 | --- | --- |
 | Configure services, accounts and database modes | [Local deployment](docs/local-deployment.md) · [Tenant placement](platform/database/README.md) |

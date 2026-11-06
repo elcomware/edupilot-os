@@ -15,7 +15,7 @@ import (
 	"time"
 	_ "time/tzdata"
 
-	"github.com/elcomware/edupilot-os/platform/scope"
+	"github.com/elcomware/edupilot/platform/scope"
 )
 
 const maxManifestBytes = 4 << 20

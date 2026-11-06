@@ -7,8 +7,8 @@ import (
 	"context"
 	"slices"
 
-	"github.com/elcomware/edupilot-os/modules/students/application/ports"
-	"github.com/elcomware/edupilot-os/modules/students/domain"
+	"github.com/elcomware/edupilot/modules/students/application/ports"
+	"github.com/elcomware/edupilot/modules/students/domain"
 )
 
 type Memory struct {

@@ -9,11 +9,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/elcomware/edupilot-os/app/facades"
-	"github.com/elcomware/edupilot-os/bootstrap"
-	"github.com/elcomware/edupilot-os/database/edumigrations"
-	"github.com/elcomware/edupilot-os/platform/database"
-	"github.com/elcomware/edupilot-os/platform/identity"
+	"github.com/elcomware/edupilot/app/facades"
+	"github.com/elcomware/edupilot/bootstrap"
+	"github.com/elcomware/edupilot/database/edumigrations"
+	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/platform/identity"
 )
 
 func main() {

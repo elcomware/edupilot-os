@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/elcomware/edupilot-os/modules/tenancy/application"
-	"github.com/elcomware/edupilot-os/modules/tenancy/internal/domain"
-	"github.com/elcomware/edupilot-os/platform/scope"
+	"github.com/elcomware/edupilot/modules/tenancy/application"
+	"github.com/elcomware/edupilot/modules/tenancy/internal/domain"
+	"github.com/elcomware/edupilot/platform/scope"
 )
 
 type reader struct {

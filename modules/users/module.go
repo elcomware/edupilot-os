@@ -2,12 +2,12 @@
 package users
 
 import (
-	"github.com/elcomware/edupilot-os/modules/modulekit"
-	"github.com/elcomware/edupilot-os/modules/users/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot-os/modules/users/application"
-	"github.com/elcomware/edupilot-os/modules/users/migrations"
+	"github.com/elcomware/edupilot/modules/modulekit"
+	"github.com/elcomware/edupilot/modules/users/adapters/outbound/persistence"
+	"github.com/elcomware/edupilot/modules/users/application"
+	"github.com/elcomware/edupilot/modules/users/migrations"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func Definition() modulekit.Definition {

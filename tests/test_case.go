@@ -2,7 +2,7 @@
 package tests
 
 import (
-	"github.com/elcomware/edupilot-os/bootstrap"
+	"github.com/elcomware/edupilot/bootstrap"
 	goraveltesting "github.com/goravel/framework/testing"
 	"sync"
 )

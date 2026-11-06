@@ -2,10 +2,10 @@
 package modulekit
 
 import (
-	"github.com/elcomware/edupilot-os/database/edumigrations"
-	"github.com/elcomware/edupilot-os/platform/catalog"
-	"github.com/elcomware/edupilot-os/platform/database"
-	"github.com/elcomware/edupilot-os/platform/workspace"
+	"github.com/elcomware/edupilot/database/edumigrations"
+	"github.com/elcomware/edupilot/platform/catalog"
+	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/platform/workspace"
 )
 
 type Definition struct {

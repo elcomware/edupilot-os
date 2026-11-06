@@ -10,10 +10,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/elcomware/edupilot-os/modules/students/application"
-	"github.com/elcomware/edupilot-os/modules/students/contracts"
-	"github.com/elcomware/edupilot-os/modules/students/domain"
-	"github.com/elcomware/edupilot-os/platform/identity"
+	"github.com/elcomware/edupilot/modules/students/application"
+	"github.com/elcomware/edupilot/modules/students/contracts"
+	"github.com/elcomware/edupilot/modules/students/domain"
+	"github.com/elcomware/edupilot/platform/identity"
 )
 
 const collection = "/api/v1/students"

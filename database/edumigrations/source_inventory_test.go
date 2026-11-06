@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/elcomware/edupilot-os/modules"
-	"github.com/elcomware/edupilot-os/modules/documents/adapters/outbound/blob"
-	"github.com/elcomware/edupilot-os/platform/database"
-	"github.com/elcomware/edupilot-os/platform/tenantupgrade"
+	"github.com/elcomware/edupilot/modules"
+	"github.com/elcomware/edupilot/modules/documents/adapters/outbound/blob"
+	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/platform/tenantupgrade"
 )
 
 func TestStarterFixtureSourceInventoryIsCompleteAndPrivate(t *testing.T) {

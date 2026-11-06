@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/elcomware/edupilot-os/modules/documents/adapters/outbound/blob"
+	"github.com/elcomware/edupilot/modules/documents/adapters/outbound/blob"
 	"github.com/google/uuid"
 )
 

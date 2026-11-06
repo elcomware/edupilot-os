@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/elcomware/edupilot-os/app/facades"
-	"github.com/elcomware/edupilot-os/modules/documents/adapters/inbound/files"
-	"github.com/elcomware/edupilot-os/modules/documents/adapters/outbound/blob"
-	"github.com/elcomware/edupilot-os/modules/documents/application"
+	"github.com/elcomware/edupilot/app/facades"
+	"github.com/elcomware/edupilot/modules/documents/adapters/inbound/files"
+	"github.com/elcomware/edupilot/modules/documents/adapters/outbound/blob"
+	"github.com/elcomware/edupilot/modules/documents/application"
 )
 
 // Blobs returns one handler for the collection and individual file routes.

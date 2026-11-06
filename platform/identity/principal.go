@@ -3,7 +3,7 @@ package identity
 import (
 	"context"
 	"errors"
-	"github.com/elcomware/edupilot-os/platform/access"
+	"github.com/elcomware/edupilot/platform/access"
 )
 
 const (

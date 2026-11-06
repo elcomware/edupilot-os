@@ -12,10 +12,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/elcomware/edupilot-os/modules"
+	"github.com/elcomware/edupilot/modules"
 )
 
-const project = "github.com/elcomware/edupilot-os/"
+const project = "github.com/elcomware/edupilot/"
 
 func root(t *testing.T) string {
 	t.Helper()

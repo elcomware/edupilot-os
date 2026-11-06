@@ -2,12 +2,12 @@
 package procurement
 
 import (
-	"github.com/elcomware/edupilot-os/modules/modulekit"
-	"github.com/elcomware/edupilot-os/modules/procurement/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot-os/modules/procurement/application"
-	"github.com/elcomware/edupilot-os/modules/procurement/migrations"
+	"github.com/elcomware/edupilot/modules/modulekit"
+	"github.com/elcomware/edupilot/modules/procurement/adapters/outbound/persistence"
+	"github.com/elcomware/edupilot/modules/procurement/application"
+	"github.com/elcomware/edupilot/modules/procurement/migrations"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func Definition() modulekit.Definition {

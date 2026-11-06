@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 	"github.com/ncruces/go-sqlite3/driver"
 	_ "github.com/ncruces/go-sqlite3/embed"
 	"golang.org/x/crypto/bcrypt"

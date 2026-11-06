@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/elcomware/edupilot-os/modules/documents/application"
-	"github.com/elcomware/edupilot-os/platform/identity"
+	"github.com/elcomware/edupilot/modules/documents/application"
+	"github.com/elcomware/edupilot/platform/identity"
 )
 
 const path = "/api/v1/documents/files"

@@ -2,12 +2,12 @@
 package payments
 
 import (
-	"github.com/elcomware/edupilot-os/modules/modulekit"
-	"github.com/elcomware/edupilot-os/modules/payments/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot-os/modules/payments/application"
-	"github.com/elcomware/edupilot-os/modules/payments/migrations"
+	"github.com/elcomware/edupilot/modules/modulekit"
+	"github.com/elcomware/edupilot/modules/payments/adapters/outbound/persistence"
+	"github.com/elcomware/edupilot/modules/payments/application"
+	"github.com/elcomware/edupilot/modules/payments/migrations"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func Definition() modulekit.Definition {

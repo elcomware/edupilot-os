@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func TestInspectionSQLiteIsReadOnlyAtHandleAndTransaction(t *testing.T) {

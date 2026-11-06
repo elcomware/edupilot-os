@@ -1,4 +1,4 @@
-module github.com/elcomware/edupilot-os
+module github.com/elcomware/edupilot
 
 go 1.26.10
 

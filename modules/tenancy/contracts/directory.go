@@ -4,7 +4,7 @@ package contracts
 import (
 	"context"
 
-	"github.com/elcomware/edupilot-os/platform/scope"
+	"github.com/elcomware/edupilot/platform/scope"
 )
 
 // Directory verifies ancestry. Permission checks belong to verified request handling.

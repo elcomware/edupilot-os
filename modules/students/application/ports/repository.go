@@ -3,7 +3,7 @@ package ports
 import (
 	"context"
 
-	"github.com/elcomware/edupilot-os/modules/students/domain"
+	"github.com/elcomware/edupilot/modules/students/domain"
 )
 
 // Repository is the application transaction boundary. Insert and Replace must

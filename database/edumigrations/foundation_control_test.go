@@ -5,7 +5,7 @@ import (
 
 	"testing"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 // Exercise the same owner/pool constraints on both supported SQL engines.

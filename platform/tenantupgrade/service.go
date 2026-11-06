@@ -5,7 +5,7 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 // DryRunReport is safe to archive as pre-prepare evidence. It deliberately

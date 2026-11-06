@@ -4,7 +4,7 @@ import (
 	"github.com/goravel/framework/support/path"
 	"github.com/goravel/framework/support/str"
 
-	"github.com/elcomware/edupilot-os/app/facades"
+	"github.com/elcomware/edupilot/app/facades"
 )
 
 func init() {

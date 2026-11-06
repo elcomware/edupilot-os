@@ -7,8 +7,8 @@ import (
 	"io"
 	"time"
 
-	"github.com/elcomware/edupilot-os/modules/documents/adapters/outbound/blob"
-	"github.com/elcomware/edupilot-os/platform/tenantupgrade"
+	"github.com/elcomware/edupilot/modules/documents/adapters/outbound/blob"
+	"github.com/elcomware/edupilot/platform/tenantupgrade"
 )
 
 func verifyLocalRestore(upgrade tenantupgrade.Upgrade, manifest tenantupgrade.Manifest, selection tenantupgrade.SourceSelection, referencesPath, root string, output, diagnostics io.Writer) int {

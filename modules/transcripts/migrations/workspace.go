@@ -1,9 +1,9 @@
 package migrations
 
 import (
-	"github.com/elcomware/edupilot-os/database/edumigrations"
-	"github.com/elcomware/edupilot-os/modules/transcripts/internal/domain"
-	"github.com/elcomware/edupilot-os/platform/workspace/sqlstore"
+	"github.com/elcomware/edupilot/database/edumigrations"
+	"github.com/elcomware/edupilot/modules/transcripts/internal/domain"
+	"github.com/elcomware/edupilot/platform/workspace/sqlstore"
 )
 
 // WorkspaceSchema belongs to this module and runs on shared and dedicated databases.

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 // Consumer applies a local durable effect using the supplied transaction. This

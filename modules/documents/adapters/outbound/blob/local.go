@@ -7,7 +7,7 @@ import (
 	"io/fs"
 	"os"
 
-	"github.com/elcomware/edupilot-os/modules/documents/application"
+	"github.com/elcomware/edupilot/modules/documents/application"
 	"github.com/google/uuid"
 )
 

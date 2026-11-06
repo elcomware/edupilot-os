@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/elcomware/edupilot-os/app/facades"
+	"github.com/elcomware/edupilot/app/facades"
 )
 
 var ErrPlacement = errors.New("tenant placement mismatch")

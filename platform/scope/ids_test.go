@@ -2,7 +2,7 @@ package scope_test
 
 import (
 	"encoding/json"
-	"github.com/elcomware/edupilot-os/platform/scope"
+	"github.com/elcomware/edupilot/platform/scope"
 	"testing"
 )
 

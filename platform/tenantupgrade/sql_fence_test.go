@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/ncruces/go-sqlite3"
 )

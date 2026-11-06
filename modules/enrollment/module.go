@@ -2,12 +2,12 @@
 package enrollment
 
 import (
-	"github.com/elcomware/edupilot-os/modules/enrollment/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot-os/modules/enrollment/application"
-	"github.com/elcomware/edupilot-os/modules/enrollment/migrations"
-	"github.com/elcomware/edupilot-os/modules/modulekit"
+	"github.com/elcomware/edupilot/modules/enrollment/adapters/outbound/persistence"
+	"github.com/elcomware/edupilot/modules/enrollment/application"
+	"github.com/elcomware/edupilot/modules/enrollment/migrations"
+	"github.com/elcomware/edupilot/modules/modulekit"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func Definition() modulekit.Definition {

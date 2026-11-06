@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/elcomware/edupilot-os/modules/enrollment/internal/domain"
+	"github.com/elcomware/edupilot/modules/enrollment/internal/domain"
 )
 
 func TestPlacementValidationAndConflictingRetries(t *testing.T) {

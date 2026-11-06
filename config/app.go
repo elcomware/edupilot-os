@@ -3,7 +3,7 @@ package config
 import (
 	"github.com/goravel/framework/support/carbon"
 
-	"github.com/elcomware/edupilot-os/app/facades"
+	"github.com/elcomware/edupilot/app/facades"
 )
 
 // Boot Start all init methods of the current folder to bootstrap all config.

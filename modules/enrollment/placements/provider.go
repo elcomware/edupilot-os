@@ -5,12 +5,12 @@ package placements
 import (
 	"net/http"
 
-	enrollmenthttp "github.com/elcomware/edupilot-os/modules/enrollment/adapters/inbound/http"
-	"github.com/elcomware/edupilot-os/modules/enrollment/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot-os/modules/enrollment/application"
-	"github.com/elcomware/edupilot-os/modules/enrollment/migrations"
-	"github.com/elcomware/edupilot-os/modules/students/contracts"
-	"github.com/elcomware/edupilot-os/platform/database"
+	enrollmenthttp "github.com/elcomware/edupilot/modules/enrollment/adapters/inbound/http"
+	"github.com/elcomware/edupilot/modules/enrollment/adapters/outbound/persistence"
+	"github.com/elcomware/edupilot/modules/enrollment/application"
+	"github.com/elcomware/edupilot/modules/enrollment/migrations"
+	"github.com/elcomware/edupilot/modules/students/contracts"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 var SchemaUp = migrations.PlacementsUp

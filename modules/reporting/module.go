@@ -2,12 +2,12 @@
 package reporting
 
 import (
-	"github.com/elcomware/edupilot-os/modules/modulekit"
-	"github.com/elcomware/edupilot-os/modules/reporting/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot-os/modules/reporting/application"
-	"github.com/elcomware/edupilot-os/modules/reporting/migrations"
+	"github.com/elcomware/edupilot/modules/modulekit"
+	"github.com/elcomware/edupilot/modules/reporting/adapters/outbound/persistence"
+	"github.com/elcomware/edupilot/modules/reporting/application"
+	"github.com/elcomware/edupilot/modules/reporting/migrations"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func Definition() modulekit.Definition {

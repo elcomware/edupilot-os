@@ -9,9 +9,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/elcomware/edupilot-os/app/facades"
-	"github.com/elcomware/edupilot-os/platform/database"
-	"github.com/elcomware/edupilot-os/platform/outbox"
+	"github.com/elcomware/edupilot/app/facades"
+	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/platform/outbox"
 	"github.com/goravel/framework/contracts/database/schema"
 )
 

@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/elcomware/edupilot-os/modules/documents/application"
-	"github.com/elcomware/edupilot-os/platform/access"
+	"github.com/elcomware/edupilot/modules/documents/application"
+	"github.com/elcomware/edupilot/platform/access"
 )
 
 func TestLocalInventoryStopsAtAccumulatedContentBudget(t *testing.T) {

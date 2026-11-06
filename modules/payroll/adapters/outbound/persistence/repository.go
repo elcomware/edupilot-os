@@ -1,10 +1,10 @@
 package persistence
 
 import (
-	"github.com/elcomware/edupilot-os/modules/payroll/application"
-	"github.com/elcomware/edupilot-os/modules/payroll/internal/domain"
-	"github.com/elcomware/edupilot-os/platform/database"
-	"github.com/elcomware/edupilot-os/platform/workspace/sqlstore"
+	"github.com/elcomware/edupilot/modules/payroll/application"
+	"github.com/elcomware/edupilot/modules/payroll/internal/domain"
+	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/platform/workspace/sqlstore"
 )
 
 func New(catalog *database.Catalog) application.Repository {

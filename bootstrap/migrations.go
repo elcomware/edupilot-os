@@ -1,13 +1,13 @@
 package bootstrap
 
 import (
-	"github.com/elcomware/edupilot-os/database/edumigrations"
-	"github.com/elcomware/edupilot-os/database/migrations"
-	"github.com/elcomware/edupilot-os/modules"
-	"github.com/elcomware/edupilot-os/modules/enrollment/placements"
-	students "github.com/elcomware/edupilot-os/modules/students/migrations"
-	"github.com/elcomware/edupilot-os/platform/database"
-	"github.com/elcomware/edupilot-os/platform/identity"
+	"github.com/elcomware/edupilot/database/edumigrations"
+	"github.com/elcomware/edupilot/database/migrations"
+	"github.com/elcomware/edupilot/modules"
+	"github.com/elcomware/edupilot/modules/enrollment/placements"
+	students "github.com/elcomware/edupilot/modules/students/migrations"
+	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/platform/identity"
 	"github.com/goravel/framework/contracts/database/schema"
 )
 

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func TestLegacyUpgradeDryRunBindsReconciledSourceMappingAndPlacement(t *testing.T) {

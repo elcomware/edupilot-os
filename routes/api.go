@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"github.com/elcomware/edupilot-os/app/facades"
-	"github.com/elcomware/edupilot-os/app/providers"
+	"github.com/elcomware/edupilot/app/facades"
+	"github.com/elcomware/edupilot/app/providers"
 	"github.com/goravel/framework/contracts/http"
 )
 

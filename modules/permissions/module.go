@@ -2,12 +2,12 @@
 package permissions
 
 import (
-	"github.com/elcomware/edupilot-os/modules/modulekit"
-	"github.com/elcomware/edupilot-os/modules/permissions/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot-os/modules/permissions/application"
-	"github.com/elcomware/edupilot-os/modules/permissions/migrations"
+	"github.com/elcomware/edupilot/modules/modulekit"
+	"github.com/elcomware/edupilot/modules/permissions/adapters/outbound/persistence"
+	"github.com/elcomware/edupilot/modules/permissions/application"
+	"github.com/elcomware/edupilot/modules/permissions/migrations"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func Definition() modulekit.Definition {

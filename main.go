@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/elcomware/edupilot-os/bootstrap"
+	"github.com/elcomware/edupilot/bootstrap"
 )
 
 func main() {

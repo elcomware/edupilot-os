@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/elcomware/edupilot-os/modules"
-	"github.com/elcomware/edupilot-os/platform/catalog"
-	"github.com/elcomware/edupilot-os/platform/identity"
-	"github.com/elcomware/edupilot-os/platform/workspace"
+	"github.com/elcomware/edupilot/modules"
+	"github.com/elcomware/edupilot/platform/catalog"
+	"github.com/elcomware/edupilot/platform/identity"
+	"github.com/elcomware/edupilot/platform/workspace"
 )
 
 type moduleAPI struct{ registry *modules.Registry }

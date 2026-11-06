@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/elcomware/edupilot-os/app/facades"
+	"github.com/elcomware/edupilot/app/facades"
 	"github.com/goravel/framework/contracts/database/driver"
 	postgresfacades "github.com/goravel/postgres/facades"
 	sqlitefacades "github.com/goravel/sqlite/facades"

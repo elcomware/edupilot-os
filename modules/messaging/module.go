@@ -2,12 +2,12 @@
 package messaging
 
 import (
-	"github.com/elcomware/edupilot-os/modules/messaging/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot-os/modules/messaging/application"
-	"github.com/elcomware/edupilot-os/modules/messaging/migrations"
-	"github.com/elcomware/edupilot-os/modules/modulekit"
+	"github.com/elcomware/edupilot/modules/messaging/adapters/outbound/persistence"
+	"github.com/elcomware/edupilot/modules/messaging/application"
+	"github.com/elcomware/edupilot/modules/messaging/migrations"
+	"github.com/elcomware/edupilot/modules/modulekit"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func Definition() modulekit.Definition {

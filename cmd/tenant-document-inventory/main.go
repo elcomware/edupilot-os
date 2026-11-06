@@ -10,8 +10,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/elcomware/edupilot-os/modules/documents/adapters/outbound/blob"
-	"github.com/elcomware/edupilot-os/platform/tenantupgrade"
+	"github.com/elcomware/edupilot/modules/documents/adapters/outbound/blob"
+	"github.com/elcomware/edupilot/platform/tenantupgrade"
 )
 
 const usage = "Usage: tenant-document-inventory -manifest=PRIVATE_JSON -root=EXISTING_PRIVATE_ROOT [-expected-sha256=APPROVED_DIGEST] [-references=PRIVATE_JSON]"

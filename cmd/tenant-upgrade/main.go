@@ -8,7 +8,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/elcomware/edupilot-os/platform/tenantupgrade"
+	"github.com/elcomware/edupilot/platform/tenantupgrade"
 )
 
 type result struct {

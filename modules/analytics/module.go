@@ -2,12 +2,12 @@
 package analytics
 
 import (
-	"github.com/elcomware/edupilot-os/modules/analytics/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot-os/modules/analytics/application"
-	"github.com/elcomware/edupilot-os/modules/analytics/migrations"
-	"github.com/elcomware/edupilot-os/modules/modulekit"
+	"github.com/elcomware/edupilot/modules/analytics/adapters/outbound/persistence"
+	"github.com/elcomware/edupilot/modules/analytics/application"
+	"github.com/elcomware/edupilot/modules/analytics/migrations"
+	"github.com/elcomware/edupilot/modules/modulekit"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func Definition() modulekit.Definition {

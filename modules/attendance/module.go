@@ -2,12 +2,12 @@
 package attendance
 
 import (
-	"github.com/elcomware/edupilot-os/modules/attendance/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot-os/modules/attendance/application"
-	"github.com/elcomware/edupilot-os/modules/attendance/migrations"
-	"github.com/elcomware/edupilot-os/modules/modulekit"
+	"github.com/elcomware/edupilot/modules/attendance/adapters/outbound/persistence"
+	"github.com/elcomware/edupilot/modules/attendance/application"
+	"github.com/elcomware/edupilot/modules/attendance/migrations"
+	"github.com/elcomware/edupilot/modules/modulekit"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func Definition() modulekit.Definition {

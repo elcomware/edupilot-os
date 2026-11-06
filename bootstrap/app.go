@@ -4,9 +4,9 @@ import (
 	contractsfoundation "github.com/goravel/framework/contracts/foundation"
 	"github.com/goravel/framework/foundation"
 
-	"github.com/elcomware/edupilot-os/app/jobs"
-	"github.com/elcomware/edupilot-os/config"
-	"github.com/elcomware/edupilot-os/routes"
+	"github.com/elcomware/edupilot/app/jobs"
+	"github.com/elcomware/edupilot/config"
+	"github.com/elcomware/edupilot/routes"
 )
 
 func Boot() contractsfoundation.Application {

@@ -5,10 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/elcomware/edupilot-os/modules/students/application"
-	"github.com/elcomware/edupilot-os/modules/students/contracts"
-	"github.com/elcomware/edupilot-os/modules/students/domain"
-	"github.com/elcomware/edupilot-os/modules/students/tests/testkit"
+	"github.com/elcomware/edupilot/modules/students/application"
+	"github.com/elcomware/edupilot/modules/students/contracts"
+	"github.com/elcomware/edupilot/modules/students/domain"
+	"github.com/elcomware/edupilot/modules/students/tests/testkit"
 )
 
 func TestRegisterAndMutateKeepScopeVersionAndActor(t *testing.T) {

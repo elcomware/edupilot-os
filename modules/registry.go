@@ -5,9 +5,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/elcomware/edupilot-os/modules/modulekit"
-	"github.com/elcomware/edupilot-os/platform/database"
-	"github.com/elcomware/edupilot-os/platform/workspace"
+	"github.com/elcomware/edupilot/modules/modulekit"
+	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/platform/workspace"
 )
 
 var moduleKey = regexp.MustCompile("^[a-z][a-z0-9_]{0,39}$")

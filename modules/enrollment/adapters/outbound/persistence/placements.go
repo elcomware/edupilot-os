@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/elcomware/edupilot-os/modules/enrollment/application"
-	"github.com/elcomware/edupilot-os/modules/enrollment/internal/domain"
-	"github.com/elcomware/edupilot-os/platform/database"
-	"github.com/elcomware/edupilot-os/platform/outbox"
+	"github.com/elcomware/edupilot/modules/enrollment/application"
+	"github.com/elcomware/edupilot/modules/enrollment/internal/domain"
+	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/platform/outbox"
 )
 
 type PlacementCatalog interface {

@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/elcomware/edupilot-os/app/facades"
+	"github.com/elcomware/edupilot/app/facades"
 )
 
 func init() {
@@ -42,7 +42,7 @@ func init() {
 			},
 			"otel": map[string]any{
 				"driver":          "otel",
-				"instrument_name": config.GetString("APP_NAME", "github.com/elcomware/edupilot-os/log"),
+				"instrument_name": config.GetString("APP_NAME", "github.com/elcomware/edupilot/log"),
 			},
 		},
 	})

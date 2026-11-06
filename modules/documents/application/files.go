@@ -5,14 +5,14 @@ import (
 	"context"
 	"crypto/sha256"
 	"errors"
-	"github.com/elcomware/edupilot-os/platform/media"
+	"github.com/elcomware/edupilot/platform/media"
 	"io"
 	"mime"
 	"regexp"
 	"strings"
 	"unicode/utf8"
 
-	"github.com/elcomware/edupilot-os/platform/access"
+	"github.com/elcomware/edupilot/platform/access"
 	"github.com/google/uuid"
 )
 

@@ -1,6 +1,7 @@
 package edumigrations_test
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -11,9 +12,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/elcomware/edupilot-os/bootstrap"
-	"github.com/elcomware/edupilot-os/database/edumigrations"
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/bootstrap"
+	"github.com/elcomware/edupilot/database/edumigrations"
+	"github.com/elcomware/edupilot/platform/database"
 	schemaContract "github.com/goravel/framework/contracts/database/schema"
 )
 
@@ -40,6 +41,12 @@ func loadStarterRegistry(t *testing.T) starterRegistrySnapshot {
 		data, err := os.ReadFile(filepath.Join("../..", path))
 		if err != nil {
 			t.Fatal(err)
+		}
+		if path == "database/migrations/20210101000001_create_jobs_table.go" {
+			// Compare against the original starter bytes across the root module rename.
+			// Any edit outside this exact import line must still fail the pinned hash.
+			data = bytes.Replace(data, []byte("\n\t\"github.com/elcomware/edupilot/app/facades\"\n"),
+				[]byte("\n\t\"github.com/elcomware/edupilot-os/app/facades\"\n"), 1)
 		}
 		sum := sha256.Sum256(data)
 		if hex.EncodeToString(sum[:]) != want {

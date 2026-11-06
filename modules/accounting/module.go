@@ -2,12 +2,12 @@
 package accounting
 
 import (
-	"github.com/elcomware/edupilot-os/modules/accounting/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot-os/modules/accounting/application"
-	"github.com/elcomware/edupilot-os/modules/accounting/migrations"
-	"github.com/elcomware/edupilot-os/modules/modulekit"
+	"github.com/elcomware/edupilot/modules/accounting/adapters/outbound/persistence"
+	"github.com/elcomware/edupilot/modules/accounting/application"
+	"github.com/elcomware/edupilot/modules/accounting/migrations"
+	"github.com/elcomware/edupilot/modules/modulekit"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func Definition() modulekit.Definition {

@@ -11,7 +11,7 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE = "github.com/elcomware/edupilot-os"
+BASE = "github.com/elcomware/edupilot"
 GROUPS = {"platform", "lifecycle", "academics", "finance", "operations", "engagement"}
 
 

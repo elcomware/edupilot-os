@@ -7,7 +7,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/elcomware/edupilot-os/platform/scope"
+	"github.com/elcomware/edupilot/platform/scope"
 )
 
 var (

@@ -2,12 +2,12 @@
 package school_settings
 
 import (
-	"github.com/elcomware/edupilot-os/modules/modulekit"
-	"github.com/elcomware/edupilot-os/modules/school_settings/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot-os/modules/school_settings/application"
-	"github.com/elcomware/edupilot-os/modules/school_settings/migrations"
+	"github.com/elcomware/edupilot/modules/modulekit"
+	"github.com/elcomware/edupilot/modules/school_settings/adapters/outbound/persistence"
+	"github.com/elcomware/edupilot/modules/school_settings/application"
+	"github.com/elcomware/edupilot/modules/school_settings/migrations"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func Definition() modulekit.Definition {

@@ -5,8 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/elcomware/edupilot-os/app/facades"
-	"github.com/elcomware/edupilot-os/tests"
+	"github.com/elcomware/edupilot/app/facades"
+	"github.com/elcomware/edupilot/tests"
 )
 
 func TestLiveEndpointThroughGoravel(t *testing.T) {

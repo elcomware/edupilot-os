@@ -2,12 +2,12 @@
 package library
 
 import (
-	"github.com/elcomware/edupilot-os/modules/library/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot-os/modules/library/application"
-	"github.com/elcomware/edupilot-os/modules/library/migrations"
-	"github.com/elcomware/edupilot-os/modules/modulekit"
+	"github.com/elcomware/edupilot/modules/library/adapters/outbound/persistence"
+	"github.com/elcomware/edupilot/modules/library/application"
+	"github.com/elcomware/edupilot/modules/library/migrations"
+	"github.com/elcomware/edupilot/modules/modulekit"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func Definition() modulekit.Definition {

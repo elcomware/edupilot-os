@@ -1,8 +1,8 @@
 package providers
 
 import (
-	"github.com/elcomware/edupilot-os/app/schoolapi"
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/app/schoolapi"
+	"github.com/elcomware/edupilot/platform/database"
 	"github.com/goravel/framework/contracts/foundation"
 	"net/http"
 	"sync"

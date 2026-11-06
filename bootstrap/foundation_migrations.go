@@ -1,16 +1,16 @@
 package bootstrap
 
 import (
-	"github.com/elcomware/edupilot-os/database/edumigrations"
-	"github.com/elcomware/edupilot-os/modules"
-	documents "github.com/elcomware/edupilot-os/modules/documents/migrations"
-	enrollment "github.com/elcomware/edupilot-os/modules/enrollment/migrations"
-	students "github.com/elcomware/edupilot-os/modules/students/migrations"
-	tenancy "github.com/elcomware/edupilot-os/modules/tenancy/migrations"
-	"github.com/elcomware/edupilot-os/platform/database"
-	"github.com/elcomware/edupilot-os/platform/identity"
-	"github.com/elcomware/edupilot-os/platform/outbox"
-	"github.com/elcomware/edupilot-os/platform/workspace/sqlstore"
+	"github.com/elcomware/edupilot/database/edumigrations"
+	"github.com/elcomware/edupilot/modules"
+	documents "github.com/elcomware/edupilot/modules/documents/migrations"
+	enrollment "github.com/elcomware/edupilot/modules/enrollment/migrations"
+	students "github.com/elcomware/edupilot/modules/students/migrations"
+	tenancy "github.com/elcomware/edupilot/modules/tenancy/migrations"
+	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/platform/identity"
+	"github.com/elcomware/edupilot/platform/outbox"
+	"github.com/elcomware/edupilot/platform/workspace/sqlstore"
 )
 
 // FoundationPlans adds empty, versioned tables alongside the starter. The

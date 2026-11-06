@@ -2,12 +2,12 @@
 package workflows
 
 import (
-	"github.com/elcomware/edupilot-os/modules/modulekit"
-	"github.com/elcomware/edupilot-os/modules/workflows/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot-os/modules/workflows/application"
-	"github.com/elcomware/edupilot-os/modules/workflows/migrations"
+	"github.com/elcomware/edupilot/modules/modulekit"
+	"github.com/elcomware/edupilot/modules/workflows/adapters/outbound/persistence"
+	"github.com/elcomware/edupilot/modules/workflows/application"
+	"github.com/elcomware/edupilot/modules/workflows/migrations"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func Definition() modulekit.Definition {

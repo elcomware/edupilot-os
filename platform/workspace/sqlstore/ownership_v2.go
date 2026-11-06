@@ -1,6 +1,6 @@
 package sqlstore
 
-import "github.com/elcomware/edupilot-os/database/edumigrations"
+import "github.com/elcomware/edupilot/database/edumigrations"
 
 // OwnershipPlan appends a new schema beside the module's starter work list.
 func OwnershipPlan(module string) edumigrations.Plan {

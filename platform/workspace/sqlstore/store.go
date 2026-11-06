@@ -9,10 +9,10 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/elcomware/edupilot-os/database/edumigrations"
-	"github.com/elcomware/edupilot-os/platform/database"
-	"github.com/elcomware/edupilot-os/platform/outbox"
-	"github.com/elcomware/edupilot-os/platform/workspace"
+	"github.com/elcomware/edupilot/database/edumigrations"
+	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/platform/outbox"
+	"github.com/elcomware/edupilot/platform/workspace"
 	"github.com/google/uuid"
 )
 

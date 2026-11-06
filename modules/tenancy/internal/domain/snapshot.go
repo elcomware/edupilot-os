@@ -6,7 +6,7 @@ import (
 	"math"
 	"slices"
 
-	"github.com/elcomware/edupilot-os/platform/scope"
+	"github.com/elcomware/edupilot/platform/scope"
 )
 
 // Snapshot is a detached persistence boundary. Organizations are emitted

@@ -9,9 +9,9 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/elcomware/edupilot-os/modules/enrollment/application"
-	"github.com/elcomware/edupilot-os/modules/enrollment/internal/domain"
-	"github.com/elcomware/edupilot-os/platform/identity"
+	"github.com/elcomware/edupilot/modules/enrollment/application"
+	"github.com/elcomware/edupilot/modules/enrollment/internal/domain"
+	"github.com/elcomware/edupilot/platform/identity"
 )
 
 const collection = "/api/v1/enrollment/placements"

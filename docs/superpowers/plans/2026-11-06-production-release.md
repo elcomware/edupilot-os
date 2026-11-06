@@ -12,7 +12,7 @@
 
 ## Global constraints
 
-- Product: **EduPilot OS**; repository/service identifier: **edupilot-os**.
+- The product is **EduPilot OS**, the GitHub repository is **elcomware/edupilot-os**, and the root Go module is `github.com/elcomware/edupilot`.
 - Native installation and operation are the documented default. Docker is optional and has explicit `docker-*` commands.
 - Preserve the standard Goravel 1.18 tree and module isolation; no framework or transport dependencies in domain/application code.
 - Tenant, organization, school, campus, location, team and curriculum are distinct scoped concepts. Tenant placement supports named shared/dedicated pools and controlled tenant moves.

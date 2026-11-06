@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 // PlacementInspection inventories legacy SQL routing only. Complete means all

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/elcomware/edupilot-os/platform/identity"
+	"github.com/elcomware/edupilot/platform/identity"
 )
 
 func TestUseCaseRequiresVerifiedFilePermission(t *testing.T) {

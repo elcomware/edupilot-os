@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/elcomware/edupilot-os/modules"
-	"github.com/elcomware/edupilot-os/platform/database"
-	"github.com/elcomware/edupilot-os/platform/tenantupgrade"
+	"github.com/elcomware/edupilot/modules"
+	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/platform/tenantupgrade"
 )
 
 func inspectionKeys() []string {

@@ -3,7 +3,7 @@ package migrations
 import (
 	"github.com/goravel/framework/contracts/database/schema"
 
-	"github.com/elcomware/edupilot-os/app/facades"
+	"github.com/elcomware/edupilot/app/facades"
 )
 
 type M20210101000001CreateJobsTable struct{}

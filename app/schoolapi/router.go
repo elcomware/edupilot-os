@@ -2,14 +2,14 @@ package schoolapi
 
 import (
 	"context"
-	"github.com/elcomware/edupilot-os/app/facades"
-	"github.com/elcomware/edupilot-os/database/edumigrations"
-	"github.com/elcomware/edupilot-os/modules"
-	"github.com/elcomware/edupilot-os/modules/documents"
-	"github.com/elcomware/edupilot-os/modules/enrollment/placements"
-	"github.com/elcomware/edupilot-os/modules/students/providers"
-	"github.com/elcomware/edupilot-os/platform/database"
-	"github.com/elcomware/edupilot-os/platform/identity"
+	"github.com/elcomware/edupilot/app/facades"
+	"github.com/elcomware/edupilot/database/edumigrations"
+	"github.com/elcomware/edupilot/modules"
+	"github.com/elcomware/edupilot/modules/documents"
+	"github.com/elcomware/edupilot/modules/enrollment/placements"
+	"github.com/elcomware/edupilot/modules/students/providers"
+	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/platform/identity"
 	"net/http"
 	"time"
 )

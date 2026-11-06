@@ -1,8 +1,8 @@
 package config
 
 import (
-	"github.com/elcomware/edupilot-os/app/facades"
-	"github.com/elcomware/edupilot-os/platform/database"
+	"github.com/elcomware/edupilot/app/facades"
+	"github.com/elcomware/edupilot/platform/database"
 )
 
 func init() {

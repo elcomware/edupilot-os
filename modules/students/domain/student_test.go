@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/elcomware/edupilot-os/modules/students/domain"
+	"github.com/elcomware/edupilot/modules/students/domain"
 )
 
 func TestPersonalNamesPreserveSpellingButRejectInvalidInput(t *testing.T) {
