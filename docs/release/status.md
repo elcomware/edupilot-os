@@ -141,3 +141,29 @@ The [native stack run](https://github.com/elcomware/edupilot-os/actions/runs/423
 stopped before browser execution because the pinned Playwright release could
 not install Chromium on Ubuntu 26.04. Both jobs that install this browser
 now select Ubuntu 24.04, including the optional manual Docker drill.
+
+### Initialize a new shared tenant
+
+On an installed native system, choose a fresh tenant UUID and confirm the shared
+physical pool ID from the control database's `edu_pool_marker` row. Run:
+
+```sh
+go run ./cmd/provision-shared-tenant -tenant "$tenant" -pool-id "$shared_pool_id"
+go run ./cmd/inspect-hierarchy -tenant "$tenant"
+```
+
+The command creates the placement pin, an active empty hierarchy at epoch 1
+and version 1, and one creation event in the same database transaction. Use the
+returned version when adding the first root organization. After an interrupted
+response, inspect the same UUID before retrying. Existing placements require
+inspection or recovery. Provisioning also rejects a configured dedicated route,
+a different physical ID, an existing school realm, or foundation data for the
+UUID in any configured pool.
+
+Disposable PostgreSQL and SQLite checks exercised competing creates and an
+outbox failure after the pin and gate inserts. The native SQLite CLI drill
+provisioned a shared tenant, read it back, added its first organization, and
+rejected a dedicated UUID. It verified the two expected events in shared storage
+and an empty dedicated hierarchy. This command provisions storage only.
+Dedicated initialization across databases, tenant profile and slug, user grants,
+administrative screens and tenant moves remain open.

@@ -217,6 +217,12 @@ func (c *Catalog) CheckReady(ctx context.Context) error {
 	return rows.Err()
 }
 
+// HasDedicatedRoute reports the configured override even before first placement.
+func (c *Catalog) HasDedicatedRoute(id string) bool {
+	_, ok := c.routes[id]
+	return ok
+}
+
 // ForTenant is for code without a request context. Use ForTenantContext in request handlers.
 func (c *Catalog) ForTenant(id string) (Pool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
