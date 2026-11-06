@@ -26,6 +26,8 @@ The foundation's [iPhone simulator run](https://github.com/elcomware/edupilot-os
 
 The [instrumented iPhone test](https://github.com/elcomware/edupilot-os/actions/runs/42254178788/job/128016831767) isolated a rapid-input failure before submission: the native field contained `Ciew` after typing `Campus review`. The mobile workspace now seeds the native editor from its saved draft once per mount and resets it after a confirmed create. Native typing, navigation drafts, and server acknowledgement are still exercised by their respective checks.
 
+The [native mobile verification](https://github.com/elcomware/edupilot-os/actions/runs/42264975684) passed on iPhone and Android at `aab9110`. The iPhone journey waited for the keyboard and acknowledged each injected character once. It verified cold-launch school identity, the complete displayed title and open status, and sign-out across relaunch. Both fixtures verified one matching SQLite row and zero remaining sessions. Android passed on retry after an initial launch timed out before the login field appeared. Rapid iPhone typing still needs a separate reproduction and physical-device qualification remains open.
+
 ### Hierarchy integrity
 
 Hierarchy restoration rejects a snapshot whose version is too low for its
@@ -53,5 +55,3 @@ intermittently reached a populated table without finding the expected edit
 button after typing. The driver now waits for native keyboard focus and checks
 the synthetic title in WebKit before submitting. The window, accessible edit
 button, screenshot and independent database assertions still have to pass.
-
-The iPhone simulator subsequently restored the expected school but rapid XCTest key injection still produced a truncated title. The work-list journey now waits for keyboard focus and acknowledges each injected character once; it fails at the first missing character. It still requires the complete on-screen title and server row. Passing this paced journey does not qualify rapid typing or physical-device behavior.
