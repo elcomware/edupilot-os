@@ -163,3 +163,17 @@ func TestUpgradeDryRunIsExplicitReadOnlyAndRedacted(t *testing.T) {
 		t.Fatal("rehearsal accepted a public selection")
 	}
 }
+
+func TestRestoreModeRequiresBothRestoreInputs(t *testing.T) {
+	for _, args := range [][]string{
+		{"-mode=verify-local-restore", "-manifest=m", "-selection=s", "-references=r"},
+		{"-mode=verify-local-restore", "-manifest=m", "-selection=s", "-root=secret-root"},
+		{"-mode=dry-run", "-manifest=m", "-selection=s", "-root=secret-root"},
+		{"-mode=inspect-placement", "-references="},
+	} {
+		var out, diag bytes.Buffer
+		if run(args, &out, &diag) != 2 || out.Len() != 0 || strings.Contains(diag.String(), "secret-root") {
+			t.Fatal("invalid restore options were accepted or disclosed")
+		}
+	}
+}

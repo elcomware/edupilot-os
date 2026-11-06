@@ -87,7 +87,7 @@ func inventorySource(selectionPath string, output, diagnostics io.Writer) int {
 	return 0
 }
 
-func checkUpgrade(mode, manifestPath, selectionPath string, output, diagnostics io.Writer) int {
+func checkUpgrade(mode, manifestPath, selectionPath, referencesPath, root string, output, diagnostics io.Writer) int {
 	manifestFile, err := openPrivateRegular(manifestPath)
 	if err != nil {
 		fmt.Fprintln(diagnostics, "Cannot read a private regular mapping manifest.")
@@ -122,6 +122,9 @@ func checkUpgrade(mode, manifestPath, selectionPath string, output, diagnostics 
 		}
 	}
 	upgrade := tenantupgrade.NewUpgrade(settings, keys, manifest, selection)
+	if mode == "verify-local-restore" {
+		return verifyLocalRestore(upgrade, manifest, selection, referencesPath, root, output, diagnostics)
+	}
 	if mode == "rehearse-sql-fence" {
 		report, err := upgrade.RehearseSQLFence(context.Background())
 		if err != nil {

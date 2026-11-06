@@ -141,6 +141,18 @@ Exit 0 emits `legacy-sql-fence-rehearsal` with the pool count and approved diges
 
 The SQL check reuses the supplied, previously reconciled document evidence. Deployment maintenance must separately prevent legacy processes from restarting, fence file/object writes and database replacement, and verify a restorable backup. PostgreSQL coverage is limited to registered legacy tables. Journal preparation and copying will require their own continuously held maintenance boundary.
 
+## Verify an isolated restore with local documents
+
+Stop all writers to the restored copy and keep its document tree immutable throughout verification. Point native database settings at the restored control and every restored dedicated pool. Use the original approved mapping, version 2 source selection and independently preserved reference list from **before** the backup. Rebuilding those inputs from the restore would defeat the comparison.
+
+```sh
+go run ./cmd/tenant-upgrade -mode=verify-local-restore \
+  -manifest=/private/mapping.json -selection=/private/source-selection.json \
+  -references=/private/object-references.json -root=/private/restored-documents
+```
+
+The command re-reads the actual envelopes and content bytes, reconciles the exact reference set and compares its aggregate with the approved evidence. It then computes the restored SQL fingerprint and verifies school membership, placement and pool markers through read-only connections. Exit 0 returns the pool and document counts and the approved hashes. An unavailable pool, missing object or fingerprint mismatch returns exit 1 without an approval report. This qualifies the contents of an isolated copy with local document storage. Deployment maintenance, backup capture, PostgreSQL restore tooling and object-provider recovery require separate drills.
+
 ## Inspect legacy SQL placement
 
 From the native deployment directory, with the same environment and `.env` used by the application:

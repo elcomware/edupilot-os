@@ -89,7 +89,7 @@ func TestLegacyUpgradeDryRunSharedDedicated(t *testing.T) {
 		rehearsal.Pools != 2 || rehearsal.SourceSHA256 != source.SHA256 || rehearsal.ManifestSHA256 != report.ManifestSHA256 {
 		t.Fatalf("fenced rehearsal did not reproduce the approved mixed source: %#v %v", rehearsal, err)
 	}
-	t.Run("native rehearsal command", func(t *testing.T) {
+	t.Run("native rehearsal and restored backup commands", func(t *testing.T) {
 		dir := t.TempDir()
 		writeInput := func(name string, value any) string {
 			t.Helper()
@@ -120,6 +120,78 @@ func TestLegacyUpgradeDryRunSharedDedicated(t *testing.T) {
 		if err != nil || strings.TrimSpace(string(output)) != string(expected) {
 			t.Fatal("native rehearsal did not return the expected redacted JSON")
 		}
+		// Snapshot the quiescent synthetic pools (including any committed WAL
+		// contents). The command receives only the restored database paths.
+		restoreDB := func(pool database.Pool, name string) string {
+			t.Helper()
+			path := filepath.Join(dir, name)
+			if _, err := pool.DB.ExecContext(t.Context(), "VACUUM INTO ?", path); err != nil {
+				t.Fatal(err)
+			}
+			return path
+		}
+		control := restoreDB(fixture.Control, "control.sqlite")
+		dedicated := slices.Clone(settings.Dedicated)
+		for i, node := range dedicated {
+			dedicated[i].Database = restoreDB(fixture.Dedicated[node.Tenant], node.Name+".sqlite")
+		}
+		encodedPools, err := json.Marshal(dedicated)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Setenv("DB_DATABASE", control)
+		t.Setenv("EDUPILOT_DEDICATED_DATABASES", string(encodedPools))
+		root := filepath.Join(dir, "restored-documents")
+		var objectPath string
+		for _, document := range fixture.Blobs {
+			rel := filepath.Join("schools", document.School, "documents", document.ID)
+			data, err := os.ReadFile(filepath.Join(fixture.BlobRoot, rel))
+			if err != nil {
+				t.Fatal(err)
+			}
+			objectPath = filepath.Join(root, rel)
+			if err := os.MkdirAll(filepath.Dir(objectPath), 0700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(objectPath, data, 0600); err != nil {
+				t.Fatal(err)
+			}
+		}
+		referencesPath := writeInput("references.json", references)
+		verify := func() ([]byte, error) {
+			cmd := exec.CommandContext(t.Context(), binary, "-mode=verify-local-restore",
+				"-manifest="+filepath.Join(dir, "mapping.json"), "-selection="+filepath.Join(dir, "selection.json"),
+				"-root="+root, "-references="+referencesPath)
+			cmd.Dir = dir
+			cmd.Env = append(os.Environ(), "APP_KEY=12345678901234567890123456789012")
+			return cmd.Output()
+		}
+		output, err = verify()
+		var verified struct {
+			Classification               string
+			Pools, Documents             int
+			SourceSHA256, ManifestSHA256 string
+		}
+		if err != nil || json.Unmarshal(output, &verified) != nil || verified.Classification != "verified-local-restore" ||
+			verified.Pools != 2 || verified.Documents != len(fixture.Blobs) || verified.SourceSHA256 != source.SHA256 || verified.ManifestSHA256 != report.ManifestSHA256 {
+			t.Fatal("restored pools and objects did not reproduce the approved evidence", err)
+		}
+		if err := os.Rename(dedicated[0].Database, dedicated[0].Database+".offline"); err != nil {
+			t.Fatal(err)
+		}
+		if output, err := verify(); err == nil || len(output) != 0 {
+			t.Fatal("missing restored pool returned approval evidence")
+		}
+		if err := os.Rename(dedicated[0].Database+".offline", dedicated[0].Database); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Remove(objectPath); err != nil {
+			t.Fatal(err)
+		}
+		if output, err := verify(); err == nil || len(output) != 0 {
+			t.Fatal("missing restored object returned approval evidence")
+		}
+
 	})
 	manifest.SourceSHA256 = strings.Repeat("b", 64)
 	rehearsal, err = tenantupgrade.NewUpgrade(settings, keys, manifest, selection).RehearseSQLFence(t.Context())
