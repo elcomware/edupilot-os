@@ -55,3 +55,19 @@ intermittently reached a populated table without finding the expected edit
 button after typing. The driver now waits for native keyboard focus and checks
 the synthetic title in WebKit before submitting. The window, accessible edit
 button, screenshot and independent database assertions still have to pass.
+
+### Inspect a persisted hierarchy
+
+Operators can run `go run ./cmd/inspect-hierarchy -tenant TENANT_UUID -campus CAMPUS_UUID`
+against a configured installation. The command checks the placement catalog and
+reads the selected tenant gate, campus, school and organization ancestors from a
+consistent snapshot. Its JSON includes the hierarchy version and whether the
+selected path is active. The optional `-organization` and `-school` flags can
+select a parent directly or require a campus to belong to that parent.
+
+The disposable SQLite and PostgreSQL drills verified root-first ancestry,
+an inactive parent, conflicting ancestors, a cross-tenant lookup, a cycle,
+a wrong gate pool ID and a lookup that left an unpinned tenant unregistered.
+The compiled CLI also returned the expected JSON on a synthetic SQLite pool.
+This is a local operator lookup for existing UUID-based hierarchies.
+Provisioning, versioned edits and user grant checks remain open.

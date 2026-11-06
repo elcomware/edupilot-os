@@ -229,6 +229,15 @@ func (c *Catalog) ForTenant(id string) (Pool, error) {
 // changing the shared DB target, or silently remapping a school cannot bypass this pin
 // while the control database is intact. Moving data requires explicit operator cutover.
 func (c *Catalog) ForTenantContext(ctx context.Context, id string) (Pool, error) {
+	return c.tenantPool(ctx, id, true)
+}
+
+// PinnedPool resolves an existing placement without registering a first use.
+func (c *Catalog) PinnedPool(ctx context.Context, id string) (Pool, error) {
+	return c.tenantPool(ctx, id, false)
+}
+
+func (c *Catalog) tenantPool(ctx context.Context, id string, allowFirstUse bool) (Pool, error) {
 	if !ValidTenant(id) {
 		return Pool{}, fmt.Errorf("%w: invalid school ID", ErrPlacement)
 	}
@@ -249,7 +258,7 @@ func (c *Catalog) ForTenantContext(ctx context.Context, id string) (Pool, error)
 		return pinned, err
 	}
 	pinned, err := read()
-	if errors.Is(err, sql.ErrNoRows) {
+	if allowFirstUse && errors.Is(err, sql.ErrNoRows) {
 		q := c.Control.Bind("INSERT INTO edu_tenant_placement (tenant_id, pool_id) VALUES (?, ?) ON CONFLICT (tenant_id) DO NOTHING")
 		if _, err = c.Control.DB.ExecContext(ctx, q, id, identity); err == nil {
 			pinned, err = read()

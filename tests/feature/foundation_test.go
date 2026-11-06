@@ -176,6 +176,7 @@ func exerciseFoundation(t *testing.T) {
 		t.Fatal("credentials present in data pool")
 	}
 	verifyHierarchyConstraints(t, db.Control)
+	verifyPersistedDirectory(t, db)
 	// A recognized receipt table still has to belong to the configured tenant.
 	if _, err := west.DB.Exec("UPDATE edu_pool_marker SET owner='tenant:other'"); err != nil {
 		t.Fatal(err)
