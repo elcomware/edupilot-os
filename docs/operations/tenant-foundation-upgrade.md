@@ -209,3 +209,15 @@ This is a routing inventory, not the full upgrade dry-run or source fingerprint.
 `TestInspectionPostgresFrozenSQLReadOnlyAndDetection` qualifies inspector SQL and read-only snapshots in isolated schemas. `TestLegacyPlacementInspectionPostgresActualCommand` separately builds and invokes the actual CLI through native PostgreSQL settings, with mixed shared/dedicated databases, recorded pins and frozen starter data. It checks deterministic clean output, unchanged source row hashes and table sets, an ownership fault, and redacted connection/configuration failures. The native PostgreSQL CI job enables both tests; a hosted result is required to claim this acceptance passed.
 
 The CLI test requires `EDUPILOT_TEST_POSTGRES_DSN` plus the separate opt-in `EDUPILOT_TEST_POSTGRES_CREATE_DATABASES=1` and a role with `CREATEDB`. It accepts a single-host PostgreSQL URL with explicit `sslmode=disable|require|verify-ca|verify-full`; optional TLS certificate/SNI parameters are preserved through native pgx environment settings. It creates cryptographically random private databases and verifies each opened handle before populating its public schema. Cleanup drops only databases successfully created by that test. The supplied administration database's existing tables are never populated or dropped. Without the DSN/opt-in, the CLI test skips and its acceptance remains open; the schema-scoped test still runs when its DSN is available.
+
+## Check persistent systemd masks on one native host
+
+Before maintenance, inventory the canonical system service names for every legacy API, worker, scheduled seed/migration and file writer on each host. Record their original enablement and mask state separately. Stop those units and apply persistent system-manager masks under the site's change procedure. Retain the masks through backup, copy, verification and any rollback. Use the actual inventoried names in place of these examples:
+
+```sh
+python3 scripts/verify-systemd-writer-fence.py legacy-api.service legacy-worker.service
+```
+
+Exit 0 confirms that systemd reports every supplied service inactive, dead and persistently masked, with zero main/control PIDs, an empty control group and a matching mask under /etc/systemd/system. The command only reads state. Recheck after restart or interrupted maintenance. Restore the recorded service state only after the operator has selected and verified the authorized runtime.
+
+This is a point-in-time check of named units. The operator must verify inventory completeness, prevent privileged changes, exclude unmanaged processes and other supervisors/hosts, drain leases, and fence database and object-store credentials separately. A mistyped name masked by the operator cannot prove that the intended writer was stopped. This check alone grants no copy or resume authority.

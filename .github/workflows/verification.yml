@@ -66,6 +66,8 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Dependency vulnerability check
         run: npm audit --audit-level=moderate
+      - name: Rehearse native systemd writer restart exclusion
+        run: bash scripts/tests/systemd-writer-drill.sh
       - name: Native launcher specifications
         run: python3 -m unittest discover -s scripts/tests -v
       - name: Web and mobile tests and builds
