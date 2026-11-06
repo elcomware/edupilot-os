@@ -49,26 +49,27 @@ final class StudentJourney: XCTestCase {
         try screen.screenshot.pngRepresentation.write(to: documents.appendingPathComponent("edupilot-" + name + ".png"))
     }
 
-    private func fill(_ id: String, _ text: String, secure: Bool = false) throws {
-        let field = (secure ? app.secureTextFields : app.textFields).matching(identifier: id).firstMatch
+    private func fill(_ id: String, _ text: String) throws {
+        let field = app.descendants(matching: .any).matching(identifier: id).firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 15), "Missing field " + id)
         field.tap()
-        field.typeText(text)
+        app.typeText(text)
     }
 
     func testNativeStudentRegistration() throws {
         continueAfterFailure = false
-        let env = ProcessInfo.processInfo.environment
-        let school = try XCTUnwrap(env["EDUPILOT_SEED_SCHOOL"])
-        let email = try XCTUnwrap(env["EDUPILOT_SEED_EMAIL"])
-        let password = try XCTUnwrap(env["EDUPILOT_SEED_PASSWORD"])
+        // The preceding native sign-in populated Keychain. A cold launch must
+        // restore it through the server before the directory can be exercised.
         app.launch()
-        try save(showing(["School ID", "Show password"]), "signin")
-        try fill("school-id", school)
-        try fill("email", email)
-        try fill("password", password + "\n", secure: true)
-        try save(showing(["School modules", school, "Students"]), "directory")
-        try tapText("Students")
+        let directory = try showing(["School modules"])
+        try save(directory, "directory")
+        if let loaded = try? showing(["Students"], timeout: 10) { try save(loaded, "directory") }
+        let students = app.buttons.matching(identifier: "module-students").firstMatch
+        if students.waitForExistence(timeout: 10) && students.isHittable {
+            students.tap()
+        } else {
+            try tapText("Students")
+        }
         try fill("given-name", "Jamie")
         try fill("family-name", "Demo\n")
         try tapText("Register student")

@@ -1,0 +1,18 @@
+appId: org.edupilot.mobile
+---
+- launchApp
+- extendedWaitUntil:
+    visible: { id: "school-id" }
+    timeout: 60000
+- takeScreenshot: edupilot-signin
+- tapOn: { id: "school-id" }
+- inputText: ${SCHOOL}
+- tapOn: { id: "email" }
+- inputText: registrar@example.test
+- tapOn: { id: "password" }
+- inputText: ${PASSWORD}
+- pressKey: Enter
+- extendedWaitUntil:
+    visible: "School modules"
+    timeout: 20000
+- assertVisible: ${SCHOOL}

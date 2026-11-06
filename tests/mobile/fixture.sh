@@ -56,20 +56,24 @@ driver="$RUNNER_TEMP/mobile-maestro"
 mkdir "$driver"
 result=0
 if [[ "$platform" = ios ]]; then
+  (cd "$driver" && maestro test -e "SCHOOL=$EDUPILOT_SEED_SCHOOL" -e "PASSWORD=$EDUPILOT_SEED_PASSWORD" \
+    --test-output-dir "$driver" "$root/tests/mobile/iphone-login.yml")
   cp -R tests/mobile/iphone "$driver/project"
   (cd "$driver/project" && xcodegen generate &&
-    TEST_RUNNER_EDUPILOT_SEED_SCHOOL="$EDUPILOT_SEED_SCHOOL" \
-    TEST_RUNNER_EDUPILOT_SEED_EMAIL="$EDUPILOT_SEED_EMAIL" \
-    TEST_RUNNER_EDUPILOT_SEED_PASSWORD="$EDUPILOT_SEED_PASSWORD" \
-    xcodebuild test -quiet -project MobileProof.xcodeproj -scheme MobileProof \
+    xcodebuild test -project MobileProof.xcodeproj -scheme MobileProof \
       -parallel-testing-enabled NO -destination "id=$IPHONE_UDID" \
-      -derivedDataPath "$RUNNER_TEMP/mobile-uitests" > "$RUNNER_TEMP/mobile-xctest.log" 2>&1) || result=$?
+      -resultBundlePath "$RUNNER_TEMP/proof.xcresult" -derivedDataPath "$RUNNER_TEMP/mobile-uitests" > "$RUNNER_TEMP/mobile-xctest.log" 2>&1) || result=$?
   # XCTest logs can contain text entered into fields. Only surface assertion/build failure lines.
   if [[ "$result" != 0 ]]; then
-    grep -E 'error:|Timed out waiting|Missing field|XCTUnwrap failed|TEST FAILED' "$RUNNER_TEMP/mobile-xctest.log" | tail -20 || true
+    grep -E 'error:|Waited for|Timed out waiting|Missing field|TEST FAILED|failure:' "$RUNNER_TEMP/mobile-xctest.log" | tail -30 || true
+    xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/proof.xcresult" | python3 -c 'import json,sys; print([f.get("failureText","")[:800] for f in json.load(sys.stdin).get("testFailures",[])])' || true
   fi
   appdata=$(xcrun simctl get_app_container "$IPHONE_UDID" org.edupilot.proof.tests.xctrunner data)
-  driver="$appdata/Documents"
+  for state in directory students; do
+    if [[ -f "$appdata/Documents/edupilot-$state.png" ]]; then
+      cp "$appdata/Documents/edupilot-$state.png" "$driver/"
+    fi
+  done
 else
   (cd "$driver" && maestro test -e "SCHOOL=$EDUPILOT_SEED_SCHOOL" -e "PASSWORD=$EDUPILOT_SEED_PASSWORD" \
     --test-output-dir "$driver" "$root/tests/mobile/flow.yml") || result=$?
