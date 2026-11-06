@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { View } from "react-native";
 import type { SessionModel, SessionState } from "@edupilot/core/native/session";
 import type { Translator } from "@edupilot/core/native/strings";
@@ -13,13 +13,12 @@ export function Login({
   state: SessionState;
   t: Translator;
 }) {
-  const [school, setSchool] = useState(""),
-    [email, setEmail] = useState(""),
-    [password, setPassword] = useState(""),
-    [visible, show] = useState(false),
+  const credentials = useRef({ school: "", email: "", password: "" });
+  const [visible, show] = useState(false),
     [invalid, setInvalid] = useState(false);
   const pending = state.kind === "signingIn";
   const submit = () => {
+    const { school, email, password } = credentials.current;
     if (!school.trim() || !email.trim() || !password) {
       setInvalid(true);
       return;
@@ -39,8 +38,7 @@ export function Login({
         <Field
           testID="school-id"
           label={t("school")}
-          value={school}
-          onChangeText={setSchool}
+          onChangeText={(value) => { credentials.current.school = value; }}
           autoCorrect={false}
           autoCapitalize="none"
           editable={!pending}
@@ -48,8 +46,7 @@ export function Login({
         <Field
           testID="email"
           label={t("email")}
-          value={email}
-          onChangeText={setEmail}
+          onChangeText={(value) => { credentials.current.email = value; }}
           keyboardType="email-address"
           autoComplete="username"
           autoCorrect={false}
@@ -59,8 +56,7 @@ export function Login({
         <Field
           testID="password"
           label={t("password")}
-          value={password}
-          onChangeText={setPassword}
+          onChangeText={(value) => { credentials.current.password = value; }}
           secureTextEntry={!visible}
           autoComplete="current-password"
           autoCapitalize="none"

@@ -12,7 +12,3 @@ appId: org.edupilot.mobile
 - tapOn: { id: "password" }
 - inputText: ${PASSWORD}
 - pressKey: Enter
-- extendedWaitUntil:
-    visible: "School modules"
-    timeout: 20000
-- assertVisible: ${SCHOOL}

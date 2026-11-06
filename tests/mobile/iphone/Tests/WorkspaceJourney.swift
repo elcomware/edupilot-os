@@ -67,6 +67,7 @@ final class WorkspaceJourney: XCTestCase {
         // restore it through the server before the directory can be exercised.
         app.launch()
         let directory = try showing(["School modules"])
+        XCTAssertTrue(app.staticTexts["demo-ios"].waitForExistence(timeout: 10), "Wrong restored school")
         try save(directory, "directory")
         if let loaded = try? showing(["Schools"], timeout: 10) { try save(loaded, "directory") }
         let schools = app.buttons.matching(identifier: "module-tenancy").firstMatch

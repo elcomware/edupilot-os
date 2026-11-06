@@ -35,3 +35,5 @@ synthetic tenants. Both SQLite and PostgreSQL accepted the same codes under
 different owners and rejected duplicate sibling codes and cross-tenant parent
 references. All 40 Go tests and subtests and the native HTTP school-isolation
 journey passed locally. Hierarchy administration and scoped sessions remain open.
+
+Follow-up iPhone runs failed at different directory labels immediately after the keyboard submitted sign-in. The login inputs now retain native text and submit their latest values without sending a controlled value back on every keystroke. The simulator fixture waits for the real scoped session in disposable SQLite; the cold-launch UI check verifies the restored school. The exact workspace title, status, durable row and revocation checks remain required. Mobile type checking and all ten mobile unit tests passed locally.

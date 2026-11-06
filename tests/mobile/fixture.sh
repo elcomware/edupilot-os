@@ -58,6 +58,19 @@ result=0
 if [[ "$platform" = ios ]]; then
   (cd "$driver" && maestro test -e "SCHOOL=$EDUPILOT_SEED_SCHOOL" -e "PASSWORD=$EDUPILOT_SEED_PASSWORD" \
     --test-output-dir "$driver" "$root/tests/mobile/iphone-login.yml")
+  # Wait for the real UI request to create the school session before the
+  # separate XCTest process cold-launches the app and verifies Keychain restore.
+  python3 - <<'SESSION'
+import os, sqlite3, time
+with sqlite3.connect("file:database/edupilot.sqlite?mode=ro", uri=True) as db:
+    for _ in range(60):
+        if db.execute("SELECT count(*) FROM auth_sessions WHERE school_id=?",
+                      (os.environ["EDUPILOT_SEED_SCHOOL"],)).fetchone() == (1,):
+            break
+        time.sleep(0.5)
+    else:
+        raise SystemExit("The native sign-in did not create the expected school session")
+SESSION
   cp -R tests/mobile/iphone "$driver/project"
   (cd "$driver/project" && xcodegen generate &&
     xcodebuild test -project MobileProof.xcodeproj -scheme MobileProof \
