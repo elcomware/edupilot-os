@@ -35,6 +35,16 @@ type ObjectReference struct {
 	ID     string `json:"id"`
 }
 
+func (r ObjectReferences) MarshalJSON() ([]byte, error) {
+	// The preserved reference list is always an array, including at a school
+	// which has never stored a document.
+	if r.Objects == nil {
+		r.Objects = []ObjectReference{}
+	}
+	type fields ObjectReferences
+	return json.Marshal(fields(r))
+}
+
 func ReadObjectReferences(input io.Reader) (ObjectReferences, error) {
 	data, err := io.ReadAll(io.LimitReader(input, maxObjectReferenceBytes+1))
 	if err != nil {

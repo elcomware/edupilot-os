@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -315,5 +316,50 @@ func TestSourceTableInventoryMatchesPostgresAndSQLite(t *testing.T) {
 	}
 	if postgresReport != sqliteReport {
 		t.Fatalf("portable digests differ:\nSQLite %#v\nPostgreSQL %#v", sqliteReport, postgresReport)
+	}
+}
+
+func TestPersistedSourceSelectionRoundTrips(t *testing.T) {
+	empty := `{"version":2,"schools":["east"],"documents":{"version":2,"schools":1,"references":0,"documents":0,"contentBytes":0,"referencesSha256":"` + strings.Repeat("a", 64) + `","inventorySha256":"` + strings.Repeat("b", 64) + `","sha256":"09f8ce145f5872b07ab4b09270b3b64d4715b70904dbb58e7b5c199bb56892d0"}}`
+	for name, original := range map[string]string{
+		"SQL only":               `{"version":1,"schools":["east"]}`,
+		"legacy documents":       validSourceSelection(),
+		"reconciled documents":   validReconciledSourceSelection(),
+		"no document references": empty,
+	} {
+		t.Run(name, func(t *testing.T) {
+			want, err := ReadSourceSelection(strings.NewReader(original))
+			if err != nil {
+				t.Fatal(err)
+			}
+			stored, err := json.Marshal(want)
+			if err != nil {
+				t.Fatal(err)
+			}
+			got, err := ReadSourceSelection(bytes.NewReader(stored))
+			if err != nil || !reflect.DeepEqual(want, got) {
+				t.Fatal("saved selection could not reproduce the input evidence", err)
+			}
+		})
+	}
+}
+
+func TestPersistedEmptyReferenceListRoundTrips(t *testing.T) {
+	refs := ObjectReferences{Version: 1, Schools: []string{"east"}}
+	expected, err := refs.Fingerprint()
+	if err != nil {
+		t.Fatal(err)
+	}
+	stored, err := json.Marshal(refs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := ReadObjectReferences(bytes.NewReader(stored))
+	if err != nil {
+		t.Fatal("saved empty reference list is invalid", err)
+	}
+	digest, err := got.Fingerprint()
+	if err != nil || digest != expected {
+		t.Fatal("empty reference set digest changed during storage")
 	}
 }

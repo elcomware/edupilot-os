@@ -21,7 +21,7 @@ var errSourceSelection = errors.New("invalid version 1 source selection structur
 type SourceSelection struct {
 	Version   int                    `json:"version"`
 	Schools   []string               `json:"schools"`
-	Documents SourceDocumentEvidence `json:"documents,omitempty"`
+	Documents SourceDocumentEvidence `json:"documents,omitzero"`
 }
 
 // SourceDocumentEvidence optionally binds an independently verified document
@@ -36,6 +36,20 @@ type SourceDocumentEvidence struct {
 	ReferencesSHA256 string `json:"referencesSha256,omitempty"`
 	InventorySHA256  string `json:"inventorySha256,omitempty"`
 	SHA256           string `json:"sha256"`
+}
+
+// Version 2 records an explicit zero when no objects are referenced. Version
+// 1 predates that field, and the original strict reader rejects its presence.
+func (d SourceDocumentEvidence) MarshalJSON() ([]byte, error) {
+	type fields SourceDocumentEvidence
+	var count *int64
+	if d.Version == 2 || d.References != 0 {
+		count = &d.References
+	}
+	return json.Marshal(struct {
+		fields
+		References *int64 `json:"references,omitempty"`
+	}{fields(d), count})
 }
 
 type sourceSelectionWire struct {

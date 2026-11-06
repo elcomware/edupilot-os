@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -63,6 +64,13 @@ func starterFixture(t *testing.T, mode string) StarterFixture {
 
 func starterFixtureDriver(t *testing.T, mode, driver string) StarterFixture {
 	t.Helper()
+	return starterFixtureOn(t, mode, driver, nil)
+}
+
+// A database-level recovery drill needs public schemas in separate databases.
+// Existing schema-scoped tests keep their original, stricter target check.
+func starterFixtureOn(t *testing.T, mode, driver string, drill *postgresDatabaseDrill) StarterFixture {
+	t.Helper()
 	if _, err := os.ReadFile("testdata/starter/README.md"); err != nil {
 		t.Fatalf("starter fixture documentation required: %v", err)
 	}
@@ -90,7 +98,18 @@ func starterFixtureDriver(t *testing.T, mode, driver string) StarterFixture {
 	default:
 		t.Fatalf("unknown fixture placement %s", mode)
 	}
-	if driver == "postgres" {
+	var owned map[string]ownedDatabase
+	if drill != nil {
+		if driver != "postgres" || mode != "mixed" {
+			t.Fatal("database restore fixture requires mixed PostgreSQL placement")
+		}
+		shared, west := drill.create("shared"), drill.create("west")
+		owned = map[string]ownedDatabase{"postgres": shared, "tenant_west": west}
+		settings = drill.settings(shared, west)
+		for key, value := range drill.tlsEnvironment {
+			t.Setenv(key, value)
+		}
+	} else if driver == "postgres" {
 		settings.Control.Host, settings.Control.Port, settings.Control.Username, settings.Control.Database, settings.Control.SSLMode = "localhost", 5432, "fixture", "fixture_control", "disable"
 		for i := range settings.Dedicated {
 			n := &settings.Dedicated[i]
@@ -100,10 +119,11 @@ func starterFixtureDriver(t *testing.T, mode, driver string) StarterFixture {
 	t.Setenv("DB_CONNECTION", driver)
 	t.Setenv("DB_DATABASE", settings.Control.Database)
 	if driver == "postgres" {
-		t.Setenv("DB_HOST", "localhost")
-		t.Setenv("DB_PORT", "5432")
-		t.Setenv("DB_USERNAME", "fixture")
-		t.Setenv("DB_SSLMODE", "disable")
+		t.Setenv("DB_HOST", settings.Control.Host)
+		t.Setenv("DB_PORT", fmt.Sprint(settings.Control.Port))
+		t.Setenv("DB_USERNAME", settings.Control.Username)
+		t.Setenv("DB_PASSWORD", settings.Control.Password)
+		t.Setenv("DB_SSLMODE", settings.Control.SSLMode)
 	}
 	dedicatedJSON, err := json.Marshal(settings.Dedicated)
 	if err != nil {
@@ -115,7 +135,7 @@ func starterFixtureDriver(t *testing.T, mode, driver string) StarterFixture {
 	t.Setenv("EDUPILOT_DEDICATED_DATABASES", string(dedicatedJSON))
 	connections := settings.Connections()
 	postgresTargets := map[string]starterPostgresTarget{}
-	if driver == "postgres" {
+	if driver == "postgres" && drill == nil {
 		for _, node := range settings.Nodes() {
 			// Each handle and native migration uses its own freshly created schema;
 			// public and any caller-supplied search_path are never modified.
@@ -166,6 +186,12 @@ func starterFixtureDriver(t *testing.T, mode, driver string) StarterFixture {
 	}
 	migrate := func() error { return edumigrations.Run(t.Context(), catalog) }
 	if driver == "postgres" {
+		check := func(name string, handle *sql.DB, action func() error) error {
+			if drill != nil {
+				return owned[name].beforeDDL(t.Context(), handle, action)
+			}
+			return starterBeforePostgresDDL(t.Context(), postgresTargets[name], postgresHandleIdentity(handle), action)
+		}
 		// Inspect the exact Goravel handles used by native DDL, not only the admin
 		// helpers that allocated schemas. Keep one verified connection per pool.
 		for _, node := range settings.Nodes() {
@@ -178,7 +204,7 @@ func starterFixtureDriver(t *testing.T, mode, driver string) StarterFixture {
 			}
 			actual.SetMaxOpenConns(1)
 			actual.SetMaxIdleConns(1)
-			if err := starterBeforePostgresDDL(t.Context(), postgresTargets[node.Name], postgresHandleIdentity(actual), func() error { return nil }); err != nil {
+			if err := check(node.Name, actual, func() error { return nil }); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -189,7 +215,7 @@ func starterFixtureDriver(t *testing.T, mode, driver string) StarterFixture {
 		if control != f.Control.DB {
 			t.Fatal("native schema ORM uses an unverified PostgreSQL handle")
 		}
-		if err := starterBeforePostgresDDL(t.Context(), postgresTargets[settings.Control.Name], postgresHandleIdentity(control), migrate); err != nil {
+		if err := check(settings.Control.Name, control, migrate); err != nil {
 			t.Fatal(err)
 		}
 	} else if err := migrate(); err != nil {

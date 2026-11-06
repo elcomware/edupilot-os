@@ -151,7 +151,24 @@ go run ./cmd/tenant-upgrade -mode=verify-local-restore \
   -references=/private/object-references.json -root=/private/restored-documents
 ```
 
-The command re-reads the actual envelopes and content bytes, reconciles the exact reference set and compares its aggregate with the approved evidence. It then computes the restored SQL fingerprint and verifies school membership, placement and pool markers through read-only connections. Exit 0 returns the pool and document counts and the approved hashes. An unavailable pool, missing object or fingerprint mismatch returns exit 1 without an approval report. This qualifies the contents of an isolated copy with local document storage. Deployment maintenance, backup capture, PostgreSQL restore tooling and object-provider recovery require separate drills.
+The command re-reads the actual envelopes and content bytes, reconciles the exact reference set and compares its aggregate with the approved evidence. It then computes the restored SQL fingerprint and verifies school membership, placement and pool markers through read-only connections. Exit 0 returns the pool and document counts and the approved hashes. An unavailable pool, missing object or fingerprint mismatch returns exit 1 without an approval report. This qualifies the contents of an isolated copy with local document storage. Use the native PostgreSQL drill below to exercise logical archive capture and restore on synthetic data. A real installation still requires a continuous maintenance boundary and a rehearsal of its own backup and storage provider.
+
+## Rehearse PostgreSQL archive recovery
+
+Use a disposable PostgreSQL test instance and its matching native client utilities. Configure the private test DSN as described under PostgreSQL CLI acceptance below. The test login needs `CREATEDB`. Run from the repository root:
+
+```sh
+pg_dump --version
+pg_restore --version
+EDUPILOT_TEST_POSTGRES_CREATE_DATABASES=1 \
+  go test -count=1 -v ./database/edumigrations -run '^TestLegacyPostgresArchiveRestore$'
+```
+
+Look for a **PASS** on the named test. Without both the DSN and the database-creation opt-in, Go reports a skip. With both set, a missing archive utility fails the test. Allow space for four temporary databases, two private archives and the copied document envelopes. The test removes its own databases on cleanup.
+
+The drill creates two synthetic schools using the frozen starter migrations. One school uses the shared control/data pool and one uses a dedicated database. Before backup it computes the SQL and local-document evidence and writes the private mapping, selection and exact object references. With fixture writers quiescent, it captures each database using `pg_dump --format=custom`, copies the documents to a separate tree, and replays each archive into a fresh database using `pg_restore --single-transaction --exit-on-error`.
+
+The compiled verifier must refuse the restore while the dedicated database is empty. After both archives have been restored, it must reproduce both pre-backup hashes. Updating a single restored student row must make it exit 1 with empty standard output. The drill uses the fixture login for ownership and the target's default tablespace. Production role grants, tablespaces, managed-provider snapshots, point-in-time recovery, external document storage and enforcement of the maintenance window require deployment-specific qualification.
 
 ## Inspect legacy SQL placement
 

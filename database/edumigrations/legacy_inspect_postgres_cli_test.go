@@ -20,74 +20,16 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/elcomware/edupilot-os/platform/database"
 	"github.com/elcomware/edupilot-os/platform/tenantupgrade"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/stdlib"
 )
 
-// Separate opt-in: an ordinary schema-scoped test DSN never authorizes creating
-// databases. Public tables are populated only after this test creates a fresh,
-// random database and verifies the actual opened handle's database identity.
 func TestLegacyPlacementInspectionPostgresActualCommand(t *testing.T) {
-	if os.Getenv("EDUPILOT_TEST_POSTGRES_CREATE_DATABASES") != "1" || os.Getenv("EDUPILOT_TEST_POSTGRES_DSN") == "" {
-		t.Skip("requires EDUPILOT_TEST_POSTGRES_DSN and EDUPILOT_TEST_POSTGRES_CREATE_DATABASES=1; native PostgreSQL CLI acceptance remains open")
-	}
-	cfg, sslmode, tlsEnvironment, err := inspectionCLIConfig(os.Getenv("EDUPILOT_TEST_POSTGRES_DSN"))
-	if err != nil {
-		t.Fatal(err) // Configuration errors intentionally contain no input or DSN.
-	}
-	ctx, cancel := context.WithTimeout(t.Context(), 3*time.Minute)
-	defer cancel()
-	admin := stdlib.OpenDB(*cfg)
-	admin.SetMaxOpenConns(1)
-	if err := admin.PingContext(ctx); err != nil {
-		admin.Close()
-		t.Fatal("cannot connect to PostgreSQL fixture administration database")
-	}
-	type ownedDatabase struct {
-		name string
-		db   *sql.DB
-	}
-	owned := []ownedDatabase{}
-	t.Cleanup(func() {
-		// Test contexts are cancelled before cleanup. Use a separate bounded
-		// cleanup context and only names whose CREATE DATABASE succeeded below.
-		cleanup, finish := context.WithTimeout(context.Background(), 20*time.Second)
-		defer finish()
-		defer admin.Close()
-		for _, entry := range owned {
-			if entry.db != nil {
-				entry.db.Close()
-			}
-		}
-		for _, entry := range owned {
-			if _, err := admin.ExecContext(cleanup, "DROP DATABASE "+pgx.Identifier{entry.name}.Sanitize()); err != nil {
-				t.Error("could not drop a test-created PostgreSQL fixture database")
-			}
-		}
-	})
-	create := func(label string) ownedDatabase {
-		name := "edu_inspect_cli_" + label + "_" + inspectionCLIRandom(t)
-		if _, err := admin.ExecContext(ctx, "CREATE DATABASE "+pgx.Identifier{name}.Sanitize()+" TEMPLATE template0"); err != nil {
-			t.Fatal("could not create a private PostgreSQL fixture database")
-		}
-		owned = append(owned, ownedDatabase{name: name})
-		copy := cfg.Copy() // Preserve configured TLS, credentials and timeouts.
-		copy.Database = name
-		copy.RuntimeParams["search_path"] = "public"
-		writer := stdlib.OpenDB(*copy)
-		writer.SetMaxOpenConns(1)
-		owned[len(owned)-1].db = writer
-		var actual, schema string
-		if err := writer.QueryRowContext(ctx, "SELECT current_database(),current_schema()").Scan(&actual, &schema); err != nil || actual != name || schema != "public" {
-			t.Fatal("fixture handle does not identify its newly created database and public schema")
-		}
-		return owned[len(owned)-1]
-	}
-	shared, west := create("shared"), create("west")
+	drill := newPostgresDatabaseDrill(t)
+	ctx, cfg, sslmode, tlsEnvironment := drill.ctx, drill.cfg, drill.sslmode, drill.tlsEnvironment
+	shared, west := drill.create("shared"), drill.create("west")
 	writers := map[string]*sql.DB{"postgres": shared.db, "tenant_west": west.db}
 	markers := map[string]string{"postgres": "private-shared-" + inspectionCLIRandom(t), "tenant_west": "private-west-" + inspectionCLIRandom(t)}
 	private := "PRIVATE-INSPECTION-CONTENT-" + inspectionCLIRandom(t)
