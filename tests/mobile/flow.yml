@@ -11,8 +11,15 @@ appId: org.edupilot.mobile
 - inputText: registrar@example.test
 - tapOn: { id: "password" }
 - inputText: ${PASSWORD}
-- hideKeyboard
-- tapOn: { id: "sign-in" }
+- runFlow:
+    when: { platform: Android }
+    commands:
+      - hideKeyboard
+      - tapOn: { id: "sign-in" }
+- runFlow:
+    when: { platform: iOS }
+    commands:
+      - pressKey: Enter
 - assertVisible: School modules
 - assertVisible: ${SCHOOL}
 - extendedWaitUntil:
@@ -27,7 +34,17 @@ appId: org.edupilot.mobile
 - inputText: Jamie
 - tapOn: { id: "family-name" }
 - inputText: Demo
-- hideKeyboard
+- runFlow:
+    when: { platform: Android }
+    commands:
+      - hideKeyboard
+- runFlow:
+    when: { platform: iOS }
+    commands:
+      - pressKey: Enter
+- scrollUntilVisible:
+    element: "Register student"
+    direction: DOWN
 - tapOn: Register student
 - scrollUntilVisible:
     element: Active
