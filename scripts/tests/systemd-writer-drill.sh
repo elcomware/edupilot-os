@@ -29,3 +29,4 @@ for unit in "${units[@]}"; do
   if sudo systemctl start "$unit"; then exit 1; fi
 done
 check
+bash scripts/tests/systemd-fleet-drill.sh "${units[@]}"

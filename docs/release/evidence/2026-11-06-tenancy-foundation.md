@@ -43,3 +43,7 @@ A disposable PostgreSQL 17.11 cluster with two synthetic writer identities rejec
 ### Dedicated ext4 document volume
 
 Local mount-table tests covered an escaped directory name, a mismatched device or mount ID, a read-only bind view with a writable superblock, nested mounts and unsupported filesystems. The CLI rejected a non-block device and emitted no success report. The privileged drill in Native verification creates a disposable ext4 loop image, shows a write through the original mount while the bind view is read-only, then attempts create, truncate and unlink through both paths after remounting the filesystem read-only. It also injects a writable nested mount. The hosted step supplies the kernel-level result for this commit.
+
+### Declared systemd writer fleet
+
+The operator probe samples each inventoried host and returns counts only after all hosts pass. Local verification: 21 Python tests passed, including two-host aggregation, duplicate identities, unsafe unit names, timeout on the second host and a repeated machine response. The native CI service drill additionally starts a key-only loopback SSH server and checks the masked services, a wrong machine ID, an absent service and a wrong host key. This drill exercises one real SSH endpoint; separate physical hosts, continuous exclusion and object storage remain unqualified.

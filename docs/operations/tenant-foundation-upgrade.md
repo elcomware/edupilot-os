@@ -241,3 +241,20 @@ Stop and drain the writers. Under the site's maintenance procedure, remount the 
 The probe opens the directory and matches its kernel mount ID and device number. It requires both the mount and the ext4 superblock to be read-only, and rejects symlinked roots, subdirectory mounts, system-root mounts and nested mounts under the document directory. It reports one verified directory without printing the path, volume identifier or file contents. Use the existing document inventory command separately to verify the bytes and references.
 
 Recheck each writer namespace and each configured source before resuming maintenance. Restrict privileged remounts, raw block access, alternate source paths and access from other hosts throughout the operation. This point-in-time result covers local filesystem writes only. SQLite ownership, remote object storage, other filesystems and upgrade authorization have separate gates.
+
+## Sample writer services across a native Linux fleet
+
+Before maintenance, reconcile every API, worker, seeder and migrator host against deployment records. Retain its machine ID, canonical service names and independently authenticated SSH host key. Use an unprivileged SSH account that can inspect the system manager and an operator-owned known_hosts file with a simple absolute path. Authentication uses a local key or SSH agent. The check disables forwarding and rejects unknown or changed keys.
+
+Synthetic inventory example:
+
+```json
+[{"host":"writer-a.example","machine":"11111111111111111111111111111111","units":["legacy-api.service"]},
+ {"host":"writer-b.example","machine":"22222222222222222222222222222222","units":["legacy-worker.service"]}]
+```
+
+```sh
+python3 scripts/verify-systemd-fleet.py --inventory /private/writers.json --login auditor --known-hosts /private/writer_host_keys
+```
+
+Each host runs the same read-only service probe from the operator checkout via Python 3 over SSH. Require exit 0 and reconcile the aggregate counts. An incomplete inventory can omit writers. Success samples hosts sequentially and cannot establish continuous exclusion or authorize copy/resume. Maintain deployment access controls throughout downtime, including controls on unmanaged processes, database credentials and object storage.
