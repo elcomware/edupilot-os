@@ -55,10 +55,10 @@ def run():
             raise RuntimeError("Fixture API did not become ready.")
         proof = base | fixture | {"DESKTOP_SCREEN_DIR": str(OUTPUT)}
         if WINDOWS:
-            command = ["node", "tests/e2e/desktop-webview2.mjs"]
+            command = [sys.executable, "tests/desktop/windows.py"]
         else:
             command = ["xvfb-run", "-a", "-s", "-screen 0 1440x960x24",
-                       "dbus-run-session", "--", sys.executable, "tests/desktop/linux.py"]
+                       "dbus-run-session", "--", "/usr/bin/python3", "tests/desktop/linux.py"]
         subprocess.run(command, env=proof, check=True, timeout=180)
         # An independent read proves the native form really wrote a school record.
         with sqlite3.connect(DATABASE.as_uri() + "?mode=ro", uri=True) as db:

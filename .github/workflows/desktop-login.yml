@@ -13,7 +13,6 @@ on:
       - 'modules/students/**'
       - 'scripts/setup.py'
       - 'tests/desktop/**'
-      - 'tests/e2e/desktop-webview2.mjs'
   workflow_dispatch:
 permissions:
   contents: read
@@ -42,7 +41,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev libx11-dev xvfb xauth xdotool dbus-x11 imagemagick tesseract-ocr tesseract-ocr-eng
+          sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev libx11-dev xvfb xauth xdotool dbus-x11 imagemagick at-spi2-core python3-pyatspi gsettings-desktop-schemas
       - run: npm ci --ignore-scripts
       - run: npm run build:web
       - run: node clients/desktop/scripts/build.mjs
@@ -51,10 +50,9 @@ jobs:
         run: |
           sudo install -D -o root -g root -m 0755 clients/desktop/bin/edupilot /opt/edupilot-ci-window/edupilot
           sudo apparmor_parser -a .github/ci/desktop-window.apparmor
-      - name: Install Windows WebView2 test driver
+      - name: Install Windows native UI automation and capture tools
         if: runner.os == 'Windows'
-        working-directory: tests/e2e
-        run: npm ci --workspaces=false --ignore-scripts
+        run: python -m pip install pywinauto==0.6.9 "Pillow>=11.2.1,<14"
       - name: Verify native SQLite filenames and options
         run: go test -run TestSQLiteFileDSNOpensExactFile -count=1 ./platform/database
       - name: Sign in and register a synthetic student in the native window
