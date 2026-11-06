@@ -1,0 +1,12 @@
+# Tenancy foundation qualification
+
+| Change | Check | Result |
+|---|---|---|
+| Pure topology | Typed IDs, JSON round trips, active ancestry, immutable snapshots, duplicate campus codes and conflicting selections | Unit and architecture tests passed. [Hosted verification](https://github.com/elcomware/edupilot-os/actions/runs/42144474657) passed all three jobs. |
+| Personal navigation | Current user's pins in saved order, keyboard controls, persistence, cancellation, confirmed reset and shared-device isolation | 22 web tests and production build passed. [Hosted verification](https://github.com/elcomware/edupilot-os/actions/runs/42145986076) passed, including the real 320px French browser journey. |
+| Starter compatibility | Frozen registered migration order and SQL, exact physical tables, separate private identities with colliding emails and legacy IDs, document integrity and outbox states | Shared, dedicated and mixed SQLite fixtures passed. The [hosted PostgreSQL job](https://github.com/elcomware/edupilot-os/actions/runs/42146285885) also passed, including actual-connection schema isolation before DDL. |
+| Additive foundation | Native migration from a mixed starter, presence and absence on the correct pools, lost control receipt, forward-only rollback protection and empty target tables before activation | SQLite passed. A randomized migration test run exposed a shared provider registry referencing a closed test database. Each fixture now starts with and cleans up an isolated provider registry. Randomized rerun passed. |
+| Data integrity | Cross-tenant school writes, overlapping business IDs, school grant/context ownership, duplicate event identity, credential aliases, legacy mapping provenance and one tenant per old school | SQLite assertions passed. Reproduced and corrected SQLite replacement of a previously registered physical pool and malformed expiration/epoch values. |
+| Combined backend | Full Go suite, vet and build after review fixes | 69 test/subtest passes, 9 explicit local service skips, zero test failures. Vet and build passed. Eight skips require PostgreSQL. One requires a private S3 test bucket. |
+
+The SQL checks protect table structure and ownership constraints. Activation, copy/resume, current grants on every business request and operator-driven placement moves have separate acceptance criteria. Operators must keep the starter runtime in school scope until those criteria pass.

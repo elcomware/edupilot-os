@@ -23,6 +23,11 @@ func TestTenantOwnershipInventoryCoversRegisteredTables(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ownership inventory is required: %v", err)
 	}
+	foundation, err := os.ReadFile(filepath.Join(root(t), "docs/architecture/foundation-ownership-inventory.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	data = append(append(data, '\n'), foundation...)
 	entries := map[string][]string{}
 	for _, line := range strings.Split(string(data), "\n") {
 		cells := strings.Split(line, "|")
@@ -67,6 +72,7 @@ func TestTenantOwnershipInventoryCoversRegisteredTables(t *testing.T) {
 			plans = append(plans, d.Migration())
 			workspaces++
 			require("ws_" + d.Key)
+			require("ws_" + d.Key + "_v2")
 			if row := entries["ws_"+d.Key]; len(row) > 0 && row[0] != "modules/"+d.Key {
 				t.Errorf("workspace owner for %s = %s", d.Key, row[0])
 			}

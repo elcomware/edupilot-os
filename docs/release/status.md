@@ -40,3 +40,11 @@ See [verification](../verification.md) and [baseline evidence](evidence/2026-11-
 [Dependency and fixture evidence](evidence/2026-11-06-dependencies.md): patched source and compiled API scans report zero affected vulnerabilities; root and E2E npm audits report zero. No release candidate is tagged.
 
 The pure topology model resolves tenant, organization, school and campus ancestry, inherited active status and a persisted hierarchy revision. Snapshot tests exercise sibling schools, conflicting campus context, missing owners, team selection, optional ID serialization and independent snapshots. Production sign-in and placement still use the starter school scope. Multi-school activation waits for the additive schema, offline upgrade, grant checks, scoped transaction boundary and end-to-end qualification in the [tenant implementation plan](../superpowers/plans/2026-11-06-tenant-foundation.md).
+
+The starter fixtures exercise 42 registered modules on shared, dedicated and mixed placements, including clean and deliberately damaged records. [Ownership inventory](../architecture/tenant-ownership-inventory.md).
+
+The new schema appends 48 plans to the original migrations. On a shared control/data pool plus one dedicated pool, that creates 94 additional migration registrations. Control retains identity and placements. Data pools enforce composite tenant/school ownership for topology, student and enrollment records, documents, outbox and all 41 work lists. Upgrading the schema creates empty tables. A separate verified offline upgrade is required before switching sessions or business reads to them. [Foundation table inventory](../architecture/foundation-ownership-inventory.md).
+
+Personal navigation ordering and reset are implemented in the shared web/desktop shell. Users can move pinned modules with a keyboard, reload their order, and reset this workspace's device settings. Account changes isolate language, pins, theme and spacing. The reset confirmation keeps focus and announces the result. Automated web tests and the production build pass. Saved view/column presets and group inheritance remain open under UI-03 and CFG.
+
+[Tenancy and UI verification record](evidence/2026-11-06-tenancy-foundation.md). Offline copy/resume is the next tenancy implementation dependency.

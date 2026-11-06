@@ -18,7 +18,9 @@ import (
 type Plan struct {
 	ID          string
 	ControlOnly bool
+	ForwardOnly bool
 	Up, Down    []string
+	DriverUp    map[string][]string
 	placement   bool
 }
 
@@ -36,6 +38,9 @@ func (p Plan) Statements(node database.Connection, down bool) []string {
 	if !p.placement {
 		if down {
 			return p.Down
+		}
+		if statements, exists := p.DriverUp[node.Driver]; exists {
+			return statements
 		}
 		return p.Up
 	}
@@ -139,6 +144,9 @@ func (m *registered) onDedicated(down bool) error {
 // history. A local receipt in the DDL transaction closes that crash window for
 // arbitrary changes, including ALTER, backfills and plain CREATE/DROP statements.
 func (m *registered) apply(down bool, exec func(string, ...any) (int64, error)) error {
+	if down && m.plan.ForwardOnly {
+		return fmt.Errorf("%s: forward-only migration; recover from a verified snapshot under maintenance", m.Signature())
+	}
 	const receipts = `CREATE TABLE IF NOT EXISTS edu_migration_receipts
 		(signature TEXT PRIMARY KEY NOT NULL)`
 	if _, err := exec(receipts); err != nil {

@@ -27,5 +27,6 @@ func Migrations() []schema.Migration {
 			plans = append(plans, d.Migration())
 		}
 	}
+	plans = append(plans, FoundationPlans()...)
 	return append([]schema.Migration{&migrations.M20210101000001CreateJobsTable{}}, edumigrations.Register(settings, plans...)...)
 }

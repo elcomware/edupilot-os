@@ -135,7 +135,9 @@ func starterFixtureDriver(t *testing.T, mode, driver string) StarterFixture {
 		}
 	}
 	app := facades.App()
+	// Each native migrator specification owns its provider registry and SQL pools.
 	app.Fresh()
+	t.Cleanup(func() { app.Fresh() })
 	facades.Config().Add("database", map[string]any{"default": driver, "connections": connections, "pool": map[string]any{"max_open_conns": 3, "max_idle_conns": 3}})
 	(&log.ServiceProvider{}).Register(app)
 	(&sqlite.ServiceProvider{}).Register(app)

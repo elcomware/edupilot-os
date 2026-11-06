@@ -24,6 +24,9 @@ func TestGoravelMigratorKeepsHistoryOnControlAndDDLOnItsNamedPool(t *testing.T) 
 		Dedicated: []database.Connection{{Name: "tenant_west", Driver: "sqlite", Tenant: "west", Database: filepath.Join(dir, "west.sqlite")}},
 	}
 	app := facades.App()
+	// Each native migrator specification owns its provider registry and SQL pools.
+	app.Fresh()
+	t.Cleanup(func() { app.Fresh() })
 	facades.Config().Add("database", map[string]any{
 		"default": "sqlite", "connections": settings.Connections(),
 		"pool": map[string]any{"max_open_conns": 3, "max_idle_conns": 3},
