@@ -79,6 +79,32 @@ final class WorkspaceJourney: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [hidden], timeout: 10), .completed, "Keyboard still covers the form")
     }
 
+    // Tap the painted button label. The heading uses the same text, so its
+    // midpoint must also be inside the accessible button's own frame.
+    private func tapSignIn() throws {
+        let button = app.buttons["sign-in"]
+        for _ in 0..<4 {
+            if button.isHittable { break }
+            app.scrollViews.firstMatch.swipeUp()
+        }
+        XCTAssertTrue(button.isEnabled && button.isHittable, "Sign in button unavailable")
+        let screenshot = XCUIScreen.main.screenshot()
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .accurate
+        try VNImageRequestHandler(cgImage: screenshot.image.cgImage!).perform([request])
+        let bounds = app.frame
+        for result in request.results ?? [] {
+            guard result.topCandidates(1).first?.string.lowercased() == "sign in" else { continue }
+            let label = result.boundingBox
+            let point = CGPoint(x: bounds.width * label.midX, y: bounds.height * (1 - label.midY))
+            if button.frame.contains(point) {
+                app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: point.x, dy: point.y)).tap()
+                return
+            }
+        }
+        XCTFail("No painted Sign in label inside the button")
+    }
+
     func testSignIn() throws {
         continueAfterFailure = false
         struct Credentials: Decodable {
@@ -90,6 +116,9 @@ final class WorkspaceJourney: XCTestCase {
         let input = try JSONDecoder().decode(Credentials.self, from: Data(contentsOf: url))
         app.launch()
         try save(showing(["School ID", "Show password"]), "signin")
+        try tapSignIn()
+        XCTAssertTrue(app.descendants(matching: .any)["login-error-incomplete"].waitForExistence(timeout: 8),
+                      "Empty sign-in did not show field validation")
         _ = try enter("school-id", input.school)
         _ = try enter("email", input.email)
         _ = try enter("password", input.password, secure: true)
@@ -107,23 +136,17 @@ final class WorkspaceJourney: XCTestCase {
             let hidden = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: keyboard)
             XCTAssertEqual(XCTWaiter.wait(for: [hidden], timeout: 10), .completed, "Login keyboard still visible")
         }
-        let button = app.buttons["sign-in"]
-        for _ in 0..<4 {
-            if button.isHittable { break }
-            app.scrollViews.firstMatch.swipeUp()
-        }
-        XCTAssertTrue(button.isHittable, "Sign in button unavailable")
-        button.tap()
+        let field = app.descendants(matching: .any)
+        XCTAssertTrue(field["school-id"].value as? String == input.school, "School changed after focus left")
+        XCTAssertTrue(field["email"].value as? String == input.email, "Email changed after focus left")
+        XCTAssertTrue((field["password"].value as? String)?.count == input.password.count, "Secure length changed after focus left")
+        try tapSignIn()
         if !app.buttons["Sign out"].waitForExistence(timeout: 30) {
-            let reasons = [
-                ("incomplete", "Enter a school ID, email and password."),
-                ("credentials", "Check your school ID, email and password."),
-                ("network", "The server could not complete this request. Check your connection and try again."),
-                ("storage", "Your session could not be saved. Unlock your device and sign in again."),
-            ]
-            let reason = reasons.first { app.descendants(matching: .any).matching(
-                NSPredicate(format: "label == %@", $0.1)).firstMatch.exists }?.0
-            XCTFail("Sign-in outcome: " + (reason ?? (button.exists ? "guest" : "unknown")))
+            let reasons = ["incomplete", "credentials", "network", "storage", "invalid", "forbidden", "expired", "conflict"]
+            let reason = reasons.first { field["login-error-" + $0].exists }
+            let system = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            let fallback = system.alerts.firstMatch.exists ? "system-alert" : (field["sign-in"].exists ? "guest" : "unknown")
+            XCTFail("Sign-in outcome: " + (reason ?? fallback))
         }
     }
 

@@ -182,14 +182,17 @@ export function Field({ label, ...props }: TextInputProps & { label: string }) {
   );
 }
 export function Notice({
+  testID,
   children,
   error = false,
 }: {
   children: ReactNode;
+  testID?: string;
   error?: boolean;
 }) {
   return (
     <Text
+      testID={testID}
       accessibilityRole={error ? "alert" : undefined}
       accessibilityLiveRegion="polite"
       style={error ? s.error : s.notice}

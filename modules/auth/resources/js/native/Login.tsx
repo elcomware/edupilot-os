@@ -71,9 +71,9 @@ export function Login({
             disabled={pending}
           />
         </View>
-        {invalid && <Notice error>{t("incomplete")}</Notice>}
+        {invalid && <Notice testID="login-error-incomplete" error>{t("incomplete")}</Notice>}
         {state.kind === "guest" && state.reason && (
-          <Notice error>{t(state.reason)}</Notice>
+          <Notice testID={`login-error-${state.reason}`} error>{t(state.reason)}</Notice>
         )}
         <Action
           testID="sign-in"

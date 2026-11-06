@@ -2,7 +2,7 @@ name: Native mobile sign-in
 on:
   workflow_dispatch:
   push:
-    branches: [main, 'verify/mobile-login']
+    branches: [main, 'verify/mobile-login', 'verify/iphone-session']
     paths:
       - '.github/workflows/mobile-login.yml'
       - 'clients/mobile/**'

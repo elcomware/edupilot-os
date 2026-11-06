@@ -74,7 +74,7 @@ CREDENTIALS
   }
   if ! run_iphone_test testSignIn; then
     # Input-driver errors can contain typed characters. Emit known markers only.
-    grep -Eo 'Input diverged for (school-id|email|password) at character [0-9]+|Keyboard unavailable for (school-id|email|password)|Missing field (school-id|email|password)|Login keyboard still visible|Sign in button unavailable|Sign-in outcome: (incomplete|credentials|network|storage|guest|unknown)|Timed out waiting for visible labels: School ID, Show password' \
+    grep -Eo 'Input diverged for (school-id|email|password) at character [0-9]+|Keyboard unavailable for (school-id|email|password)|Missing field (school-id|email|password)|Login keyboard still visible|Sign in button unavailable|No painted Sign in label inside the button|Empty sign-in did not show field validation|(School|Email|Secure length) changed after focus left|Sign-in outcome: (incomplete|credentials|network|storage|invalid|forbidden|expired|conflict|system-alert|guest|unknown)|Timed out waiting for visible labels: School ID, Show password' \
       "$RUNNER_TEMP/testSignIn.log" | tail -4 || true
     echo 'iPhone sign-in XCTest failed'
     exit 1
