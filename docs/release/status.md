@@ -95,3 +95,9 @@ back from dedicated SQLite and verified that only the dedicated pool contained
 the organization and event. The native HTTP school-isolation journey passed.
 Initial tenant provisioning, user-facing administration, scoped grants and
 verified tenant moves remain open.
+
+The [organization checkpoint's iPhone run](https://github.com/elcomware/edupilot-os/actions/runs/42277337262/job/128108074496)
+twice finished keyboard submission without creating the expected school session.
+The iPhone login drill now dismisses the keyboard and taps the visible Sign in
+button. The independent SQLite session check,
+cold-launch school check, workspace write and revocation checks still apply.

@@ -11,4 +11,8 @@ appId: org.edupilot.mobile
 - inputText: registrar@example.test
 - tapOn: { id: "password" }
 - inputText: ${PASSWORD}
-- pressKey: Enter
+- hideKeyboard
+- scrollUntilVisible:
+    element: { id: "sign-in" }
+    direction: DOWN
+- tapOn: { id: "sign-in" }
