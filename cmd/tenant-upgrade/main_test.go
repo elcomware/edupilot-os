@@ -57,3 +57,20 @@ func TestInspectPlacementIsExplicitAndMissingDatabaseIsNotCreated(t *testing.T) 
 		t.Fatal("default mode performed inspection")
 	}
 }
+
+func TestInvalidFlagsKeepOperatorInputOutOfDiagnostics(t *testing.T) {
+	for _, args := range [][]string{{"-private-connection-string"}, {"-mode=private-connection-string"}, {"-manifest"}, {"-help"}} {
+		var output, diagnostics bytes.Buffer
+		wantStatus := 2
+		if args[0] == "-help" {
+			wantStatus = 0
+		}
+		if got := run(args, &output, &diagnostics); got != wantStatus {
+			t.Fatal("unexpected exit status", got)
+		}
+		if output.Len() != 0 || strings.Contains(diagnostics.String(), "private-connection-string") ||
+			!strings.Contains(diagnostics.String(), "validate-manifest") || !strings.Contains(diagnostics.String(), "inspect-placement") {
+			t.Fatal("usage must list supported operations without echoing operator input")
+		}
+	}
+}

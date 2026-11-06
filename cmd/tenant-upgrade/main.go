@@ -17,12 +17,16 @@ type result struct {
 	ManifestSHA256 string `json:"manifestSha256"`
 }
 
+const usage = "Usage: tenant-upgrade -mode=validate-manifest -manifest=PATH | -mode=inspect-placement"
+
 func run(args []string, output, diagnostics io.Writer) int {
 	flags := flag.NewFlagSet("tenant-upgrade", flag.ContinueOnError)
-	flags.SetOutput(diagnostics)
+	// The flag parser includes unrecognized input in its own messages.
+	flags.SetOutput(io.Discard)
 	mode := flags.String("mode", "", "operation: validate-manifest or inspect-placement")
 	path := flags.String("manifest", "", "path to the private JSON mapping manifest")
 	if err := flags.Parse(args); err != nil {
+		fmt.Fprintln(diagnostics, usage)
 		if err == flag.ErrHelp {
 			return 0
 		}
@@ -32,7 +36,7 @@ func run(args []string, output, diagnostics io.Writer) int {
 		return inspectPlacement(output, diagnostics)
 	}
 	if *mode != "validate-manifest" || *path == "" || flags.NArg() != 0 {
-		fmt.Fprintln(diagnostics, "Usage: tenant-upgrade -mode=validate-manifest -manifest=PATH | -mode=inspect-placement")
+		fmt.Fprintln(diagnostics, usage)
 		return 2
 	}
 	file, err := os.Open(*path)
