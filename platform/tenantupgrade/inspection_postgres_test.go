@@ -47,6 +47,11 @@ func TestInspectionPostgresFrozenSQLReadOnlyAndDetection(t *testing.T) {
 		scoped := cfg.Copy()
 		scoped.RuntimeParams["search_path"] = schema
 		writer := stdlib.OpenDB(*scoped)
+		var actual string
+		if err := writer.QueryRow("SELECT current_schema()").Scan(&actual); err != nil || actual != schema {
+			writer.Close()
+			t.Fatal("connection did not select the private PostgreSQL test schema")
+		}
 		writers[name] = writer
 		configurations[name] = scoped
 		t.Cleanup(func() { writer.Close() })
@@ -131,7 +136,10 @@ func TestInspectionPostgresFrozenSQLReadOnlyAndDetection(t *testing.T) {
 	open := func(_ context.Context, node database.Connection) (*sql.DB, error) {
 		return stdlib.OpenDB(*configurations[node.Name]), nil
 	}
-	report := inspectPlacement(t.Context(), settings, keys, open)
+	t.Run("source write fence", func(t *testing.T) {
+		exercisePostgresSQLFences(t, settings, keys, open, writers)
+	})
+	report := inspectPlacement(t.Context(), settings, keys, readSnapshots(open))
 	if !report.Complete || len(report.Issues) != 0 || len(report.Schools) != 2 {
 		t.Fatalf("native PostgreSQL read failed: %#v", report)
 	}
@@ -140,7 +148,7 @@ func TestInspectionPostgresFrozenSQLReadOnlyAndDetection(t *testing.T) {
 			t.Fatal("PostgreSQL omitted registered table counts")
 		}
 	}
-	source := inventorySource(t.Context(), settings, keys, SourceSelection{Version: 1, Schools: []string{"east", "west"}}, open)
+	source := inventorySource(t.Context(), settings, keys, SourceSelection{Version: 1, Schools: []string{"east", "west"}}, readSnapshots(open))
 	if !source.Complete || len(source.Issues) != 0 || len(source.SHA256) != 64 || len(source.Pools) != 2 || len(source.Pools[0].Tables)+len(source.Pools[1].Tables) != 102 {
 		t.Fatalf("registered PostgreSQL source inventory failed: %#v", source)
 	}
@@ -175,7 +183,7 @@ func TestInspectionPostgresFrozenSQLReadOnlyAndDetection(t *testing.T) {
 	if _, err := west.Exec("INSERT INTO edu_outbox(event_id,tenant_id,event_type,aggregate_id,payload,created_at,available_at,lease_id,lease_until) VALUES ('leased','west','students.registered.v1','same-record','{}',1,1,'lease',4102444800000)"); err != nil {
 		t.Fatal(err)
 	}
-	damaged := inspectPlacement(t.Context(), settings, keys, open)
+	damaged := inspectPlacement(t.Context(), settings, keys, readSnapshots(open))
 	codes := map[string]bool{}
 	for _, issue := range damaged.Issues {
 		codes[issue.Code] = true

@@ -31,8 +31,7 @@ type placementInspectionFunc func(context.Context, database.Settings, []string) 
 type sourceMarkerFunc func(context.Context, database.Settings) (map[string]string, error)
 
 // Upgrade owns the immutable inputs used by every later upgrade phase. This
-// increment exposes only DryRun; no journal, target row or source byte is
-// mutated until the separately fenced Prepare phase is implemented.
+// preflight and rehearsal code never commits a source or target mutation.
 type Upgrade struct {
 	settings      database.Settings
 	workspaceKeys []string
@@ -49,8 +48,20 @@ func NewUpgrade(settings database.Settings, workspaceKeys []string, manifest Man
 	selection.Schools = slices.Clone(selection.Schools)
 	return Upgrade{
 		settings: settings, workspaceKeys: slices.Clone(workspaceKeys), manifest: manifest, selection: selection,
-		inventory: InventorySource, placement: InspectPlacement, markers: inspectSourceMarkers,
+	}.withSnapshots(readSnapshots(openInspectionDB))
+}
+
+func (u Upgrade) withSnapshots(snapshot sourceSnapshots) Upgrade {
+	u.inventory = func(ctx context.Context, settings database.Settings, keys []string, selection SourceSelection) SourceInventory {
+		return inventorySource(ctx, settings, keys, selection, snapshot)
 	}
+	u.placement = func(ctx context.Context, settings database.Settings, keys []string) PlacementInspection {
+		return inspectPlacement(ctx, settings, keys, snapshot)
+	}
+	u.markers = func(ctx context.Context, settings database.Settings) (map[string]string, error) {
+		return inspectSourceMarkers(ctx, settings, snapshot)
+	}
+	return u
 }
 
 func (u Upgrade) DryRun(ctx context.Context) (DryRunReport, error) {
@@ -137,21 +148,21 @@ func (u Upgrade) DryRun(ctx context.Context) (DryRunReport, error) {
 	return report, nil
 }
 
-func inspectSourceMarkers(ctx context.Context, settings database.Settings) (map[string]string, error) {
+func inspectSourceMarkers(ctx context.Context, settings database.Settings, snapshot sourceSnapshots) (map[string]string, error) {
 	if err := settings.Validate(); err != nil {
 		return nil, errors.New("source marker configuration unavailable")
 	}
 	result := make(map[string]string, len(settings.Nodes()))
 	seen := map[string]bool{}
 	for _, node := range settings.Nodes() {
-		db, err := openInspectionDB(ctx, node)
+		tx, release, err := snapshot(ctx, node)
 		if err != nil {
 			return nil, errors.New("source marker unavailable")
 		}
 		var singleton int
 		var marker string
-		err = db.QueryRowContext(ctx, "SELECT singleton,pool_id FROM edu_pool_marker WHERE singleton=1").Scan(&singleton, &marker)
-		_ = db.Close()
+		err = tx.QueryRowContext(ctx, "SELECT singleton,pool_id FROM edu_pool_marker WHERE singleton=1").Scan(&singleton, &marker)
+		release()
 		if err != nil || singleton != 1 || !legacyMarkerValid(marker) || seen[marker] {
 			return nil, errors.New("source marker unavailable")
 		}

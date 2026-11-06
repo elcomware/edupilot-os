@@ -65,10 +65,10 @@ type inspectionState struct {
 // from composition's actual module registrations; platform imports no modules.
 // Each pool has a repeatable snapshot, without a cross-database snapshot claim.
 func InspectPlacement(ctx context.Context, settings database.Settings, workspaceKeys []string) PlacementInspection {
-	return inspectPlacement(ctx, settings, workspaceKeys, openInspectionDB)
+	return inspectPlacement(ctx, settings, workspaceKeys, readSnapshots(openInspectionDB))
 }
 
-func inspectPlacement(ctx context.Context, settings database.Settings, workspaceKeys []string, openSource func(context.Context, database.Connection) (*sql.DB, error)) PlacementInspection {
+func inspectPlacement(ctx context.Context, settings database.Settings, workspaceKeys []string, snapshot sourceSnapshots) PlacementInspection {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	state := inspectionState{report: PlacementInspection{Version: 1, Classification: "inspect-only", Complete: true, Pools: []InspectedPool{}, Schools: []InspectedSchool{}, Issues: []InspectionIssue{}}, schools: map[string]*InspectedSchool{}, pins: map[string]string{}, markers: map[string][]string{}, owners: map[string][]string{}, observed: map[string]map[string]bool{}, issueKeys: map[InspectionIssue]bool{}, markersRead: map[string]bool{}}
@@ -94,7 +94,7 @@ func inspectPlacement(ctx context.Context, settings database.Settings, workspace
 	slices.SortFunc(nodes, func(a, b database.Connection) int { return strings.Compare(a.Name, b.Name) })
 	now := time.Now().UnixMilli()
 	for _, node := range nodes {
-		state.inspectPool(ctx, node, tables, now, openSource)
+		state.inspectPool(ctx, node, tables, now, snapshot)
 	}
 	state.reconcile(settings)
 	for _, school := range state.schools {
@@ -137,21 +137,15 @@ func (s *inspectionState) school(id, pool, table string) *InspectedSchool {
 	s.schools[id] = school
 	return school
 }
-func (s *inspectionState) inspectPool(ctx context.Context, node database.Connection, tables []inspectionTable, now int64, openSource func(context.Context, database.Connection) (*sql.DB, error)) {
+func (s *inspectionState) inspectPool(ctx context.Context, node database.Connection, tables []inspectionTable, now int64, snapshot sourceSnapshots) {
 	pool := InspectedPool{Name: node.Name, Tables: []InspectedTable{}}
 	defer func() { s.report.Pools = append(s.report.Pools, pool) }()
-	db, err := openSource(ctx, node)
+	tx, release, err := snapshot(ctx, node)
 	if err != nil {
 		s.problem("pool_unavailable", node.Name, "", "", true)
 		return
 	}
-	defer db.Close()
-	tx, err := beginInspectionSnapshot(ctx, db, node.Driver)
-	if err != nil {
-		s.problem("pool_unavailable", node.Name, "", "", true)
-		return
-	}
-	defer tx.Rollback()
+	defer release()
 	available, err := inspectionTables(ctx, tx, node.Driver)
 	if err != nil {
 		s.problem("schema_unavailable", node.Name, "", "", true)

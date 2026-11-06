@@ -87,7 +87,7 @@ func inventorySource(selectionPath string, output, diagnostics io.Writer) int {
 	return 0
 }
 
-func upgradeDryRun(manifestPath, selectionPath string, output, diagnostics io.Writer) int {
+func checkUpgrade(mode, manifestPath, selectionPath string, output, diagnostics io.Writer) int {
 	manifestFile, err := openPrivateRegular(manifestPath)
 	if err != nil {
 		fmt.Fprintln(diagnostics, "Cannot read a private regular mapping manifest.")
@@ -121,7 +121,19 @@ func upgradeDryRun(manifestPath, selectionPath string, output, diagnostics io.Wr
 			keys = append(keys, definition.Key)
 		}
 	}
-	report, err := tenantupgrade.NewUpgrade(settings, keys, manifest, selection).DryRun(context.Background())
+	upgrade := tenantupgrade.NewUpgrade(settings, keys, manifest, selection)
+	if mode == "rehearse-sql-fence" {
+		report, err := upgrade.RehearseSQLFence(context.Background())
+		if err != nil {
+			fmt.Fprintln(diagnostics, "SQL fence rehearsal did not complete.")
+			return 1
+		}
+		if err := json.NewEncoder(output).Encode(report); err != nil || !report.Complete {
+			return 1
+		}
+		return 0
+	}
+	report, err := upgrade.DryRun(context.Background())
 	if err != nil {
 		fmt.Fprintln(diagnostics, "Upgrade dry-run did not complete.")
 		return 1

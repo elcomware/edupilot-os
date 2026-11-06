@@ -450,10 +450,10 @@ type SourceInventoryIssue struct {
 // one repeatable snapshot per physical pool. The operator must freeze all pools;
 // no cross-database atomic snapshot is claimed.
 func InventorySource(ctx context.Context, settings database.Settings, workspaceKeys []string, selection SourceSelection) SourceInventory {
-	return inventorySource(ctx, settings, workspaceKeys, selection, openInspectionDB)
+	return inventorySource(ctx, settings, workspaceKeys, selection, readSnapshots(openInspectionDB))
 }
 
-func inventorySource(ctx context.Context, settings database.Settings, workspaceKeys []string, selection SourceSelection, openSource func(context.Context, database.Connection) (*sql.DB, error)) SourceInventory {
+func inventorySource(ctx context.Context, settings database.Settings, workspaceKeys []string, selection SourceSelection, snapshot sourceSnapshots) SourceInventory {
 	classification := "frozen-source-sql"
 	if selection.Version == 2 {
 		classification = "frozen-source-sql-objects"
@@ -488,7 +488,7 @@ func inventorySource(ctx context.Context, settings database.Settings, workspaceK
 
 	// Placement reconciliation has its own qualified, bounded reader. Reduce
 	// its details to safe issue codes; never copy historical school IDs.
-	placement := inspectPlacement(ctx, settings, workspaceKeys, openSource)
+	placement := inspectPlacement(ctx, settings, workspaceKeys, snapshot)
 	if !placement.Complete || len(placement.Issues) > 0 {
 		for _, issue := range placement.Issues {
 			problem("placement_"+issue.Code, issue.Pool, issue.Table)
@@ -508,15 +508,8 @@ func inventorySource(ctx context.Context, settings database.Settings, workspaceK
 	for _, node := range nodes {
 		poolReport := SourcePoolInventory{Name: node.Name, Tables: []SourceTableInventory{}}
 		poolOK := true
-		db, err := openSource(ctx, node)
+		tx, release, err := snapshot(ctx, node)
 		if err != nil {
-			problem("pool_unavailable", node.Name, "")
-			report.Pools = append(report.Pools, poolReport)
-			continue
-		}
-		tx, err := beginInspectionSnapshot(ctx, db, node.Driver)
-		if err != nil {
-			db.Close()
 			problem("pool_unavailable", node.Name, "")
 			report.Pools = append(report.Pools, poolReport)
 			continue
@@ -541,8 +534,7 @@ func inventorySource(ctx context.Context, settings database.Settings, workspaceK
 				poolOK = false
 			}
 		}
-		_ = tx.Rollback()
-		_ = db.Close()
+		release()
 		if poolOK {
 			poolReport.SHA256 = digestSourcePool(poolReport)
 		}

@@ -1,7 +1,11 @@
 package edumigrations_test
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -72,11 +76,55 @@ func TestLegacyUpgradeDryRunSharedDedicated(t *testing.T) {
 		t.Fatalf("fixture source evidence not ready: %#v", source)
 	}
 	manifest.SourceSHA256 = source.SHA256
-	report, err := tenantupgrade.NewUpgrade(settings, keys, manifest, selection).DryRun(t.Context())
+	upgrade := tenantupgrade.NewUpgrade(settings, keys, manifest, selection)
+	report, err := upgrade.DryRun(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !report.Complete || !report.ReadyForPrepare || report.Schools != len(fixture.Schools) || report.Pools != 2 || report.SourceSHA256 != source.SHA256 {
 		t.Fatalf("mixed shared/dedicated source did not pass dry-run: %#v", report)
+	}
+	rehearsal, err := upgrade.RehearseSQLFence(t.Context())
+	if err != nil || !rehearsal.Complete || rehearsal.Classification != "legacy-sql-fence-rehearsal" ||
+		rehearsal.Pools != 2 || rehearsal.SourceSHA256 != source.SHA256 || rehearsal.ManifestSHA256 != report.ManifestSHA256 {
+		t.Fatalf("fenced rehearsal did not reproduce the approved mixed source: %#v %v", rehearsal, err)
+	}
+	t.Run("native rehearsal command", func(t *testing.T) {
+		dir := t.TempDir()
+		writeInput := func(name string, value any) string {
+			t.Helper()
+			path := filepath.Join(dir, name)
+			data, err := json.Marshal(value)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, data, 0600); err != nil {
+				t.Fatal(err)
+			}
+			return path
+		}
+		binary := filepath.Join(dir, "tenant-upgrade")
+		build := exec.CommandContext(t.Context(), "go", "build", "-buildvcs=false", "-o", binary, "../../cmd/tenant-upgrade")
+		if err := build.Run(); err != nil {
+			t.Fatal("could not build native rehearsal command", err)
+		}
+		command := exec.CommandContext(t.Context(), binary, "-mode=rehearse-sql-fence",
+			"-manifest="+writeInput("mapping.json", manifest), "-selection="+writeInput("selection.json", selection))
+		command.Dir = dir
+		command.Env = append(os.Environ(), "APP_KEY=12345678901234567890123456789012")
+		output, err := command.Output()
+		if err != nil {
+			t.Fatal("compiled rehearsal command failed", err)
+		}
+		expected, err := json.Marshal(rehearsal)
+		if err != nil || strings.TrimSpace(string(output)) != string(expected) {
+			t.Fatal("native rehearsal did not return the expected redacted JSON")
+		}
+	})
+	manifest.SourceSHA256 = strings.Repeat("b", 64)
+	rehearsal, err = tenantupgrade.NewUpgrade(settings, keys, manifest, selection).RehearseSQLFence(t.Context())
+	if err != nil || rehearsal.Complete || rehearsal.SourceSHA256 != "" || rehearsal.ManifestSHA256 != "" ||
+		!slices.Contains(rehearsal.Issues, tenantupgrade.DryRunIssue{Code: "source_fingerprint_mismatch"}) {
+		t.Fatalf("rehearsal accepted changed source evidence: %#v %v", rehearsal, err)
 	}
 }

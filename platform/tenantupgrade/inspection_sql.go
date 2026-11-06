@@ -18,6 +18,16 @@ import (
 )
 
 func openInspectionDB(ctx context.Context, node database.Connection) (*sql.DB, error) {
+	return openSourceDB(ctx, node, false)
+}
+
+func openFenceDB(ctx context.Context, node database.Connection) (*sql.DB, error) {
+	return openSourceDB(ctx, node, true)
+}
+
+// A rehearsal needs a write-capable connection to reserve the source, but
+// must never create a missing database. Other inspections remain read-only.
+func openSourceDB(ctx context.Context, node database.Connection, fence bool) (*sql.DB, error) {
 	var db *sql.DB
 	if node.Driver == "sqlite" {
 		info, err := os.Stat(node.Database)
@@ -28,14 +38,22 @@ func openInspectionDB(ctx context.Context, node database.Connection) (*sql.DB, e
 		if err != nil {
 			return nil, errors.New("source unavailable")
 		}
-		uri := url.URL{Scheme: "file", Path: path, RawQuery: url.Values{"mode": {"ro"}, "_pragma": {"query_only(1)", "busy_timeout(5000)"}}.Encode()}
+		params := url.Values{"mode": {"ro"}, "_pragma": {"query_only(1)", "busy_timeout(5000)"}}
+		if fence {
+			params = url.Values{"mode": {"rw"}, "_pragma": {"busy_timeout(0)"}}
+		}
+		uri := url.URL{Scheme: "file", Path: path, RawQuery: params.Encode()}
 		db, err = sql.Open("sqlite3", uri.String())
 		if err != nil {
 			return nil, errors.New("source unavailable")
 		}
 	} else {
 		uri := url.URL{Scheme: "postgres", User: url.UserPassword(node.Username, node.Password), Host: net.JoinHostPort(node.Host, strconv.Itoa(node.Port)), Path: "/" + node.Database}
-		uri.RawQuery = url.Values{"sslmode": {node.SSLMode}, "search_path": {"public"}, "timezone": {"UTC"}, "connect_timeout": {"5"}, "default_transaction_read_only": {"on"}}.Encode()
+		params := url.Values{"sslmode": {node.SSLMode}, "search_path": {"public"}, "timezone": {"UTC"}, "connect_timeout": {"5"}}
+		if !fence {
+			params.Set("default_transaction_read_only", "on")
+		}
+		uri.RawQuery = params.Encode()
 		config, err := pgx.ParseConfig(uri.String())
 		if err != nil {
 			return nil, errors.New("source unavailable")
@@ -94,4 +112,27 @@ func boundedInspectionText(column string, limit int, driver string) string {
 		return "CASE WHEN typeof(" + column + ")='text' THEN substr(CAST(" + column + " AS BLOB),1," + size + ") END"
 	}
 	return "substr(" + column + ",1," + size + ")"
+}
+
+// The release function ends a reader-owned snapshot. A borrowed fence
+// transaction is released only by its coordinator, after all reads finish.
+type sourceSnapshots func(context.Context, database.Connection) (*sql.Tx, func(), error)
+type sourceOpener func(context.Context, database.Connection) (*sql.DB, error)
+
+func readSnapshots(open sourceOpener) sourceSnapshots {
+	return func(ctx context.Context, node database.Connection) (*sql.Tx, func(), error) {
+		db, err := open(ctx, node)
+		if err != nil {
+			return nil, nil, err
+		}
+		tx, err := beginInspectionSnapshot(ctx, db, node.Driver)
+		if err != nil {
+			db.Close()
+			return nil, nil, err
+		}
+		return tx, func() {
+			tx.Rollback()
+			db.Close()
+		}, nil
+	}
 }

@@ -124,6 +124,23 @@ The successful report is classified `legacy-upgrade-dry-run`, sets `complete=tru
 This is still a read-only precondition, not the mutation phase. It does not acquire a deployment maintenance lock, verify a backup/restore drill, create journal or tenant rows, copy data, activate tenants or fence old binaries. Do not release the freeze or treat `readyForPrepare` as permission to run an unimplemented prepare/copy command. Durable prepare/resume remains blocked until the operator-confirmed maintenance mechanism can prove the old API, worker, seed and migrator processes are stopped and their source access is fenced.
 
 
+## Rehearse the SQL write fence on an offline restore
+
+Use a disposable restore with synthetic schools and private mapping and selection files. Stop the API, worker, seeder and migrator before the rehearsal. Point native configuration at the restore and use a role that can lock the registered PostgreSQL tables or open the restored SQLite files for writing. Run the following command under the same maintenance window as the document inventory.
+
+```sh
+umask 077
+go run ./cmd/tenant-upgrade -mode=rehearse-sql-fence \
+  -manifest=/private/upgrade.json -selection=/private/source-selection.json \
+  > /private/sql-fence-rehearsal.json
+```
+
+The command acquires all configured pools in a stable order. SQLite reserves the database writer with `BEGIN IMMEDIATE`. PostgreSQL takes `EXCLUSIVE` table locks with `NOWAIT` on the original 55 control/shared tables and the 47 legacy tables on each dedicated pool. Ordinary readers may continue. An existing writer on any required target aborts the rehearsal and releases earlier locks. The service verifies the mapping, active outbox leases, pool markers, placement and approved source fingerprint through those exact transactions, then rolls back and closes every connection. The operation has a two-minute deadline and never creates a missing SQLite database.
+
+Exit 0 emits `legacy-sql-fence-rehearsal` with the pool count and approved digests. Exit 1 covers lock contention, insufficient privilege, missing schema or source, inconsistent evidence, cancellation and output failures. A failed run emits no approval digests. Stop or drain the conflicting writer before retrying. Locks last only for this invocation. The report grants no copy or activation authority.
+
+The SQL check reuses the supplied, previously reconciled document evidence. Deployment maintenance must separately prevent legacy processes from restarting, fence file/object writes and database replacement, and verify a restorable backup. PostgreSQL coverage is limited to registered legacy tables. Journal preparation and copying will require their own continuously held maintenance boundary.
+
 ## Inspect legacy SQL placement
 
 From the native deployment directory, with the same environment and `.env` used by the application:

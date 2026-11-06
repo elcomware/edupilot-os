@@ -139,6 +139,16 @@ func TestUpgradeDryRunIsExplicitReadOnlyAndRedacted(t *testing.T) {
 	if _, err := os.Stat(missing); !os.IsNotExist(err) {
 		t.Fatalf("dry-run created the missing database: %v", err)
 	}
+	output.Reset()
+	diagnostics.Reset()
+	status = run([]string{"-mode=rehearse-sql-fence", "-manifest", manifestPath, "-selection", selectionPath}, &output, &diagnostics)
+	if status != 1 || !strings.Contains(output.String(), `"code":"sql_fence_unavailable"`) ||
+		strings.Contains(output.String()+diagnostics.String(), missing) || strings.Contains(output.String(), "Sha256") {
+		t.Fatal("missing rehearsal source did not fail privately")
+	}
+	if _, err := os.Stat(missing); !os.IsNotExist(err) {
+		t.Fatal("rehearsal created a missing database", err)
+	}
 	if err := os.Chmod(selectionPath, 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -146,5 +156,10 @@ func TestUpgradeDryRunIsExplicitReadOnlyAndRedacted(t *testing.T) {
 	diagnostics.Reset()
 	if status := run([]string{"-mode=dry-run", "-manifest", manifestPath, "-selection", selectionPath}, &output, &diagnostics); status != 1 || output.Len() != 0 {
 		t.Fatal("dry-run accepted a public selection or emitted partial output")
+	}
+	output.Reset()
+	diagnostics.Reset()
+	if status := run([]string{"-mode=rehearse-sql-fence", "-manifest", manifestPath, "-selection", selectionPath}, &output, &diagnostics); status != 1 || output.Len() != 0 {
+		t.Fatal("rehearsal accepted a public selection")
 	}
 }
