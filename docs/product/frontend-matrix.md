@@ -2,6 +2,8 @@
 
 This matrix is a release checklist, not a declaration that every screen already exists. Each domain story requires a complete real-data page flow. Web and Wails share these pages; mobile parity is specified by CLI-02/03 in the release plan.
 
+Binding additions: [context, inherited customization and complete business flows](frontend-context-and-flows.md), [tenancy/placement contract](tenancy-and-placement.md). These include group hierarchy, context switching, multilingual content and operator move screens.
+
 ## Shared professional UI acceptance
 
 Every row inherits: role-aware navigation; shared shell/heading/actions; localized labels and validation; accessible list/detail/editor as applicable; loading, empty, no-results, error/retry, forbidden, offline, dirty and stale-version states; keyboard focus restoration; responsive layout at 320px, tablet and desktop; 200% zoom; all themes and long English/French text. Lists use bounded server pagination and safe URL filters. A disabled or unfinished domain workflow is never presented as a working action.

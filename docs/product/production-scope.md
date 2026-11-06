@@ -4,24 +4,28 @@ Product name: **EduPilot OS**. Repository and technical identifier: **edupilot-o
 
 ## Outcome
 
-A school can install EduPilot OS natively, configure its institution and academic policies, invite staff, operate the complete student lifecycle, teach and assess, collect and reconcile fees, manage staff and resources, and publish appropriately scoped information to families. Web, desktop and mobile use the same authenticated API. Every shipped capability has a usable interface, persisted business behavior and verified authorization. A module directory or a general work list does not complete a business module.
+A tenant operating one school or a group of organizations, schools and campuses can install EduPilot OS natively, configure its institutions and academic policies, invite staff, operate the complete student lifecycle, teach and assess, collect and reconcile fees, manage staff and resources, and publish appropriately scoped information to families. Web, desktop and mobile use the same authenticated API. Every shipped capability has a usable interface, persisted business behavior and verified authorization. A module directory or a general work list does not complete a business module.
 
 The starting point is commit `ae7a791cdbbdc1bf76be7f1a166e9a226c3da177`: 42 module registrations; working student registration, enrollment placements, document storage, sessions and per-module work lists; shared React web/Wails UI and Expo client. The original 20 iterations were a starter phase, not a production release.
 
 ## Binding constraints
 
 - Preserve the standard Goravel 1.18 application tree and hexagonal module boundaries. Domain/application code has no HTTP, SQL or Goravel dependency.
-- Use **EduPilot OS** for product copy and **edupilot-os** for repository/service identifiers. School remains the legitimate domain term for a tenant.
+- Use **EduPilot OS** for product copy and **edupilot-os** for repository/service identifiers. Tenant and school are separate entities: one tenant can own many organizations, schools and campuses.
 - Native installation and operation are the documented default. Docker is optional and has explicit `docker-*` commands.
-- Support SQLite for a single-process modest deployment and PostgreSQL for concurrent deployment. Keep tenant placement explicit, including dedicated databases.
+- Support SQLite for a single-process modest deployment and PostgreSQL for concurrent deployment. Support multiple shared pools and dedicated tenant databases, with explicit placement epochs and verified tenant moves.
 - Every read, write, background job, export and file operation is authorized using a verified principal and tenant. Never trust a client-supplied tenant switch.
 - Full UI is part of each story's delivery: useful page flows, real APIs, responsive layout, professional typography, keyboard operation and meaningful states. No dummy statistics or controls with no effect.
 - Share tokens, shell, page layouts, data tables, forms, dialogs and state components. Domain pages supply typed data and actions; avoid copying whole pages.
 - Customize language, theme, accent, density, width, navigation and permitted workspace views per user and school. Preferences must never grant permissions.
-- English and French are supported throughout UI, validation and printed output. Dates use the configured school timezone; money uses integer minor units and explicit currency.
+- English and French are the initial supported UI catalogs, with an extensible locale registry and separate language-tagged record content. Multiple curricula, instruction languages, timezones and school policies can coexist within one tenant. English and French are supported throughout UI, validation and printed output. Dates use the configured school timezone; money uses integer minor units and explicit currency.
 - Web and Wails share the complete administrative interface. Expo supplies role-appropriate daily workflows; the release matrix must state which workflows require the administrative web/desktop client.
 - Write unit, feature/integration, contract and end-to-end tests. Run available tests. Record an unavailable test with its reason and unblock requirement. A skipped gate is not a passing gate.
 - Push the plan before implementation. Push coherent, reviewed implementation checkpoints to the authorized repository. No production deployment, real customer data import or external messages are implied.
+
+## Group tenancy and placement
+
+The binding [tenancy and placement specification](tenancy-and-placement.md) defines tenant, organization, school, campus, location, team, curriculum, scope grants, configuration inheritance, database placement and safe moves. The starter currently conflates school and tenant; resolving that is a prerequisite for domain expansion. Context selection and physical database selection are separate concepts. All organizations in a tenant share its active placement and move together.
 
 ## Professional frontend contract
 
