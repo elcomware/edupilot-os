@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { captureWorkspace } from "./ui-evidence";
 import { account, loginForm } from "./accounts";
+import { expectAccessible, expectPageReflow } from "./accessibility";
 
 async function openNavigation(page: Page) {
   const toggle = page.getByRole("button", { name: "Navigation", exact: true });
@@ -12,8 +13,23 @@ async function signOut(page: Page) {
 }
 
 test("personal pins reorder, survive reload and reset only the current workspace", async ({ page }) => {
+  test.setTimeout(90_000); // Full-page scans share this journey's existing sign-ins.
   const primary = account("NAV"), other = account("NAV_OTHER");
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/#/settings");
+  await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+  await expectAccessible(page, "sign-in-desktop");
+  await page.getByLabel("Language", { exact: true }).selectOption("fr");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.setViewportSize({ width: 320, height: 780 });
+  await expect(page.locator("html")).toHaveAttribute("lang", "fr");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expectPageReflow(page);
+  await expectAccessible(page, "sign-in-narrow-fr");
+  await page.getByLabel("Langue", { exact: true }).selectOption("en");
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.setViewportSize({ width: 1280, height: 900 });
   await loginForm(page, other);
   await page.getByLabel("Accent", { exact: true }).selectOption("clay");
   await page.getByRole("link", { name: "Module directory", exact: true }).click();
@@ -27,6 +43,7 @@ test("personal pins reorder, survive reload and reset only the current workspace
   await page.getByRole("link", { name: "Back to directory", exact: true }).click();
   await expect(page.getByRole("button", {name:"Pin Students",exact:true})).toBeVisible();
   await captureWorkspace(page, "directory-desktop");
+  await expectAccessible(page, "directory-desktop");
   for (const title of ["Students", "Library", "Family and student portal"]) {
     await page.getByRole("button", { name: "Pin " + title, exact: true }).click();
   }
@@ -44,6 +61,7 @@ test("personal pins reorder, survive reload and reset only the current workspace
   await expect(rail).toHaveText(["Library", "Students", "Family and student portal"]);
 
   await captureWorkspace(page, "preferences-desktop");
+  await expectAccessible(page, "preferences-desktop");
   await page.getByLabel("Appearance", { exact: true }).selectOption("dark");
   await page.getByLabel("Density", { exact: true }).selectOption("compact");
   await page.getByLabel("Reading width", { exact: true }).selectOption("wide");
@@ -52,12 +70,30 @@ test("personal pins reorder, survive reload and reset only the current workspace
   await expect(page.getByRole("listitem", { name: "Portail familles et élèves", exact: true })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await expect(page.locator("html")).toHaveAttribute("data-density", "compact");
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await expectPageReflow(page);
   await captureWorkspace(page, "preferences-mobile-fr");
+  await expectAccessible(page, "preferences-narrow-fr");
+  await openNavigation(page);
+  await page.getByRole("link", { name: "Répertoire des modules", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Épingler Identité", exact: true })).toBeVisible();
+  await expectPageReflow(page);
+  await expectAccessible(page, "directory-narrow-fr");
+  await openNavigation(page);
+  await page.getByRole("link", { name: "Préférences", exact: true }).click();
   const reset = page.getByRole("button", { name: "Réinitialiser cet espace", exact: true });
-  await reset.click();
+  await reset.focus();
+  await page.keyboard.press("Enter");
   let dialog = page.getByRole("dialog", { name: "Réinitialiser cet espace ?", exact: true });
-  await dialog.getByRole("button", { name: "Annuler", exact: true }).last().click();
+  const close = dialog.getByRole("button", { name: "Annuler", exact: true }).first();
+  await expect(close).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(dialog.getByRole("button", { name: "Réinitialiser les préférences", exact: true })).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(close).toBeFocused();
+  await expectPageReflow(page);
+  await expectAccessible(page, "reset-dialog-narrow-fr");
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
   await expect(reset).toBeFocused();
   await expect(page.getByRole("list", { name: "Navigation épinglée", exact: true }).getByRole("listitem")).toHaveCount(3);
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");

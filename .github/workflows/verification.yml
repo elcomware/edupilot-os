@@ -94,6 +94,7 @@ jobs:
         working-directory: tests/e2e
         run: |
           npm ci --workspaces=false --ignore-scripts
+          npm audit --workspaces=false --audit-level=moderate
           npm exec --workspaces=false -- playwright install --with-deps chromium
       - name: Exercise disposable schools on the native stack
         shell: bash
@@ -118,6 +119,14 @@ jobs:
           name: workspace-layouts
           path: tests/e2e/test-results/**/qa-*.png
           if-no-files-found: error
+          retention-days: 14
+      - name: Save redacted automated accessibility evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-evidence
+          path: tests/e2e/test-results/**/attachments/accessibility-*.json
+          if-no-files-found: ignore
           retention-days: 14
       - name: Show startup diagnostics on failure
         if: failure()

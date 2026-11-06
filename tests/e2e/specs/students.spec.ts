@@ -1,11 +1,15 @@
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { account, loginForm, session } from "./accounts";
+import { expectAccessible, expectPageReflow } from "./accessibility";
 
 test("an admin registers, edits and archives a student through the web app", async ({
   page,
   request,
 }) => {
+  test.setTimeout(90_000);
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.setViewportSize({ width: 1280, height: 900 });
   const user = account("ROSTER");
   const family = "Lifecycle " + randomUUID().slice(0, 8);
   await page.goto("/#/modules/students");
@@ -31,10 +35,16 @@ test("an admin registers, edits and archives a student through the web app", asy
   await expect(edit("Jules " + family)).toBeVisible();
 
   const columns = page.locator("details.table-columns");
-  await columns.locator("summary").click();
-  await columns
-    .getByRole("checkbox", { name: "Status", exact: true })
-    .uncheck();
+  await columns.locator("summary").focus();
+  await page.keyboard.press("Enter");
+  const status = columns.getByRole("checkbox", { name: "Status", exact: true });
+  await expect(status).toBeVisible();
+  await expectAccessible(page, "student-columns-desktop");
+  await page.keyboard.press("Tab");
+  await expect(status).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect(status).not.toBeChecked();
+  await expect(status).toBeFocused();
   await expect(
     page.getByRole("columnheader", { name: "Status", exact: true }),
   ).toHaveCount(0);
@@ -50,6 +60,28 @@ test("an admin registers, edits and archives a student through the web app", asy
   await expect(
     page.getByRole("columnheader", { name: "Status", exact: true }),
   ).toBeVisible();
+
+  await page.getByRole("link", { name: "Preferences", exact: true }).click();
+  await page.getByLabel("Appearance", { exact: true }).selectOption("dark");
+  await page.getByLabel("Density", { exact: true }).selectOption("compact");
+  await page.getByLabel("Language", { exact: true }).selectOption("fr");
+  await page.setViewportSize({ width: 320, height: 780 });
+  await page.getByRole("button", { name: "Navigation", exact: true }).click();
+  await page.getByRole("link", { name: "Répertoire des modules", exact: true }).click();
+  await page.getByRole("link", { name: "Élèves", exact: true }).click();
+  await columns.locator("summary").focus();
+  await page.keyboard.press("Enter");
+  await expect(columns.getByRole("checkbox", { name: "Statut", exact: true })).toBeVisible();
+  await expectPageReflow(page);
+  await expectAccessible(page, "student-columns-narrow-fr");
+  // Continue the existing lifecycle assertions in their original language.
+  await page.getByRole("button", { name: "Navigation", exact: true }).click();
+  await page.getByRole("link", { name: "Préférences", exact: true }).click();
+  await page.getByLabel("Langue", { exact: true }).selectOption("en");
+  await page.getByLabel("Appearance", { exact: true }).selectOption("light");
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.getByRole("link", { name: "Module directory", exact: true }).click();
+  await page.getByRole("link", { name: "Students", exact: true }).click();
 
   await page
     .getByRole("button", { name: "Archive Jules " + family, exact: true })
