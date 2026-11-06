@@ -1,21 +1,12 @@
-// Package auth owns school authentication and publishes the historical identity workspace key.
+// Package auth owns school accounts, memberships, roles, grants and sessions.
 package auth
 
 import (
-	"github.com/elcomware/edupilot/modules/auth/app/services"
-	records "github.com/elcomware/edupilot/modules/auth/database"
-	"github.com/elcomware/edupilot/modules/auth/database/migrations"
-	"github.com/elcomware/edupilot/modules/modulekit"
-
-	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/modules/core/contracts/modulekit"
 )
 
 func Definition() modulekit.Definition {
 	return modulekit.Definition{
 		Descriptor: Descriptor(),
-		Bind: func(db *database.Catalog) services.Entries {
-			return services.Entries{Store: records.New(db)}
-		},
-		Migration: migrations.WorkspaceSchema,
 	}
 }

@@ -2,7 +2,7 @@ package config
 
 import (
 	"github.com/elcomware/edupilot/app/facades"
-	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/modules/core/database"
 )
 
 func init() {

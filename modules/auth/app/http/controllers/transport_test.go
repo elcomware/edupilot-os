@@ -11,7 +11,7 @@ import (
 
 	"github.com/elcomware/edupilot/modules/auth/app/models"
 	authv1 "github.com/elcomware/edupilot/modules/auth/proto/v1"
-	"github.com/elcomware/edupilot/platform/access"
+	"github.com/elcomware/edupilot/modules/core/access"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -78,7 +78,7 @@ func TestHTTPAndGRPCShareMembershipAndRevocation(t *testing.T) {
 		w := httptest.NewRecorder()
 		c.CurrentUser(w, r)
 		var web models.User
-		if w.Code != http.StatusOK || json.Unmarshal(w.Body.Bytes(), &web) != nil || profile.Id != web.ID || profile.Email != web.Email || profile.Membership.School != web.Membership.School || profile.Membership.UserId != web.Membership.UserID || profile.Membership.Role != role || string(web.Membership.Role) != role || !slices.Equal(profile.Permissions, web.Permissions) || slices.Contains(profile.Permissions, access.StudentsWrite) != (role == models.RoleRegistrar) {
+		if w.Code != http.StatusOK || json.Unmarshal(w.Body.Bytes(), &web) != nil || profile.Id != web.ID || profile.Email != web.Email || profile.Membership.School != web.Membership.School || profile.Membership.UserId != web.Membership.UserID || profile.Membership.Role != role || string(web.Membership.Role) != role || !slices.Equal(profile.Permissions, web.Permissions) || slices.Contains(profile.Permissions, access.WorkspaceWrite) != (role == models.RoleRegistrar) {
 			t.Fatal("HTTP and RPC returned an incorrect membership")
 		}
 	}

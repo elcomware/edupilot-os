@@ -1,10 +1,7 @@
 package migrations
 
 import (
-	"github.com/elcomware/edupilot/database/edumigrations"
-	"github.com/elcomware/edupilot/modules/tenancy/app/models"
-	"github.com/elcomware/edupilot/platform/workspace/sqlstore"
+	"github.com/elcomware/edupilot/modules/core/migration"
 )
 
-// WorkspaceSchema belongs to this module and runs on shared and dedicated databases.
-func WorkspaceSchema() edumigrations.Plan { return sqlstore.Schema(models.Key) }
+func Workspace(db migration.Schema) error { return migration.Workspace(db, "ws_tenancy") }

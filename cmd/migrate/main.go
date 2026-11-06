@@ -4,12 +4,13 @@ package main
 
 import (
 	"context"
-	"log/slog"
+	"fmt"
 	"os"
 
+	"github.com/elcomware/edupilot/app/facades"
 	"github.com/elcomware/edupilot/bootstrap"
 	"github.com/elcomware/edupilot/database/edumigrations"
-	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/modules/core/database"
 )
 
 func main() {
@@ -19,8 +20,9 @@ func main() {
 		err = edumigrations.Run(context.Background(), catalog)
 	}
 	if err != nil {
-		slog.Error("migration failed", "error", err)
+		facades.Log().Errorf("migration failed: %v", err)
+		fmt.Fprintln(os.Stderr, "migration failed:", err)
 		os.Exit(1)
 	}
-	slog.Info("all configured EduPilot databases are ready")
+	facades.Log().Info("all configured EduPilot databases are ready")
 }

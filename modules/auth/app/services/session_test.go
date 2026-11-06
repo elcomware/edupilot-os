@@ -5,16 +5,17 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
-	"github.com/elcomware/edupilot/modules/auth/app/models"
-	"github.com/elcomware/edupilot/modules/auth/database/migrations"
-	"github.com/elcomware/edupilot/platform/access"
 	"net/url"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/modules/auth/app/models"
+	"github.com/elcomware/edupilot/modules/auth/database/migrations"
+	"github.com/elcomware/edupilot/modules/core/access"
+	"github.com/elcomware/edupilot/modules/core/database"
+	"github.com/elcomware/edupilot/tests/schemafixture"
 	"github.com/ncruces/go-sqlite3/driver"
 	_ "github.com/ncruces/go-sqlite3/embed"
 	"golang.org/x/crypto/bcrypt"
@@ -29,10 +30,8 @@ func fixture(t *testing.T) *Service {
 	}
 	t.Cleanup(func() { _ = db.Close() })
 	db.SetMaxOpenConns(1)
-	for _, stmt := range migrations.SchemaUp {
-		if _, err := db.ExecContext(t.Context(), stmt); err != nil {
-			t.Fatal(err)
-		}
+	if err := migrations.Accounts(schemafixture.Builder{DB: db}); err != nil {
+		t.Fatal(err)
 	}
 	return New(&database.Pool{DB: db, Driver: "sqlite"})
 }
@@ -78,7 +77,7 @@ func TestSessionLifecycleAndStorage(t *testing.T) {
 	}
 
 	var passwordHash string
-	if err := s.pool.DB.QueryRowContext(ctx, "SELECT password_hash FROM identity_accounts WHERE school_id=?", "north").Scan(&passwordHash); err != nil {
+	if err := s.pool.DB.QueryRowContext(ctx, "SELECT password_hash FROM auth_users WHERE school_id=?", "north").Scan(&passwordHash); err != nil {
 		t.Fatal(err)
 	}
 	if password == passwordHash || bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password)) != nil {
@@ -99,7 +98,7 @@ func TestSessionLifecycleAndStorage(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stored string
-	if err = s.pool.DB.QueryRowContext(ctx, "SELECT token_hash FROM identity_sessions WHERE token_hash=?", hash).Scan(&stored); err != nil {
+	if err = s.pool.DB.QueryRowContext(ctx, "SELECT token_hash FROM auth_sessions WHERE token_hash=?", hash).Scan(&stored); err != nil {
 		t.Fatal(err)
 	}
 	if stored == first.Token {
@@ -139,7 +138,7 @@ func TestSchoolAndRoleBoundaries(t *testing.T) {
 	if _, err := s.Login(ctx, "south", adminEmail, northPassword); !errors.Is(err, ErrInvalidCredentials) {
 		t.Fatalf("password crossed schools: %v", err)
 	}
-	if err := asAdmin.Principal.Require("south", access.StudentsWrite); !errors.Is(err, access.ErrForbidden) {
+	if err := asAdmin.Principal.Require("south", access.WorkspaceWrite); !errors.Is(err, access.ErrForbidden) {
 		t.Fatalf("cross-school write allowed: %v", err)
 	}
 	if _, err := s.CreateMember(ctx, asAdmin.Token, "south", memberEmail, memberPassword, models.RoleViewer); !errors.Is(err, access.ErrForbidden) {
@@ -153,7 +152,7 @@ func TestSchoolAndRoleBoundaries(t *testing.T) {
 		t.Fatal(err)
 	}
 	asMember := login(t, s, "north", memberEmail, memberPassword)
-	if !asMember.Principal.Allows(access.StudentsRead) || asMember.Principal.Allows(access.StudentsWrite) {
+	if !asMember.Principal.Allows(access.WorkspaceRead) || asMember.Principal.Allows(access.WorkspaceWrite) {
 		t.Fatal("incorrect viewer privileges")
 	}
 	if err := s.SetMemberRole(ctx, asMember.Token, "north", member.ID, models.RoleRegistrar); !errors.Is(err, access.ErrForbidden) {
@@ -169,17 +168,17 @@ func TestSchoolAndRoleBoundaries(t *testing.T) {
 		t.Fatal(err)
 	}
 	p, err := s.Authenticate(ctx, asMember.Token)
-	if err != nil || !p.Allows(access.StudentsWrite) || p.Allows(access.ManageMembers) {
+	if err != nil || !p.Allows(access.WorkspaceWrite) || p.Allows(access.ManageMembers) {
 		t.Fatalf("unexpected registrar permissions: %v", err)
 	}
 	if err := s.SetMemberRole(ctx, asAdmin.Token, "north", member.ID, models.RoleViewer); err != nil {
 		t.Fatal(err)
 	}
 	p, err = s.Authenticate(ctx, asMember.Token)
-	if err != nil || p.Allows(access.StudentsWrite) {
+	if err != nil || p.Allows(access.WorkspaceWrite) {
 		t.Fatalf("revoked write grant remained active: %v", err)
 	}
-	if _, err := s.pool.DB.ExecContext(ctx, "DELETE FROM identity_memberships WHERE school_id=? AND user_id=?", "north", member.ID); err != nil {
+	if _, err := s.pool.DB.ExecContext(ctx, "DELETE FROM auth_memberships WHERE school_id=? AND user_id=?", "north", member.ID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.Authenticate(ctx, asMember.Token); !errors.Is(err, access.ErrUnauthenticated) {

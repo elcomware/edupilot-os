@@ -12,14 +12,18 @@ import (
 	"testing"
 
 	"github.com/elcomware/edupilot/app/schoolapi"
-	"github.com/elcomware/edupilot/database/edumigrations"
-	"github.com/elcomware/edupilot/modules"
+	modules "github.com/elcomware/edupilot/bootstrap/modulecatalog"
 	"github.com/elcomware/edupilot/modules/auth/app/http/controllers"
+	"github.com/elcomware/edupilot/modules/auth/app/http/middleware"
 	"github.com/elcomware/edupilot/modules/auth/app/services"
 	"github.com/elcomware/edupilot/modules/auth/database/migrations"
 	authroutes "github.com/elcomware/edupilot/modules/auth/routes"
-	"github.com/elcomware/edupilot/platform/database"
-	"github.com/elcomware/edupilot/platform/workspace"
+	"github.com/elcomware/edupilot/modules/core/database"
+	"github.com/elcomware/edupilot/modules/core/migration"
+	"github.com/elcomware/edupilot/modules/core/workspace"
+	"github.com/elcomware/edupilot/modules/core/workspace/sqlstore"
+	tenancy "github.com/elcomware/edupilot/modules/tenancy/database/migrations"
+	"github.com/elcomware/edupilot/tests/schemafixture"
 	_ "github.com/ncruces/go-sqlite3/driver"
 	_ "github.com/ncruces/go-sqlite3/embed"
 )
@@ -38,25 +42,31 @@ func TestSchoolWorkListsUseTheSameVersionedAPIForEveryModule(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	plans := []edumigrations.Plan{edumigrations.PlacementPlan(), edumigrations.OutboxPlan(), {Up: migrations.SchemaUp}}
-	for _, d := range modules.Definitions() {
-		if d.Migration != nil {
-			plans = append(plans, d.Migration())
-		}
+	tables := schemafixture.Builder{DB: raw}
+	if err := tenancy.Placement(tables, true); err != nil {
+		t.Fatal(err)
 	}
-	for _, plan := range plans {
-		for _, stmt := range plan.Statements(conn, false) {
-			if _, err := raw.Exec(stmt); err != nil {
-				t.Fatal(err)
-			}
+	if _, err := raw.Exec("INSERT INTO edu_pool_marker VALUES(1,'shared','test-pool')"); err != nil {
+		t.Fatal(err)
+	}
+	for _, create := range []func(migration.Schema) error{migrations.Accounts, migration.Outbox, tenancy.Workspace} {
+		if err := create(tables); err != nil {
+			t.Fatal(err)
 		}
 	}
 	auth := services.New(&db.Control)
-	handler, err := schoolapi.New(db, auth, "")
+	handler, err := schoolapi.New(db, "", func(key string) (workspace.Service, error) {
+		return workspace.Service{Store: sqlstore.New(db, key)}, nil
+	}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler = authroutes.HTTP(controllers.New(func() (*services.Service, error) { return auth, nil }, nil), handler)
+	resolve := func() (*services.Service, error) { return auth, nil }
+	schoolHandler := handler
+	handler = authroutes.HTTP(controllers.New(resolve, nil), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		middleware.ServeAuthenticated(w, r, schoolHandler, &services.Guard{Request: r, Resolve: resolve})
+	}))
+
 	request := func(method, path, token string, body any, status int) []byte {
 		t.Helper()
 		b, err := json.Marshal(body)
@@ -90,9 +100,17 @@ func TestSchoolWorkListsUseTheSameVersionedAPIForEveryModule(t *testing.T) {
 	}
 	a, b := login("school-a"), login("school-b")
 	request("GET", "/api/v1/modules", "", nil, 401)
-	request("GET", "/api/v1/modules", a, nil, 200)
+	var catalog struct{ Items []struct{ Key string } }
+	if err := json.Unmarshal(request("GET", "/api/v1/modules", a, nil, 200), &catalog); err != nil || len(catalog.Items) != 2 || catalog.Items[0].Key != "tenancy" || catalog.Items[1].Key != "auth" {
+		t.Fatal("unexpected active catalog", catalog, err)
+	}
+	for _, path := range []string{"/api/v1/students", "/api/v1/modules/students", "/api/v1/modules/documents/workspace"} {
+		request("GET", path, a, nil, 404)
+	}
 	for _, m := range modules.Definitions() {
-		if m.Key == "students" {
+
+		if m.WorkspaceSchema == nil {
+			request("GET", "/api/v1/modules/"+m.Key+"/workspace", a, nil, 404)
 			continue
 		}
 		group := "/api/v1/modules/" + m.Key + "/workspace"

@@ -1,13 +1,12 @@
 # EduPilot OS Production Release Implementation Plan
 
-**Reference module decision.** Auth is the reference for new work. Use the [module convention and relationship walkthrough](../../../modules/auth/README.md). Preserve the legacy identity catalog key, tenant fences and shared client contracts.
-
+**Reference module decision.** Auth is the reference for new work. Use the [module convention and relationship walkthrough](../../../modules/auth/README.md). Use the `auth` catalog key. Users, roles and permissions belong to Auth.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking. Continue within the user's existing implementation and push authorization.
 
 **Goal:** Deliver the complete EduPilot OS product, including a professionally finished frontend, verified domain workflows and an operable native production release.
 
-**Architecture:** Goravel supplies infrastructure for a hexagonal modular monolith. Modules own domain behavior, migrations and adapters, share public contracts, and publish atomic outbox events. React provides shared web/Wails layouts; Expo uses the same typed API for mobile tasks.
+**Architecture:** Goravel supplies the service container, Auth guard, Schema builder, cache and logging. Modules own models, services and migrations and publish events through Core. React provides shared web/Wails layouts; Expo uses the same typed API for mobile tasks.
 
 **Tech Stack:** Go/Goravel 1.18, SQLite/PostgreSQL, React/TypeScript, TanStack Query, Zustand, Vite, Wails, Expo, Vitest, Playwright and Go testing. Pin existing compatible dependencies unless a verified update is required.
 
@@ -17,7 +16,7 @@
 
 - The product is **EduPilot OS**, the GitHub repository is **elcomware/edupilot-os**, and the root Go module is `github.com/elcomware/edupilot`.
 - Native installation and operation are the documented default. Docker is optional and has explicit `docker-*` commands.
-- Preserve the standard Goravel 1.18 tree and module isolation; no framework or transport dependencies in domain/application code.
+- Use Goravel module folder names. Keep business rules in module models and services. Connect feature modules through Core contracts at bootstrap or through events.
 - Tenant, organization, school, campus, location, team and curriculum are distinct scoped concepts. Tenant placement supports named shared/dedicated pools and controlled tenant moves.
 - Every shipped module includes its real backend workflows, complete UI, permissions, migrations, tests and operator documentation.
 - Use shared layout, form, table, dialog and feedback components; domain pages provide typed data and actions.
@@ -48,7 +47,7 @@ The working board uses Planned → Ready → In progress → Review → Verified
 
 | Sprint | Epic | Stories | Depends on | Demonstrable increment |
 |---|---|---|---|---|
-| S01 | E01 Native foundation and trustworthy verification | OPS-01..04 | Starter | Fresh native SQLite install, branded app, test baseline, optional containers |
+| S01 | E01 Native foundation and trustworthy verification | OPS-01..04 | Foundation | Fresh native SQLite install, branded app, test baseline, optional containers |
 | S02 | E21 Group tenancy foundation + E02 frontend system | TEN-02..04, ORG-01..03, CTX-01..02, UI-01..08, LNG-01..02 | S01 | Tenant/school separation, scoped hierarchy, context UI, shared responsive page system, inherited workspaces and multilingual records |
 | S03 | E03 Institution and access administration | TEN-01, IAM-01..03, CFG-01..02, SUB-01 | S01–02 | School setup, members, scoped roles, sessions and subscription entitlements UI |
 | S04 | E04 Academic configuration | ACD-01, CUR-01, CLS-01 | S03 | Year/term, curriculum and class configuration with usable administration screens |
@@ -76,7 +75,7 @@ These are first-class stories added by the owner's group-tenancy clarification, 
 | Story / pts | Dependency | Deliverable including full UI | Acceptance |
 |---|---|---|---|
 | TEN-02 / 8 | S01 | Distinct typed tenant/organization/school/campus/location/team context and repository ownership; schema/ID inventory | Two schools in one tenant and two tenants in one pool stay distinct; no implicit admin bypass |
-| TEN-03 / 8 | TEN-02 | Additive legacy mapping/backfill, dry-run/verify/upgrade tools and compatibility diagnostics | Upgrade real starter shared/dedicated data preserving users/records/files; repeated/interrupted migration safe; ambiguous mapping rejected |
+| TEN-03 / 8 | TEN-02 | Recover and verify the foundation on disposable shared and dedicated pools | Restore every scoped record and grant, reject ambiguous placement, and verify interruption and retry |
 | TEN-04 / 8 | TEN-03 | Durable pool registry/placement epoch and shared TenantUnitOfWork boundary for HTTP/jobs/files/exports | Named shared pools and dedicated pool route correctly; stale epoch fails; no silent shared fallback; control/data split supported |
 | ORG-01 / 8 | TEN-03, IAM-03 | Organization/school/campus hierarchy directories/detail/edit with membership and lifecycle preview | Same-named schools distinguished by ancestry; cycles/cross-tenant parents rejected; reparenting shows grant/config impact |
 | ORG-02 / 5 | ORG-01 | Location hierarchy/address/timezone and team definitions/membership UI | Physical locations and teams are distinct; off-campus facility works; team membership alone grants no access |
@@ -104,9 +103,9 @@ All domain stories below include unit rules, SQLite/PostgreSQL repository tests,
 | Story / pts | Module / dependencies | Business deliverable | Complete frontend deliverable | Acceptance journey |
 |---|---|---|---|---|
 | TEN-01 / 8 | tenancy / TEN-02..04 | Tenant/group metadata, active/suspended lifecycle, explicit authorized context | Group profile, scope-aware onboarding, lifecycle impact preview and safe placement status | Suspend tenant blocks its work; school suspension affects only that school; unrelated tenant remains available |
-| IAM-01 / 8 | identity / TEN-01 | Secure account lifecycle, password change/reset tokens, session inventory/revocation and login throttling | Sign-in, password recovery/change, session list with revoke controls | Invalid/expired/reused reset token rejected; password change revokes other sessions |
-| IAM-02 / 5 | users / IAM-01 | Member list/create/update/disable, invitations via delivery port, last-admin protection | Searchable member directory, add member/invite, profile, deactivate confirmation | Admin creates registrar; registrar denied role changes; final admin cannot be removed |
-| IAM-03 / 8 | permissions / IAM-02 | Permission catalog and role grants, class/self/family scopes, server-enforced policy | Role editor, effective-access preview, assignment workflow | Teacher cannot read unassigned class; guardian cannot read unrelated child |
+| IAM-01 / 8 | auth / TEN-01 | Secure account lifecycle, password change/reset tokens, session inventory/revocation and login throttling | Sign-in, password recovery/change, session list with revoke controls | Invalid/expired/reused reset token rejected; password change revokes other sessions |
+| IAM-02 / 5 | auth / IAM-01 | Member list/create/update/disable, invitations via delivery port, last-admin protection | Searchable member directory, add member/invite, profile, deactivate confirmation | Admin creates registrar; registrar denied role changes; final admin cannot be removed |
+| IAM-03 / 8 | auth / IAM-02 | Permission catalog and role grants, class/self/family scopes, server-enforced policy | Role editor, effective-access preview, assignment workflow | Teacher cannot read unassigned class; guardian cannot read unrelated child |
 | CFG-01 / 5 | school_settings / TEN-01 | School locale/timezone/currency/calendar defaults and versioned settings | Shared settings sections, clear validation, save/reset and conflict recovery | Invalid timezone rejected; valid setting changes formatting across clients |
 | SUB-01 / 8 | subscriptions / TEN-01 | Plan/entitlements and explicit lifecycle with provider port; no silent loss of data | Plan/usage/renewal status and administrator entitlement controls | Disabled feature is denied server-side while existing authorized export remains available |
 | ACD-01 / 5 | academics / CFG-01 | Academic years, ordered nonoverlapping terms, open/closed lifecycle | Year/term list, editor, calendar summary and close confirmation | Overlap rejected; closed term blocks new grades and attendance |
@@ -152,7 +151,7 @@ All domain stories below include unit rules, SQLite/PostgreSQL repository tests,
 
 | Story / pts | Deliverable and owned files | Acceptance |
 |---|---|---|
-| UI-01 / 5 | Shared responsive shell/navigation, route metadata and capability-aware actions (`clients/web/src/shell`, `app/router.ts`, shared client contracts) | Mobile navigation closes/restores focus; active page/breadcrumb correct; revoked permission removes actions; no cross-user content flash |
+| UI-01 / 5 | Shared responsive shell/navigation, route metadata and capability-aware actions (`resources/js/layouts`, `app/router.ts`, shared client contracts) | Mobile navigation closes/restores focus; active page/breadcrumb correct; revoked permission removes actions; no cross-user content flash |
 | UI-02 / 8 | Shared list/detail/editor/calendar/board/roster/ledger/report/settings templates (`components`, `features`) | Each template has a real consuming domain page, consistent spacing and all asynchronous states; no unused template catalog masquerading as pages |
 | UI-03 / 5 | Workspace preferences: theme, accent, density, width, pins/order, selected views/columns (`features/preferences`, `app/preferences.ts`) | Changes apply across pages and Wails; reset works; school/user isolation; denied storage handled gracefully |
 | UI-04 / 8 | Durable navigation and recovery: URL-safe filters, unsaved-change dialog, error boundary, session/offline/conflict feedback | Browser back/forward preserves safe filters, cancellation retains drafts, unknown write result never says success, no native confirm dialog for app navigation |
@@ -177,7 +176,7 @@ All domain stories below include unit rules, SQLite/PostgreSQL repository tests,
 | Story / pts | Deliverable | Acceptance / evidence |
 |---|---|---|
 | OPS-01 / 5 | Native-first Make targets, supervised dev stack, optional Docker targets, setup diagnostics | Native SQLite migrate/seed/API/worker/UI works without Docker executable; failure shuts down children and exits nonzero |
-| OPS-02 / 3 | Product naming correction | No active SchoolOS provider or School OS product copy; `EduPilotOS` provider boots; historical research untouched |
+| OPS-02 / 3 | Product naming correction | The `EduPilotOS` provider boots and each client identifies itself as EduPilot OS |
 | OPS-03 / 5 | Execute all existing suites and repair real defects | Root Go, web/mobile, gateway and available browser tests executed; failures fixed with regressions; unavailable services explicitly recorded |
 | OPS-04 / 5 | Automated native CI and reproducible evidence | Pull requests run tests/builds without Docker requirement; PostgreSQL integration job and optional container smoke separate; secret-free artifacts |
 | OPS-05 / 8 | Native build/package and install/uninstall/service units | Built server serves production UI; API/worker/migrator separately runnable; least-privilege system service and private config; startup/readiness tests |
@@ -201,8 +200,8 @@ All domain stories below include unit rules, SQLite/PostgreSQL repository tests,
 **Files:** `docs/product/production-scope.md`, this plan, `docs/product/frontend-matrix.md`, `docs/release/status.md`.
 **Interfaces:** Produces stable story IDs and acceptance criteria consumed by all implementation increments.
 
-- [x] Check all 42 catalog modules map to a story and full UI row; no backend-only completion definition.
-- [x] Record starter baseline and existing authorization, native default and naming rulings.
+- [x] Check all planned workflows map to a story and full UI row; no backend-only completion definition.
+- [x] Record foundation baseline and existing authorization, native default and naming rulings.
 - [x] Commit and push plan before product implementation. Expected: remote commit/tree contains these documents.
 
 ## Task 2: Native operation and baseline qualification (S01)
@@ -213,33 +212,33 @@ All domain stories below include unit rules, SQLite/PostgreSQL repository tests,
 - [ ] Execute baseline suites separately, write exit status and skip names to release evidence.
 - [ ] Write native launcher tests for missing dependency, migration failure, child failure and shutdown; run RED.
 - [ ] Implement native supervisor with process-group cleanup and no shell interpolation of credentials. Keep child diagnostics and return failure codes.
-- [ ] Rename `SchoolOS` provider to `EduPilotOS`, keeping registration and binding behavior.
+- [ ] Verify the application provider resolves installed module services through the Goravel container.
 - [ ] Make native docs/commands primary; retain explicit Docker commands and update optional container workflow references.
 - [ ] Run native launcher tests, root Go tests, web/mobile/gateway tests, web build, native install smoke and real browser tests where supported. Expected: green suites; unavailable checks named with reasons.
 - [ ] Commit/push coherent checkpoints and update status with verified evidence.
 
 ## Task 3: Deliver group tenancy and full frontend foundation (S02)
 
-**Files:** `platform/access`, `platform/database`, `modules/auth`, `modules/tenancy`, `database/edumigrations`, `clients/web/src/app`, `clients/web/src/shell`, `clients/web/src/components`, `clients/web/src/features/preferences`, `clients/web/src/tests`, `tests/e2e/specs`, design documents.
+**Files:** `modules/core/access`, `modules/core/database`, `modules/auth`, `modules/tenancy`, `database/edumigrations`, `clients/web/src/app`, `resources/js/layouts`, `resources/js/components`, `resources/js/features/preferences`, `clients/web/src/tests`, `tests/e2e/specs`, design documents.
 **Interfaces:** Extend existing `Preferences`, `readRoute` and shared primitives; keep API DTOs in `packages/api-client`. Use one shared confirmation/navigation controller for dirty editors, not per-page browser dialogs. Route metadata maps existing module keys to UI capability/status; it does not grant permissions.
 
 - [ ] Refine TEN-02..04, ORG/CTX/CFG/LNG enabling stories from the tenancy specification before broad UI/domain changes. Implement scope mapping/migration/authorization first with upgrade and sibling-scope isolation tests.
 - [ ] Add tests for safe route state, malformed URLs, preference reset/reorder, mobile menu focus, dirty-navigation cancel/confirm, context-switch races, inherited-setting locks and multilingual field preservation; watch new expectations fail.
-- [ ] Implement reusable shell/route/dialog/preference behavior and adapt existing student/workspace/specialized pages.
+- [ ] Implement reusable shell/route/dialog/preference behavior and adapt the Auth and Tenancy pages.
 - [ ] Add full-flow browser cases for each implemented screen with desktop/narrow layouts, keyboard, French/dark theme, empty/error/offline and conflict states.
 - [ ] Inspect real screenshots and fix overflow, hierarchy, contrast and focus defects. Record exact coverage in the frontend matrix.
 - [ ] Run component/API tests, browser suite and build. Request independent frontend/code review, resolve important findings, commit/push.
 
 ## Task 4: Refine and deliver S03–S17 in dependency order
 
-**Files:** Each owner `modules/<key>/{domain,application,contracts,adapters,migrations}` following its existing ownership layout, `app/schoolapi`, shared DTO/OpenAPI and `clients/{web,mobile}/src/features/<key>` as appropriate; module/unit/feature/e2e tests.
-**Interfaces:** Reuse existing `access.Principal`, tenant catalog, `outbox.Append`, public Students directory and transaction context. Introduce named public read/command contracts at each module boundary. Never query another module's private tables directly.
+**Files:** Each owner `modules/<key>/{app/models,app/services,app/http/controllers,routes,database/migrations,providers,resources}` following its existing ownership layout, `app/schoolapi`, shared DTO/OpenAPI and `modules/<key>/resources/js` as appropriate; module/unit/feature/e2e tests.
+**Interfaces:** Reuse existing `access.Principal`, tenant catalog, `outbox.Append`, Core contracts composed at bootstrap. Introduce named public read/command contracts at each module boundary. Never query another module's private tables directly.
 
 For each story in the domain table:
 
 - [ ] Refine the upcoming story into a file-level subplan containing concrete DTO fields, states, role grants, migrations/indexes, API routes/errors and screen flow. Split any 13-point or multi-actor story into demonstrable vertical slices.
-- [ ] Write domain/permission/concurrency tests first; run RED; implement domain and application ports; run GREEN.
-- [ ] Write real SQLite/PostgreSQL persistence/API/contract tests; implement adapters, atomic events and migration; prove negative tenant cases.
+- [ ] Write domain/permission/concurrency tests first; run RED; implement model rules and service contracts; run GREEN.
+- [ ] Write real SQLite/PostgreSQL persistence/API/contract tests; implement module services, atomic events and Blueprint migrations; prove negative tenant cases.
 - [ ] Write UI interaction and end-to-end tests; implement full page flow from shared templates and real APIs; prove denied/empty/error/dirty/conflict behavior.
 - [ ] Update OpenAPI, frontend matrix, role matrix and module documentation; run the affected and cross-module suites, review, commit and push.
 - [ ] Mark the story Verified only with recorded acceptance evidence. Repeat until all planned domain stories meet the definition of done.
@@ -260,7 +259,7 @@ For each story in the domain table:
 | Scope | Every listed module workflow and frontend row accepted | Open |
 | Automated tests | Unit, feature, contract, integration and e2e green on release SHA | Open |
 | PostgreSQL/SQLite | Isolation, concurrent writes, migrations, backups and restore | Open |
-| Group tenancy | Multiple organizations/schools/campuses/teams/curricula in one tenant; scoped grants/configuration and legacy upgrade verified | Open |
+| Group tenancy | Multiple organizations/schools/campuses/teams/curricula in one tenant; scoped grants/configuration and verified whole-tenant relocation | Open |
 | Tenant mobility | Shared/isolated and cross-engine moves; fence/epoch/crash/reverse-move/restore drills | Open |
 | Full UI | Shared components, complete page flows, context isolation, inherited customization, multilingual fields and responsive/keyboard review | Open |
 | Security | Access/tenancy/file/export/webhook/session review and dependency audit | Open |

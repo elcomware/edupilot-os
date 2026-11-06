@@ -16,24 +16,22 @@ appId: org.edupilot.mobile
 - assertVisible: School modules
 - assertVisible: ${SCHOOL}
 - extendedWaitUntil:
-    visible: { id: "module-students" }
+    visible: { id: "module-tenancy" }
     timeout: 20000
 - takeScreenshot: edupilot-directory
-- tapOn: { id: "module-students" }
-- tapOn: { id: "given-name" }
-- inputText: Jamie
-- tapOn: { id: "family-name" }
-- inputText: Demo
+- tapOn: { id: "module-tenancy" }
+- tapOn: { id: "entry-title" }
+- inputText: Campus review
 - hideKeyboard
 - scrollUntilVisible:
-    element: "Register student"
+    element: "Add entry"
     direction: DOWN
-- tapOn: Register student
+- tapOn: Add entry
 - scrollUntilVisible:
-    element: Active
+    element: Open
     direction: DOWN
-- assertVisible: Jamie Demo
-- takeScreenshot: edupilot-students
+- assertVisible: Campus review
+- takeScreenshot: edupilot-workspace
 - scrollUntilVisible:
     element: Sign out
     direction: UP

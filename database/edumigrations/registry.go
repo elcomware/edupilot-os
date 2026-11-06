@@ -1,195 +1,128 @@
-// Package edumigrations maps module-owned SQL plans to Goravel's native migration
-// registry. The native migrator owns the control ledger. Dedicated plans open
-// transactions on their explicitly named Goravel pool.
+// Package edumigrations registers module-owned Goravel migrations on each configured pool.
 package edumigrations
 
 import (
-	"context"
 	"crypto/rand"
 	"errors"
 	"fmt"
 
 	"github.com/elcomware/edupilot/app/facades"
-	"github.com/elcomware/edupilot/platform/database"
-	"github.com/elcomware/edupilot/platform/outbox"
+	"github.com/elcomware/edupilot/modules/core/database"
+	"github.com/elcomware/edupilot/modules/core/migration"
+	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/database/schema"
 )
 
-type Plan struct {
-	ID          string
-	ControlOnly bool
-	ForwardOnly bool
-	Up, Down    []string
-	DriverUp    map[string][]string
-	placement   bool
-}
-
-func PlacementPlan() Plan {
-	return Plan{ID: "20260101000001_edu_placement", placement: true}
-}
-
-func OutboxPlan() Plan {
-	return Plan{ID: "20260101000002_edu_outbox", Up: outbox.SchemaUp, Down: outbox.SchemaDown}
-}
-
-// Statements exposes the exact DDL for integration fixtures. In production only
-// Goravel's migrator should execute it, on its own connection and transaction.
-func (p Plan) Statements(node database.Connection, down bool) []string {
-	if !p.placement {
-		if down {
-			return p.Down
-		}
-		if statements, exists := p.DriverUp[node.Driver]; exists {
-			return statements
-		}
-		return p.Up
-	}
-	if down {
-		statements := []string{"DROP TABLE IF EXISTS edu_pool_marker"}
-		if node.Tenant == "" {
-			statements = append(statements, "DROP TABLE IF EXISTS edu_tenant_placement")
-		}
-		return statements
-	}
-
-	// Owner is either "shared" or a validated tenant slug. The NOT NULL
-	// constraint forces the transaction to fail if two names resolve to one DB.
-	up := []string{
-		`CREATE TABLE IF NOT EXISTS edu_pool_marker (
-			singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
-			owner TEXT NOT NULL, pool_id TEXT NOT NULL
-		)`,
-		fmt.Sprintf(`INSERT INTO edu_pool_marker (singleton, owner, pool_id) VALUES (1, '%s', '%s')
-			ON CONFLICT (singleton) DO UPDATE SET owner =
-				CASE WHEN edu_pool_marker.owner = excluded.owner THEN edu_pool_marker.owner ELSE NULL END`,
-			node.Owner(), rand.Text()),
-	}
-	if node.Tenant == "" {
-		up = append(up, `CREATE TABLE IF NOT EXISTS edu_tenant_placement (
-			tenant_id TEXT PRIMARY KEY NOT NULL, pool_id TEXT NOT NULL
-		)`)
-	}
-	return up
-}
+const receiptTable = "edu_foundation_receipts"
 
 type registered struct {
-	plan Plan
-	node database.Connection
+	node     database.Connection
+	key      string
+	create   func(migration.Schema) error
+	baseline bool
 }
 
-var _ schema.Migration = (*registered)(nil)
-
-func (m *registered) Signature() string { return m.plan.ID + "__" + m.node.Name }
-func (m *registered) Up() error         { return m.run(false) }
-func (m *registered) Down() error       { return m.run(true) }
-func (m *registered) run(down bool) error {
-	// Goravel v1.18's cached Orm.Connection(name) can report the *previous*
-	// connection name even though its query uses the correct physical pool.
-	// Keep the native migrator on control. For dedicated DDL, obtain the named
-	// physical handle explicitly rather than implementing schema.Connection.
-	if m.node.Tenant != "" {
-		return m.onDedicated(down)
+func OnPool(node database.Connection, key string, create func(migration.Schema) error) schema.Migration {
+	return &registered{node: node, key: key, create: create}
+}
+func PoolBaseline(node database.Connection, create func(migration.Schema) error) schema.Migration {
+	return &registered{node: node, key: "01_pool", create: create, baseline: true}
+}
+func (m *registered) Signature() string { return "20261106_foundation_" + m.key + "__" + m.node.Name }
+func (m *registered) Down() error {
+	return errors.New("pool migrations require restoration from a verified backup")
+}
+func (m *registered) Up() error {
+	// Goravel already wraps the control connection in a transaction. A dedicated
+	// database needs its own transaction and receipt before the control ledger advances.
+	db := facades.Schema()
+	if m.node.Tenant == "" {
+		return m.apply(db)
 	}
-	frameworkSchema := facades.Schema()
-	if frameworkSchema == nil || frameworkSchema.GetConnection() != m.node.Name {
-		return fmt.Errorf("%s: incorrect Goravel control connection", m.Signature())
-	}
-	tx := frameworkSchema.Orm().Query()
-	if tx == nil || !tx.InTransaction() {
-		return fmt.Errorf("%s: Goravel migration transaction required", m.Signature())
-	}
-	return m.apply(down, func(sql string, args ...any) (int64, error) {
-		result, err := tx.Exec(sql, args...)
-		if err != nil {
-			return 0, err
-		}
-		return result.RowsAffected, nil
+	target := db.Connection(m.node.Name)
+	return target.Orm().Transaction(func(tx orm.Query) error {
+		original := target.Orm().Query()
+		target.Orm().SetQuery(tx)
+		defer target.Orm().SetQuery(original)
+		return m.apply(target)
 	})
 }
-
-func (m *registered) onDedicated(down bool) error {
-	orm := facades.Orm()
-	if orm == nil || orm.Query() == nil {
-		return errors.New("Goravel ORM is unavailable")
-	}
-	conn := orm.Connection(m.node.Name)
-	if conn == nil || conn.Query() == nil {
-		return fmt.Errorf("%s: dedicated Goravel connection unavailable", m.Signature())
-	}
-	db, err := conn.DB()
-	if err != nil {
-		return fmt.Errorf("%s: resolve named pool: %w", m.Signature(), err)
-	}
-	pool := database.Pool{DB: db, Driver: m.node.Driver}
-	ctx := context.Background() // Goravel Migration.Up/Down do not receive a context.
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("%s: start dedicated transaction: %w", m.Signature(), err)
-	}
-	defer tx.Rollback()
-	err = m.apply(down, func(sql string, args ...any) (int64, error) {
-		result, err := tx.ExecContext(ctx, pool.Bind(sql), args...)
-		if err != nil {
-			return 0, err
-		}
-		return result.RowsAffected()
-	})
+func (m *registered) apply(db schema.Schema) error {
+	q := db.Orm().Query()
+	// Inspect the selected connection's schema, including PostgreSQL search_path.
+	exists, err := tableExists(q, m.node.Driver, receiptTable)
 	if err != nil {
 		return err
 	}
-	return tx.Commit()
-}
-
-// Goravel commits the selected connection before updating its default-connection
-// history. A local receipt in the DDL transaction closes that crash window for
-// arbitrary changes, including ALTER, backfills and plain CREATE/DROP statements.
-func (m *registered) apply(down bool, exec func(string, ...any) (int64, error)) error {
-	if down && m.plan.ForwardOnly {
-		return fmt.Errorf("%s: forward-only migration; recover from a verified snapshot under maintenance", m.Signature())
-	}
-	const receipts = `CREATE TABLE IF NOT EXISTS edu_migration_receipts
-		(signature TEXT PRIMARY KEY NOT NULL)`
-	if _, err := exec(receipts); err != nil {
-		return fmt.Errorf("%s: initialize migration receipt: %w", m.Signature(), err)
-	}
-	mark := "INSERT INTO edu_migration_receipts (signature) VALUES (?) ON CONFLICT (signature) DO NOTHING"
-	if down {
-		mark = "DELETE FROM edu_migration_receipts WHERE signature = ?"
-	}
-	changed, err := exec(mark, m.Signature())
-	if err != nil {
-		return fmt.Errorf("%s: record migration receipt: %w", m.Signature(), err)
-	}
-	if changed == 0 {
-		return nil
-	}
-	for _, stmt := range m.plan.Statements(m.node, down) {
-		if _, err := exec(stmt); err != nil {
-			return fmt.Errorf("%s: %w", m.Signature(), err)
+	if !exists {
+		if !m.baseline {
+			return errors.New("missing pool baseline")
 		}
-	}
-	return nil
-}
-
-// Register is used by bootstrap.Migrations. Each dedicated DB receives its own
-// signatures. Adding a new DB consequently applies all applicable plans to it.
-func Register(settings database.Settings, plans ...Plan) []schema.Migration {
-	if err := settings.Validate(); err != nil {
-		panic(err)
-	}
-	seen := make(map[string]bool)
-	var registeredMigrations []schema.Migration
-	for _, plan := range plans {
-		if plan.ID == "" || seen[plan.ID] {
-			panic("missing or duplicate EduPilot migration ID: " + plan.ID)
-		}
-		seen[plan.ID] = true
-		for _, node := range settings.Nodes() {
-			if plan.ControlOnly && node.Tenant != "" {
-				continue
+		// Artisan can invoke Up directly. Accept only an empty target (and
+		// the empty native ledger on control) before claiming the pool.
+		objects := applicationRelations(m.node.Driver)
+		tables := q.Table(objects.catalog).Where(objects.filter)
+		if m.node.Tenant == "" {
+			ledger, err := historyTable()
+			if err != nil {
+				return err
 			}
-			registeredMigrations = append(registeredMigrations, &registered{plan, node})
+			occupied, err := q.Table(ledger).Exists()
+			if err != nil {
+				return err
+			}
+			if occupied {
+				return errors.New("unrecognized migration history")
+			}
+			tables = tables.Where(objects.name+" <> ?", ledger)
+		}
+		occupied, err := tables.Exists()
+		if err != nil {
+			return err
+		}
+		if occupied {
+			return errors.New("select an empty database for the pool baseline")
+		}
+		if err := db.Create(receiptTable, func(t schema.Blueprint) { t.String("signature"); t.Primary("signature") }); err != nil {
+			return err
 		}
 	}
-	return registeredMigrations
+	recorded, err := q.Table(receiptTable).Where("signature", m.Signature()).Exists()
+	if err != nil || recorded {
+		return err
+	}
+	if err = m.create(db); err != nil {
+		return fmt.Errorf("%s: %w", m.Signature(), err)
+	}
+	if m.baseline {
+		if err = q.Table("edu_pool_marker").Create(map[string]any{"singleton": 1, "owner": m.node.Owner(), "pool_id": rand.Text()}); err != nil {
+			return err
+		}
+	}
+	return q.Table(receiptTable).Create(map[string]any{"signature": m.Signature()})
+}
+func tableExists(q orm.Query, driver, name string) (bool, error) {
+	if driver == "postgres" {
+		return q.Table("information_schema.tables").Where("table_schema=current_schema() AND table_type='BASE TABLE'").Where("table_name", name).Exists()
+	}
+	return q.Table("sqlite_master").Where("type", "table").Where("name", name).Exists()
+}
+
+// Both the installer preflight and the native migration inspect the selected schema.
+// PostgreSQL creates dependent indexes and sequences for the native ledger itself.
+type relationInventory struct{ catalog, name, filter string }
+
+func applicationRelations(driver string) relationInventory {
+	if driver == "postgres" {
+		return relationInventory{
+			catalog: "pg_catalog.pg_class",
+			name:    "relname",
+			filter: `relnamespace = (SELECT oid FROM pg_catalog.pg_namespace WHERE nspname = current_schema())
+				AND (relkind IN ('r', 'p', 'v', 'm', 'f') OR (relkind = 'S' AND NOT EXISTS (
+					SELECT 1 FROM pg_catalog.pg_depend
+					WHERE classid = 'pg_catalog.pg_class'::regclass AND objid = pg_class.oid AND deptype IN ('a', 'i')
+				)))`,
+		}
+	}
+	return relationInventory{catalog: "sqlite_master", name: "name", filter: "name NOT GLOB 'sqlite_*'"}
 }

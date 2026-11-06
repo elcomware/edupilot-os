@@ -1,39 +1,70 @@
-// Package migrations owns school memberships, password authentication and bearer sessions.
-// These tables live in the control database even when a school uses a dedicated data pool.
 package migrations
 
-// SchemaUp is applied by the project's central migration registry, in order.
-var SchemaUp = []string{
-	`CREATE TABLE identity_schools (
-		school_id VARCHAR(64) PRIMARY KEY
-	)`,
-	`CREATE TABLE identity_accounts (
-		school_id VARCHAR(64) NOT NULL REFERENCES identity_schools(school_id),
-		id VARCHAR(32) NOT NULL,
-		email VARCHAR(254) NOT NULL,
-		password_hash TEXT NOT NULL,
-		PRIMARY KEY (school_id,id),
-		UNIQUE (school_id,email)
-	)`,
-	`CREATE TABLE identity_memberships (
-		school_id VARCHAR(64) NOT NULL,
-		user_id VARCHAR(32) NOT NULL,
-		role VARCHAR(16) NOT NULL CHECK (role IN ('admin','registrar','viewer')),
-		PRIMARY KEY (school_id,user_id),
-		FOREIGN KEY (school_id,user_id) REFERENCES identity_accounts(school_id,id) ON DELETE CASCADE
-	)`,
-	`CREATE TABLE identity_sessions (
-		token_hash VARCHAR(64) PRIMARY KEY,
-		school_id VARCHAR(64) NOT NULL,
-		user_id VARCHAR(32) NOT NULL,
-		expires_at BIGINT NOT NULL,
-		FOREIGN KEY (school_id,user_id) REFERENCES identity_memberships(school_id,user_id) ON DELETE CASCADE
-	)`,
-	`CREATE INDEX identity_sessions_expiry ON identity_sessions (expires_at)`,
-	`CREATE INDEX identity_sessions_member ON identity_sessions (school_id,user_id)`,
-}
+import (
+	"github.com/elcomware/edupilot/modules/core/migration"
+	"github.com/goravel/framework/contracts/database/schema"
+)
 
-var SchemaDown = []string{
-	`DROP TABLE identity_sessions`, `DROP TABLE identity_memberships`,
-	`DROP TABLE identity_accounts`, `DROP TABLE identity_schools`,
+// Accounts creates school-scoped users, memberships and revocable bearer sessions.
+func Accounts(db migration.Schema) error {
+	if err := db.Create("auth_realms", func(t schema.Blueprint) { t.String("school_id", 64); t.Primary("school_id") }); err != nil {
+		return err
+	}
+	if err := db.Create("auth_roles", func(t schema.Blueprint) {
+		t.String("school_id", 64)
+		t.String("name", 64)
+		t.Primary("school_id", "name")
+		t.Foreign("school_id").References("school_id").On("auth_realms")
+	}); err != nil {
+		return err
+	}
+	if err := db.Create("auth_permissions", func(t schema.Blueprint) {
+		t.String("school_id", 64)
+		t.String("name", 100)
+		t.Primary("school_id", "name")
+		t.Foreign("school_id").References("school_id").On("auth_realms")
+	}); err != nil {
+		return err
+	}
+	if err := db.Create("auth_role_permissions", func(t schema.Blueprint) {
+		t.String("school_id", 64)
+		t.String("role", 64)
+		t.String("permission", 100)
+		t.Primary("school_id", "role", "permission")
+		t.Foreign("school_id", "role").References("school_id", "name").On("auth_roles")
+		t.Foreign("school_id", "permission").References("school_id", "name").On("auth_permissions")
+	}); err != nil {
+		return err
+	}
+	if err := db.Create("auth_users", func(t schema.Blueprint) {
+		t.String("school_id", 64)
+		t.String("id", 32)
+		t.String("email", 254)
+		t.Text("password_hash")
+		t.Primary("school_id", "id")
+		t.Unique("school_id", "email")
+		t.Foreign("school_id").References("school_id").On("auth_realms")
+	}); err != nil {
+		return err
+	}
+	if err := db.Create("auth_memberships", func(t schema.Blueprint) {
+		t.String("school_id", 64)
+		t.String("user_id", 32)
+		t.String("role", 64)
+		t.Foreign("school_id", "role").References("school_id", "name").On("auth_roles")
+		t.Primary("school_id", "user_id")
+		t.Foreign("school_id", "user_id").References("school_id", "id").On("auth_users").CascadeOnDelete()
+	}); err != nil {
+		return err
+	}
+	return db.Create("auth_sessions", func(t schema.Blueprint) {
+		t.String("token_hash", 64)
+		t.String("school_id", 64)
+		t.String("user_id", 32)
+		t.BigInteger("expires_at")
+		t.Primary("token_hash")
+		t.Index("expires_at")
+		t.Index("school_id", "user_id")
+		t.Foreign("school_id", "user_id").References("school_id", "user_id").On("auth_memberships").CascadeOnDelete()
+	})
 }

@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import type { Credentials, Principal } from "@edupilot/api-client";
-import { SessionModel, type TokenStore } from "../src/session.ts";
+import { SessionModel, type TokenStore } from "../../../resources/native/session.ts";
 
 const principal: Principal = {
   id: "fixture-user",
   school: "school-A",
-  permissions: ["students.read"],
+  permissions: ["workspace.read"],
 };
 const credentials: Credentials = {
   school: "school-A",

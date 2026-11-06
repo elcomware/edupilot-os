@@ -2,33 +2,32 @@ package schoolapi
 
 import (
 	"context"
-	"github.com/elcomware/edupilot/app/facades"
-	"github.com/elcomware/edupilot/database/edumigrations"
-	"github.com/elcomware/edupilot/modules"
-	"github.com/elcomware/edupilot/modules/auth/app/http/middleware"
-	"github.com/elcomware/edupilot/modules/auth/app/services"
-	"github.com/elcomware/edupilot/modules/documents"
-	documentsroutes "github.com/elcomware/edupilot/modules/documents/routes"
-	enrollment "github.com/elcomware/edupilot/modules/enrollment/providers"
-	enrollmentroutes "github.com/elcomware/edupilot/modules/enrollment/routes"
-	"github.com/elcomware/edupilot/modules/students/providers"
-	studentsroutes "github.com/elcomware/edupilot/modules/students/routes"
-	"github.com/elcomware/edupilot/platform/database"
 	"net/http"
+	"strings"
 	"time"
+
+	"github.com/elcomware/edupilot/app/facades"
+	modules "github.com/elcomware/edupilot/bootstrap/modulecatalog"
+	"github.com/elcomware/edupilot/database/edumigrations"
+	"github.com/elcomware/edupilot/modules/core/database"
+	"github.com/goravel/framework/contracts/cache"
 )
 
-func New(db *database.Catalog, sessions *services.Service, enabled string) (http.Handler, error) {
+func New(db *database.Catalog, enabled string, resolve modules.ResolveWorkspace, cacheStore cache.Cache) (http.Handler, error) {
 	definitions, err := modules.Enabled(modules.Definitions(), enabled)
 	if err != nil {
 		return nil, err
 	}
-	registry, err := modules.NewRegistry(db, definitions)
+	registry, err := modules.NewRegistry(resolve, definitions)
 	if err != nil {
 		return nil, err
 	}
-	students := providers.New(db)
-	api := moduleAPI{registry}
+
+	keys := []string{}
+	for _, d := range definitions {
+		keys = append(keys, d.Key)
+	}
+	api := moduleAPI{registry: registry, cache: cacheStore, catalogKey: strings.Join(keys, ".")}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/v1/ready", func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
@@ -46,15 +45,6 @@ func New(db *database.Catalog, sessions *services.Service, enabled string) (http
 	protected.HandleFunc("POST /api/v1/modules/{key}/workspace", api.entries)
 	protected.HandleFunc("GET /api/v1/modules/{key}/workspace/{id}", api.entry)
 	protected.HandleFunc("PATCH /api/v1/modules/{key}/workspace/{id}", api.entries)
-	if _, ok := registry.Find("students"); ok {
-		studentsroutes.Register(protected, students.HTTP)
-	}
-	if _, ok := registry.Find("enrollment"); ok {
-		enrollmentroutes.Register(protected, enrollment.New(db, students.Directory))
-	}
-	if _, ok := registry.Find("documents"); ok {
-		documentsroutes.Register(protected, documents.Blobs())
-	}
-	mux.Handle("/", middleware.Protect(sessions, protected))
+	mux.Handle("/", protected)
 	return mux, nil
 }

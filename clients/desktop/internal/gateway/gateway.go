@@ -68,7 +68,6 @@ func New(origin *url.URL) (http.Handler, func()) {
 		MaxResponseHeaderBytes: 64 << 10, IdleConnTimeout: 60 * time.Second, ForceAttemptHTTP2: true,
 	}
 	client := &http.Client{Transport: tr, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}
-	documentTransfers := make(chan struct{}, 8)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet, http.MethodPost, http.MethodPatch, http.MethodPut, http.MethodDelete:
@@ -76,47 +75,26 @@ func New(origin *url.URL) (http.Handler, func()) {
 			fail(w, http.StatusMethodNotAllowed, "method_not_allowed")
 			return
 		}
-		upload := r.Method == http.MethodPost && r.URL.Path == documentFiles
-		var download string
-		if r.Method == http.MethodGet {
-			download = documentPathID(r.URL.Path)
-		}
-		requestLimit, sizeCode := maxRequest, "request_too_large"
-		if upload {
-			requestLimit, sizeCode = maxDocumentBytes, "file_too_large"
-		}
-		deadline := 25 * time.Second
-		if upload || download != "" {
-			// Match the backend's bounded concurrency before buffering a file.
-			select {
-			case documentTransfers <- struct{}{}:
-				defer func() { <-documentTransfers }()
-			default:
-				fail(w, http.StatusServiceUnavailable, "busy")
-				return
-			}
-			deadline = 50 * time.Second // Documents allows up to 45 s for storage.
-		}
-		if r.ContentLength > int64(requestLimit) {
-			fail(w, http.StatusRequestEntityTooLarge, sizeCode)
+		if r.ContentLength > int64(maxRequest) {
+			fail(w, http.StatusRequestEntityTooLarge, "request_too_large")
 			return
 		}
 		var body io.Reader
 		if r.Body != nil && r.Body != http.NoBody {
-			data, err := io.ReadAll(io.LimitReader(r.Body, int64(requestLimit)+1))
+			data, err := io.ReadAll(io.LimitReader(r.Body, int64(maxRequest)+1))
 			if err != nil {
 				fail(w, http.StatusBadRequest, "invalid_body")
 				return
 			}
-			if len(data) > requestLimit {
-				fail(w, http.StatusRequestEntityTooLarge, sizeCode)
+			if len(data) > maxRequest {
+				fail(w, http.StatusRequestEntityTooLarge, "request_too_large")
 				return
 			}
 			body = bytes.NewReader(data)
 		}
 		dest := *origin
 		dest.Path, dest.RawQuery = r.URL.Path, r.URL.RawQuery
-		ctx, cancel := context.WithTimeout(r.Context(), deadline)
+		ctx, cancel := context.WithTimeout(r.Context(), 25*time.Second)
 		defer cancel()
 		req, err := http.NewRequestWithContext(ctx, r.Method, dest.String(), body)
 		if err != nil {
@@ -142,35 +120,18 @@ func New(origin *url.URL) (http.Handler, func()) {
 			fail(w, http.StatusBadGateway, "upstream_redirect")
 			return
 		}
-		responseLimit := maxResponse
-		isDownload := download != "" && res.StatusCode == http.StatusOK
-		if isDownload {
-			responseLimit = maxDocumentBytes
-		}
-		if res.ContentLength > int64(responseLimit) {
+		if res.ContentLength > int64(maxResponse) {
 			fail(w, http.StatusBadGateway, "invalid_upstream_body")
 			return
 		}
-		data, err := io.ReadAll(io.LimitReader(res.Body, int64(responseLimit)+1))
-		if err != nil || len(data) > responseLimit {
+		data, err := io.ReadAll(io.LimitReader(res.Body, int64(maxResponse)+1))
+		if err != nil || len(data) > maxResponse {
 			fail(w, http.StatusBadGateway, "invalid_upstream_body")
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		if isDownload && !setDownloadHeaders(w.Header(), res.Header, download) {
-			fail(w, http.StatusBadGateway, "invalid_upstream_attachment")
-			return
-		}
-		if upload && res.StatusCode == http.StatusCreated {
-			// A successful upload remains successful even if the upstream
-			// omitted Location. Never pass through an external URL.
-			location := res.Header.Get("Location")
-			if len(res.Header.Values("Location")) == 1 && documentPathID(location) != "" {
-				w.Header().Set("Location", location)
-			}
-		}
 		w.WriteHeader(res.StatusCode)
 		if res.StatusCode != http.StatusNoContent {
 			_, _ = w.Write(data)

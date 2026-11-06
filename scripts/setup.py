@@ -14,10 +14,7 @@ source = env_path if env_path.exists() else root / ".env.example"
 contents = source.read_text(encoding="utf-8")
 new_values = {
     "APP_KEY": lambda: secrets.token_hex(16),  # 32 ASCII characters
-    "JWT_SECRET": lambda: secrets.token_hex(32),
     "DB_PASSWORD": lambda: secrets.token_hex(24),
-    "MINIO_ROOT_USER": lambda: "edu" + secrets.token_hex(6),
-    "MINIO_ROOT_PASSWORD": lambda: secrets.token_hex(24),
 }
 for name, generate in new_values.items():
     line = re.compile(rf"^({name}[ \t]*=[ \t]*)([^\n]*)$", re.MULTILINE)

@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/elcomware/edupilot/modules/auth/app/models"
-	"github.com/elcomware/edupilot/platform/access"
-	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/modules/core/access"
+	"github.com/elcomware/edupilot/modules/core/database"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -88,8 +88,8 @@ func (s *Service) Login(ctx context.Context, school, email, password string) (Se
 	if !database.ValidTenant(school) || !ok || len(password) == 0 || len(password) > 72 {
 		return Session{}, ErrInvalidCredentials
 	}
-	const lookup = `SELECT a.id,a.password_hash,m.role FROM identity_accounts a
-		JOIN identity_memberships m ON a.school_id=m.school_id AND a.id=m.user_id
+	const lookup = `SELECT a.id,a.password_hash,m.role FROM auth_users a
+		JOIN auth_memberships m ON a.school_id=m.school_id AND a.id=m.user_id
 		WHERE a.school_id=? AND a.email=?`
 	var id, hash, role string
 	err := s.pool.DB.QueryRowContext(ctx, s.pool.Bind(lookup), school, normalized).Scan(&id, &hash, &role)
@@ -105,10 +105,6 @@ func (s *Service) Login(ctx context.Context, school, email, password string) (Se
 		return Session{}, fmt.Errorf("load membership: %w", err)
 	}
 	if bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) != nil {
-		return Session{}, ErrInvalidCredentials
-	}
-	p, err := (models.Membership{UserID: id, School: school, Role: models.Role(role)}).Principal()
-	if err != nil {
 		return Session{}, ErrInvalidCredentials
 	}
 	b, err := randomBytes(32)
@@ -128,11 +124,11 @@ func (s *Service) Login(ctx context.Context, school, email, password string) (Se
 		return Session{}, err
 	}
 	defer tx.Rollback()
-	if _, err = tx.ExecContext(ctx, s.pool.Bind(`DELETE FROM identity_sessions WHERE expires_at<=?`), now.Unix()); err != nil {
+	if _, err = tx.ExecContext(ctx, s.pool.Bind(`DELETE FROM auth_sessions WHERE expires_at<=?`), now.Unix()); err != nil {
 		return Session{}, err
 	}
-	result, err := tx.ExecContext(ctx, s.pool.Bind(`INSERT INTO identity_sessions (token_hash,school_id,user_id,expires_at)
-		SELECT ?,a.school_id,a.id,? FROM identity_accounts a JOIN identity_memberships m
+	result, err := tx.ExecContext(ctx, s.pool.Bind(`INSERT INTO auth_sessions (token_hash,school_id,user_id,expires_at)
+		SELECT ?,a.school_id,a.id,? FROM auth_users a JOIN auth_memberships m
 		ON a.school_id=m.school_id AND a.id=m.user_id
 		WHERE a.school_id=? AND a.id=? AND a.password_hash=? AND m.role=?`),
 		hashed, now.Add(sessionTTL).Unix(), school, id, hash, role)
@@ -146,6 +142,10 @@ func (s *Service) Login(ctx context.Context, school, email, password string) (Se
 	if n != 1 {
 		return Session{}, ErrInvalidCredentials
 	}
+	p, err := s.authenticate(ctx, tx, token)
+	if err != nil {
+		return Session{}, err
+	}
 	if err = tx.Commit(); err != nil {
 		return Session{}, err
 	}
@@ -153,26 +153,15 @@ func (s *Service) Login(ctx context.Context, school, email, password string) (Se
 }
 
 type queryer interface {
-	QueryRowContext(context.Context, string, ...any) *sql.Row
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
 }
 
 func (s *Service) authenticate(ctx context.Context, q queryer, token string) (access.Principal, error) {
-	hashed, err := digest(token)
+	user, err := s.currentUser(ctx, q, token)
 	if err != nil {
 		return access.Principal{}, err
 	}
-	const lookup = `SELECT m.user_id,m.school_id,m.role FROM identity_sessions s
-		JOIN identity_memberships m ON s.school_id=m.school_id AND s.user_id=m.user_id
-		WHERE s.token_hash=? AND s.expires_at>?`
-	var id, school, role string
-	err = q.QueryRowContext(ctx, s.pool.Bind(lookup), hashed, s.now().Unix()).Scan(&id, &school, &role)
-	if errors.Is(err, sql.ErrNoRows) {
-		return access.Principal{}, access.ErrUnauthenticated
-	}
-	if err != nil {
-		return access.Principal{}, fmt.Errorf("load session: %w", err)
-	}
-	return (models.Membership{UserID: id, School: school, Role: models.Role(role)}).Principal()
+	return access.Principal{ID: user.ID, School: user.Membership.School, Permissions: user.Permissions}, nil
 }
 
 func (s *Service) Authenticate(ctx context.Context, token string) (access.Principal, error) {
@@ -184,7 +173,7 @@ func (s *Service) Logout(ctx context.Context, token string) error {
 	if err != nil {
 		return err
 	}
-	result, err := s.pool.DB.ExecContext(ctx, s.pool.Bind(`DELETE FROM identity_sessions WHERE token_hash=? AND expires_at>?`), hashed, s.now().Unix())
+	result, err := s.pool.DB.ExecContext(ctx, s.pool.Bind(`DELETE FROM auth_sessions WHERE token_hash=? AND expires_at>?`), hashed, s.now().Unix())
 	if err != nil {
 		return err
 	}

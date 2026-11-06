@@ -2,13 +2,14 @@ package controllers
 
 import (
 	"encoding/json"
-	"github.com/elcomware/edupilot/modules/auth/app/models"
-	"github.com/elcomware/edupilot/platform/access"
 	"net/http"
 	"net/http/httptest"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/elcomware/edupilot/modules/auth/app/models"
+	"github.com/elcomware/edupilot/modules/core/access"
 )
 
 func TestCurrentUserFollowsSchoolMembershipAndLiveRole(t *testing.T) {
@@ -60,14 +61,14 @@ func TestCurrentUserFollowsSchoolMembershipAndLiveRole(t *testing.T) {
 	get("", "", 401)
 	get(session.Token, "south", 403)
 	viewer := get(session.Token, "north", 200)
-	if viewer.ID != member.ID || viewer.Email != "teacher@example.test" || viewer.Membership != (models.Membership{School: "north", UserID: member.ID, Role: models.RoleViewer}) || slices.Contains(viewer.Permissions, access.StudentsWrite) {
+	if viewer.ID != member.ID || viewer.Email != "teacher@example.test" || viewer.Membership != (models.Membership{School: "north", UserID: member.ID, Role: models.RoleViewer}) || slices.Contains(viewer.Permissions, access.WorkspaceWrite) {
 		t.Fatal("wrong viewer relationships")
 	}
 	if err = s.SetMemberRole(ctx, admin.Token, "north", member.ID, models.RoleRegistrar); err != nil {
 		t.Fatal(err)
 	}
 	registrar := get(session.Token, "", 200)
-	if registrar.Membership.Role != models.RoleRegistrar || !slices.Contains(registrar.Permissions, access.StudentsWrite) {
+	if registrar.Membership.Role != models.RoleRegistrar || !slices.Contains(registrar.Permissions, access.WorkspaceWrite) {
 		t.Fatal("stale role or permissions")
 	}
 	if err = s.Logout(ctx, session.Token); err != nil {

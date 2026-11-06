@@ -4,7 +4,22 @@
     "strict": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
-    "types": ["react", "node"]
+    "types": [
+      "react",
+      "node"
+    ],
+    "paths": {
+      "@resources/*": [
+        "../../resources/js/*"
+      ],
+      "@native/*": [
+        "../../resources/native/*"
+      ]
+    }
   },
-  "include": ["**/*.ts", "**/*.tsx", "expo-env.d.ts"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "expo-env.d.ts"
+  ]
 }

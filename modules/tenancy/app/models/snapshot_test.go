@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
+	s "github.com/elcomware/edupilot/modules/core/scope"
 	d "github.com/elcomware/edupilot/modules/tenancy/app/models"
-	s "github.com/elcomware/edupilot/platform/scope"
 )
 
 func TestSnapshotRoundTripPreservesVersionAndAncestors(t *testing.T) {

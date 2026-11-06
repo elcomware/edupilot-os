@@ -5,9 +5,10 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+
 	"github.com/elcomware/edupilot/modules/auth/app/models"
-	"github.com/elcomware/edupilot/platform/access"
-	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/modules/core/access"
+	"github.com/elcomware/edupilot/modules/core/database"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -24,7 +25,7 @@ func (s *Service) Seed(ctx context.Context, school, email, password string) (acc
 		return access.Principal{}, err
 	}
 	defer tx.Rollback()
-	res, err := tx.ExecContext(ctx, s.pool.Bind(`INSERT INTO identity_schools (school_id) VALUES (?) ON CONFLICT (school_id) DO NOTHING`), school)
+	res, err := tx.ExecContext(ctx, s.pool.Bind(`INSERT INTO auth_realms (school_id) VALUES (?) ON CONFLICT (school_id) DO NOTHING`), school)
 	if err != nil {
 		return access.Principal{}, err
 	}
@@ -34,8 +35,8 @@ func (s *Service) Seed(ctx context.Context, school, email, password string) (acc
 	}
 	if n == 0 {
 		var id, hash string
-		err = tx.QueryRowContext(ctx, s.pool.Bind(`SELECT a.id,a.password_hash FROM identity_accounts a
-			JOIN identity_memberships m ON a.school_id=m.school_id AND a.id=m.user_id
+		err = tx.QueryRowContext(ctx, s.pool.Bind(`SELECT a.id,a.password_hash FROM auth_users a
+			JOIN auth_memberships m ON a.school_id=m.school_id AND a.id=m.user_id
 			WHERE a.school_id=? AND a.email=? AND m.role=?`), school, normalized, models.RoleAdmin).Scan(&id, &hash)
 		if errors.Is(err, sql.ErrNoRows) {
 			return access.Principal{}, ErrConflict
@@ -46,7 +47,10 @@ func (s *Service) Seed(ctx context.Context, school, email, password string) (acc
 		if bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) != nil {
 			return access.Principal{}, ErrConflict
 		}
-		return (models.Membership{UserID: id, School: school, Role: models.RoleAdmin}).Principal()
+		return s.memberPrincipal(ctx, tx, school, id, models.RoleAdmin)
+	}
+	if err := s.seedRoles(ctx, tx, school); err != nil {
+		return access.Principal{}, err
 	}
 	p, err := s.create(ctx, tx, school, normalized, password, models.RoleAdmin)
 	if err != nil {
@@ -68,7 +72,7 @@ func (s *Service) create(ctx context.Context, tx *sql.Tx, school, email, passwor
 	if err != nil {
 		return access.Principal{}, err
 	}
-	res, err := tx.ExecContext(ctx, s.pool.Bind(`INSERT INTO identity_accounts (school_id,id,email,password_hash)
+	res, err := tx.ExecContext(ctx, s.pool.Bind(`INSERT INTO auth_users (school_id,id,email,password_hash)
 		VALUES (?,?,?,?) ON CONFLICT (school_id,email) DO NOTHING`), school, id, email, string(hash))
 	if err != nil {
 		return access.Principal{}, err
@@ -80,10 +84,10 @@ func (s *Service) create(ctx context.Context, tx *sql.Tx, school, email, passwor
 	if n != 1 {
 		return access.Principal{}, ErrConflict
 	}
-	if _, err = tx.ExecContext(ctx, s.pool.Bind(`INSERT INTO identity_memberships (school_id,user_id,role) VALUES (?,?,?)`), school, id, role); err != nil {
+	if _, err = tx.ExecContext(ctx, s.pool.Bind(`INSERT INTO auth_memberships (school_id,user_id,role) VALUES (?,?,?)`), school, id, role); err != nil {
 		return access.Principal{}, err
 	}
-	return (models.Membership{UserID: id, School: school, Role: models.Role(role)}).Principal()
+	return s.memberPrincipal(ctx, tx, school, id, role)
 }
 
 func (s *Service) authorizeGrant(ctx context.Context, tx *sql.Tx, token, school, role string) error {
@@ -135,7 +139,7 @@ func (s *Service) SetMemberRole(ctx context.Context, adminToken, school, memberI
 		return err
 	}
 	var current string
-	err = tx.QueryRowContext(ctx, s.pool.Bind(`SELECT role FROM identity_memberships WHERE school_id=? AND user_id=?`), school, memberID).Scan(&current)
+	err = tx.QueryRowContext(ctx, s.pool.Bind(`SELECT role FROM auth_memberships WHERE school_id=? AND user_id=?`), school, memberID).Scan(&current)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrNotFound
 	}
@@ -145,7 +149,7 @@ func (s *Service) SetMemberRole(ctx context.Context, adminToken, school, memberI
 	if !managedRole(current) {
 		return access.ErrForbidden
 	}
-	res, err := tx.ExecContext(ctx, s.pool.Bind(`UPDATE identity_memberships SET role=? WHERE school_id=? AND user_id=? AND role IN ('viewer','registrar')`), role, school, memberID)
+	res, err := tx.ExecContext(ctx, s.pool.Bind(`UPDATE auth_memberships SET role=? WHERE school_id=? AND user_id=? AND role IN ('viewer','registrar')`), role, school, memberID)
 	if err != nil {
 		return err
 	}
@@ -157,4 +161,43 @@ func (s *Service) SetMemberRole(ctx context.Context, adminToken, school, memberI
 		return access.ErrForbidden
 	}
 	return tx.Commit()
+}
+
+func (s *Service) seedRoles(ctx context.Context, tx *sql.Tx, school string) error {
+	for _, name := range []string{access.ModulesRead, access.WorkspaceRead, access.WorkspaceWrite, access.ManageMembers} {
+		if _, err := tx.ExecContext(ctx, s.pool.Bind("INSERT INTO auth_permissions (school_id,name) VALUES (?,?)"), school, name); err != nil {
+			return err
+		}
+	}
+	for _, role := range []models.Role{models.RoleAdmin, models.RoleRegistrar, models.RoleViewer} {
+		if _, err := tx.ExecContext(ctx, s.pool.Bind("INSERT INTO auth_roles (school_id,name) VALUES (?,?)"), school, role); err != nil {
+			return err
+		}
+		grants, err := role.DefaultPermissions()
+		if err != nil {
+			return err
+		}
+		for _, name := range grants {
+			if _, err := tx.ExecContext(ctx, s.pool.Bind("INSERT INTO auth_role_permissions (school_id,role,permission) VALUES (?,?,?)"), school, role, name); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+func (s *Service) memberPrincipal(ctx context.Context, tx *sql.Tx, school, id, role string) (access.Principal, error) {
+	rows, err := tx.QueryContext(ctx, s.pool.Bind("SELECT permission FROM auth_role_permissions WHERE school_id=? AND role=? ORDER BY permission"), school, role)
+	if err != nil {
+		return access.Principal{}, err
+	}
+	defer rows.Close()
+	p := access.Principal{ID: id, School: school, Permissions: []string{}}
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return access.Principal{}, err
+		}
+		p.Permissions = append(p.Permissions, name)
+	}
+	return p, rows.Err()
 }

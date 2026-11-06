@@ -4,18 +4,25 @@ package schoolapi
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 
-	"github.com/elcomware/edupilot/modules"
-	"github.com/elcomware/edupilot/platform/access"
-	"github.com/elcomware/edupilot/platform/catalog"
-	"github.com/elcomware/edupilot/platform/workspace"
+	"github.com/elcomware/edupilot/app/facades"
+	modules "github.com/elcomware/edupilot/bootstrap/modulecatalog"
+	"github.com/elcomware/edupilot/modules/core/access"
+	"github.com/elcomware/edupilot/modules/core/catalog"
+	"github.com/elcomware/edupilot/modules/core/workspace"
+	"github.com/goravel/framework/contracts/cache"
 )
 
-type moduleAPI struct{ registry *modules.Registry }
+type moduleAPI struct {
+	registry   *modules.Registry
+	cache      cache.Cache
+	catalogKey string
+}
 
 func respond(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -40,32 +47,13 @@ func authorized(w http.ResponseWriter, r *http.Request, permission string) (acce
 }
 func visible(d catalog.Descriptor, p access.Principal) catalog.Descriptor {
 	read, write := access.WorkspaceRead, access.WorkspaceWrite
-	if d.Key == "students" {
-		read, write = access.StudentsRead, access.StudentsWrite
-	}
 	capabilities := make([]string, 0, len(d.Capabilities))
 	for _, capability := range d.Capabilities {
-		if (capability == "list" && p.Allows(read)) || (capability != "list" && p.Allows(write)) {
+		if capability == "self" || (capability == "list" && p.Allows(read)) || ((capability == "create" || capability == "update") && p.Allows(write)) {
 			capabilities = append(capabilities, capability)
 		}
 	}
 
-	if d.Key == "documents" {
-		if p.Allows(access.DocumentsRead) {
-			capabilities = append(capabilities, "files.download")
-		}
-		if p.Allows(access.DocumentsWrite) {
-			capabilities = append(capabilities, "files.upload")
-		}
-	}
-	if d.Key == "enrollment" {
-		if p.Allows(access.WorkspaceRead) && p.Allows(access.StudentsRead) {
-			capabilities = append(capabilities, "placements.list")
-		}
-		if p.Allows(access.WorkspaceWrite) && p.Allows(access.StudentsWrite) {
-			capabilities = append(capabilities, "placements.write")
-		}
-	}
 	d.Capabilities = capabilities
 	return d
 }
@@ -74,14 +62,41 @@ func (a moduleAPI) list(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	items := make([]catalog.Descriptor, 0, len(a.registry.Definitions))
-	for _, d := range a.registry.Definitions {
-		entry := visible(d.Descriptor, p)
-		if len(entry.Capabilities) > 0 {
-			items = append(items, entry)
+	// The catalog contains only public labels. Its four cache variants come from
+	// current grants; session tokens, school records and principals never enter it.
+	build := func() ([]byte, error) {
+		items := make([]catalog.Descriptor, 0, len(a.registry.Definitions))
+		for _, d := range a.registry.Definitions {
+			entry := visible(d.Descriptor, p)
+			if len(entry.Capabilities) > 0 {
+				items = append(items, entry)
+			}
+		}
+		return json.Marshal(map[string]any{"items": items})
+	}
+	key := fmt.Sprintf("catalog:v1:%s:%t:%t", a.catalogKey, p.Allows(access.WorkspaceRead), p.Allows(access.WorkspaceWrite))
+	var body []byte
+	if a.cache != nil {
+		if value, ok := a.cache.Get(key).(string); ok {
+			body = []byte(value)
 		}
 	}
-	respond(w, 200, map[string]any{"items": items})
+	if body == nil {
+		var err error
+		body, err = build()
+		if err != nil {
+			problem(w, 500, "catalog_error", "Unable to load the module directory.")
+			return
+		}
+		if a.cache != nil {
+			if err := a.cache.Put(key, string(body), 5*time.Minute); err != nil {
+				facades.Log().WithContext(r.Context()).Warning("module catalog cache unavailable")
+			}
+		}
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	_, _ = w.Write(body)
 }
 func (a moduleAPI) detail(w http.ResponseWriter, r *http.Request) {
 	p, ok := authorized(w, r, access.ModulesRead)
@@ -187,7 +202,7 @@ func (a moduleAPI) entries(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, workspace.ErrConflict):
 		problem(w, 409, "conflict", "Someone changed this entry. Reload it before saving.")
 	default:
-		slog.Error("workspace request failed", "module", key, "error", err)
+		facades.Log().WithContext(r.Context()).Errorf("workspace request failed for module %s", key)
 		problem(w, 503, "unavailable", "Workspace storage is unavailable.")
 	}
 }

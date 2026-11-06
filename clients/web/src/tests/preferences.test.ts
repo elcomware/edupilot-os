@@ -4,9 +4,9 @@ import {
   usePreferences,
   preferenceKey,
   parsePreferences,
-} from "../app/preferences";
-import { readRoute } from "../app/router";
-import { collectionAccess, normalizeText } from "../features/collections/model";
+} from "../../../../resources/js/app/preferences";
+import { readRoute } from "../../../../resources/js/app/router";
+import { collectionAccess, normalizeText } from "../../../../resources/js/features/collections/model";
 const person = (school: string, id = "staff") => ({
   school,
   id,
@@ -37,13 +37,13 @@ describe("shared workstation", () => {
   it("isolates pins and appearance by both school and staff member", () => {
     const store = usePreferences.getState();
     store.activate(person("one"));
-    store.update({ appearance: "dark", pins: ["students"] });
+    store.update({ appearance: "dark", pins: ["tenancy"] });
     store.activate(person("two"));
     expect(usePreferences.getState().value.pins).toEqual([]);
     store.activate(person("one", "another"));
     expect(usePreferences.getState().value.appearance).toBe("system");
     store.activate(person("one"));
-    expect(usePreferences.getState().value.pins).toEqual(["students"]);
+    expect(usePreferences.getState().value.pins).toEqual(["tenancy"]);
     expect(preferenceKey(person("a:b", "c"))).not.toBe(
       preferenceKey(person("a", "b:c")),
     );
@@ -57,27 +57,27 @@ describe("shared workstation", () => {
 });
 describe("route and action boundaries", () => {
   it("rejects nested or encoded module paths", () => {
-    expect(readRoute("#/modules/students/edit").page).toBe("unknown");
+    expect(readRoute("#/modules/tenancy/edit").page).toBe("unknown");
     expect(readRoute("#/modules/a%2Fb").page).toBe("unknown");
   });
-  it("requires principal and descriptor permissions; archive is student-specific", () => {
+  it("requires principal and descriptor permissions for list and edit", () => {
     const module = {
-      key: "students",
-      group: "lifecycle",
-      title: { en: "Students", fr: "Élèves" },
+      key: "tenancy",
+      group: "platform",
+      title: { en: "Schools", fr: "Établissements" },
       capabilities: ["list", "archive"],
     };
     expect(
       collectionAccess(module, {
         ...person("one"),
-        permissions: ["students.read"],
+        permissions: ["workspace.read"],
       }),
-    ).toEqual({ list: true, edit: false, create: false, archive: false });
+    ).toEqual({ list: true, edit: false, create: false });
     expect(
       collectionAccess(
-        { ...module, key: "library" },
+        { ...module, key: "auth" },
         { ...person("one"), permissions: ["workspace.write"] },
-      ).archive,
+      ).edit,
     ).toBe(false);
   });
   it("counts Unicode code points after trimming, and rejects control characters", () => {

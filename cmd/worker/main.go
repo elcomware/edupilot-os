@@ -4,7 +4,6 @@ package main
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -13,15 +12,15 @@ import (
 	"github.com/elcomware/edupilot/app/facades"
 	"github.com/elcomware/edupilot/bootstrap"
 	"github.com/elcomware/edupilot/database/edumigrations"
-	"github.com/elcomware/edupilot/platform/database"
-	"github.com/elcomware/edupilot/platform/outbox"
+	"github.com/elcomware/edupilot/modules/core/database"
+	"github.com/elcomware/edupilot/modules/core/outbox"
 )
 
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 	if err := run(ctx); err != nil && !errors.Is(err, context.Canceled) {
-		slog.Error("outbox worker stopped", "error", err)
+		facades.Log().Errorf("outbox worker stopped: %v", err)
 		os.Exit(1)
 	}
 }
@@ -41,7 +40,7 @@ func run(ctx context.Context) error {
 	dispatcher := outbox.Dispatcher{Consumer: outbox.AuditInbox{}}
 	timer := time.NewTicker(time.Second)
 	defer timer.Stop()
-	slog.Info("outbox worker ready", "pools", len(pools))
+	facades.Log().Infof("outbox worker ready with %d pools", len(pools))
 	for ctx.Err() == nil {
 		worked := false
 		// Round robin: a busy or failing school must not starve the others.
@@ -50,7 +49,7 @@ func run(ctx context.Context) error {
 			found, err := dispatcher.Step(attempt, pool)
 			stop()
 			if err != nil && ctx.Err() == nil {
-				slog.Error("outbox delivery", "pool", i, "error", err)
+				facades.Log().WithContext(ctx).Errorf("outbox delivery failed on pool %d: %v", i, err)
 			}
 			worked = worked || found
 		}

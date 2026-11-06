@@ -1,12 +1,12 @@
 # EduPilot OS frontend context and complete flows
 
-Extends [the module screen matrix](frontend-matrix.md) and [tenancy specification](tenancy-and-placement.md). These are acceptance requirements for implementation, not capabilities already delivered by the starter.
+Extends [the module screen matrix](frontend-matrix.md) and [tenancy specification](tenancy-and-placement.md). These are acceptance requirements for implementation, with implementation status tracked in the release board.
 
 ## Context and navigation
 
 One context header shows the tenant/group, selected institution and optional campus, with unambiguous ancestry for duplicate names. Tenant switch, organization/school scope, campus/team filters, academic period and family child are different controls. The user can select only server-authorized choices. An explicitly labeled aggregate view means **all permitted schools**, not all schools or a place to create an ambiguously owned record. Create/publish/export/financial confirmations show the affected owning scope.
 
-Routes and list filters carry stable IDs and harmless view state; no bearer, personal record fields or private draft belongs in a URL. Proposed route grammar is `#/t/:tenantId/o/:organizationId/s/:schoolId/modules/:moduleKey` with optional authorized narrower filters, or explicit tenant-level module routes for group-wide resources. The server remains authoritative regardless of URL shape. Legacy module routes resolve only through an unambiguous selected context. Unavailable deep links reveal no unrelated resource name.
+Routes and list filters carry stable IDs and harmless view state; no bearer, personal record fields or private draft belongs in a URL. Proposed route grammar is `#/t/:tenantId/o/:organizationId/s/:schoolId/modules/:moduleKey` with optional authorized narrower filters, or explicit tenant-level module routes for group-wide resources. The server remains authoritative regardless of URL shape. Unavailable deep links reveal no unrelated resource name.
 
 Switch flow: request destination → resolve unsaved work in shared dialog → validate destination → retire old request epoch/cache/drafts/blobs/previews → mount new context → load allowed catalog/data. Until validation succeeds, retain the original heading/context. Cancel retains original editor and values. Writes capture the initiating scope and cannot be retargeted by a later selection. Old read results, write callbacks and 401s are discarded after an epoch change. Two tabs keep independent contexts; another tab's membership revocation still takes effect through server checks.
 

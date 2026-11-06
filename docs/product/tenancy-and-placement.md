@@ -1,6 +1,6 @@
 # EduPilot OS tenancy, organization and placement specification
 
-This specification extends the production scope. It resolves the starter's one-school-equals-one-tenant assumption before additional domain workflows are built. User requirement: a single group tenant may contain multiple organizations, schools, campuses, locations, teams, curricula and languages, and the entire tenant can move between shared or isolated database placements.
+This specification extends the production scope. A single group tenant may contain multiple organizations, schools, campuses, locations, teams, curricula and languages, and the entire tenant can move between shared or isolated database placements.
 
 ## Identity and ownership model
 
@@ -85,15 +85,9 @@ Reads after cutover must not return stale source data. Old processes and old poo
 
 Transfer manifests are module-owned and typed: table, tenant discriminator, primary key, column types/version, dependency ordering, redaction policy for diagnostics and file references. CI rejects a new tenant table that has no manifest or an explicit non-transfer rationale. Cross-tenant foreign keys are invalid. Export/import uses stable ordered streaming and bounded batches. Resume never overwrites unrelated tenant data.
 
-## Upgrade from the starter
+## Installation
 
-1. Inventory every `school_id`/`Principal.School`/file key/event/queue field and classify tenant ownership versus actual school ownership.
-2. For each existing school, create one tenant, organization, school and campus mapping. Preserve old IDs through an explicit legacy mapping; do not merge accounts by email. Produce a dry-run migration report first.
-3. Add tenant_id and appropriate scope columns, backfill from the mapping, add indexes/composite foreign keys and verify counts/ownership before enforcing non-null constraints.
-4. Evolve verified principals and shared API DTOs together. Provide a bounded legacy-session compatibility adapter only for unambiguous one-school mappings; reject ambiguity rather than widening access.
-5. Route all business operations through scoped authorization and TenantUnitOfWork. Convert workers, storage, exports and audit, not just HTTP handlers.
-6. Test upgrade from the actual starter schema/data, shared and dedicated, including interruption/retry and grant isolation. Preserve existing pool markers/receipts as the foundation for the new registry.
-7. Enable multi-school provisioning only after the complete scope matrix passes. Enable moves only after fencing and recovery drills pass.
+Provision recognized foundation pools or empty targets. Verify receipts and pool ownership before serving. Whole-tenant relocation requires its own acceptance drill.
 
 ## Mandatory failure and concurrency tests
 

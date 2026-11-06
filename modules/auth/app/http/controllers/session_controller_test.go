@@ -3,18 +3,20 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/elcomware/edupilot/modules/auth/app/http/middleware"
-	"github.com/elcomware/edupilot/modules/auth/app/services"
-	"github.com/elcomware/edupilot/modules/auth/database/migrations"
-	"github.com/elcomware/edupilot/platform/access"
-	"github.com/elcomware/edupilot/platform/database"
-	"github.com/ncruces/go-sqlite3/driver"
-	_ "github.com/ncruces/go-sqlite3/embed"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
 	"testing"
+
+	"github.com/elcomware/edupilot/modules/auth/app/http/middleware"
+	"github.com/elcomware/edupilot/modules/auth/app/services"
+	"github.com/elcomware/edupilot/modules/auth/database/migrations"
+	"github.com/elcomware/edupilot/modules/core/access"
+	"github.com/elcomware/edupilot/modules/core/database"
+	"github.com/elcomware/edupilot/tests/schemafixture"
+	"github.com/ncruces/go-sqlite3/driver"
+	_ "github.com/ncruces/go-sqlite3/embed"
 )
 
 func call(t *testing.T, h http.Handler, method string, payload any, token, scope string) *httptest.ResponseRecorder {
@@ -72,14 +74,17 @@ func TestHTTPLoginAuthenticateScopeAndRevoke(t *testing.T) {
 		t.Fatalf("GET principal: %v", err)
 	}
 	seen := false
-	protected := middleware.Protect(s, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	downstream := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p, ok := access.FromContext(r.Context())
 		if !ok || p.ID != principal.ID {
 			t.Error("missing verified principal")
 		}
 		seen = true
 		w.WriteHeader(204)
-	}))
+	})
+	protected := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		middleware.ServeAuthenticated(w, r, downstream, &services.Guard{Request: r, Resolve: func() (*services.Service, error) { return s, nil }})
+	})
 	if w := call(t, protected, "GET", nil, session.Token, "south"); w.Code != 403 || seen {
 		t.Fatal("spoofed school reached downstream")
 	}
@@ -109,17 +114,15 @@ func TestLoginThrottle(t *testing.T) {
 
 func fixture(t *testing.T) *services.Service {
 	t.Helper()
-	dsn := database.SQLiteFileDSN(filepath.Join(t.TempDir(), "identity.sqlite"), url.Values{"_pragma": {"foreign_keys(ON)"}})
+	dsn := database.SQLiteFileDSN(filepath.Join(t.TempDir(), "auth.sqlite"), url.Values{"_pragma": {"foreign_keys(ON)"}})
 	db, err := driver.Open(dsn)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = db.Close() })
 	db.SetMaxOpenConns(1)
-	for _, stmt := range migrations.SchemaUp {
-		if _, err := db.ExecContext(t.Context(), stmt); err != nil {
-			t.Fatal(err)
-		}
+	if err := migrations.Accounts(schemafixture.Builder{DB: db}); err != nil {
+		t.Fatal(err)
 	}
 	return services.New(&database.Pool{DB: db, Driver: "sqlite"})
 }

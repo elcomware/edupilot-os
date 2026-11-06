@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 
 // Read the canonical stylesheet, rather than copying its colors into fixtures.
 const style = document.createElement("style");
-style.textContent = readFileSync(resolve(import.meta.dirname, "../styles/tokens.css"), "utf8");
+style.textContent = readFileSync(resolve(import.meta.dirname, "../../../../resources/css/tokens.css"), "utf8");
 document.head.append(style);
 const rules = Array.from(style.sheet!.cssRules).filter(
   (rule): rule is CSSStyleRule => rule.type === CSSRule.STYLE_RULE,

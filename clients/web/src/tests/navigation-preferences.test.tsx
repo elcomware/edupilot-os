@@ -3,17 +3,17 @@ import { beforeAll, beforeEach, afterEach, describe, it, expect, vi } from "vite
 import { render, screen, within, cleanup } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ModuleDescriptor } from "@edupilot/api-client";
-import { usePreferences, preferenceKey } from "../app/preferences";
-import { PreferencesPage } from "../features/preferences/PreferencesPage";
-import { Shell } from "../shell/Shell";
+import { usePreferences, preferenceKey } from "../../../../resources/js/app/preferences";
+import { PreferencesPage } from "../../../../resources/js/features/preferences/PreferencesPage";
+import { TenantAdminLayout } from "../../../../resources/js/layouts/TenantAdminLayout";
 
 const person = { school: "north", id: "staff", permissions: ["modules.read"] };
 const modules: ModuleDescriptor[] = [
-  { key: "students", group: "lifecycle", title: { en: "Students", fr: "Élèves" }, capabilities: [] },
-  { key: "library", group: "academics", title: { en: "Library", fr: "Bibliothèque et ressources pédagogiques" }, capabilities: [] },
+  { key: "tenancy", group: "platform", title: { en: "Schools", fr: "Établissements" }, capabilities: [] },
+  { key: "auth", group: "platform", title: { en: "Accounts and access", fr: "Comptes et accès" }, capabilities: [] },
 ];
 function workspace(catalogStatus: "ready" | "loading" | "unavailable" = "ready") {
-  return render(<Shell principal={person} modules={modules}><PreferencesPage modules={modules} catalogStatus={catalogStatus} /></Shell>);
+  return render(<TenantAdminLayout principal={person} modules={modules}><PreferencesPage modules={modules} catalogStatus={catalogStatus} /></TenantAdminLayout>);
 }
 function railTitles() {
   return Array.from(document.querySelectorAll(".pin-zone a")).map(a => a.textContent);
@@ -25,7 +25,7 @@ beforeAll(() => {
 beforeEach(() => {
   localStorage.clear();
   usePreferences.getState().activate(person);
-  usePreferences.getState().update({ locale: "en", pins: ["library", "unavailable-private", "students"] });
+  usePreferences.getState().update({ locale: "en", pins: ["auth", "unavailable-private", "tenancy"] });
   window.location.hash = "#/settings";
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
@@ -33,23 +33,23 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 describe("personal pinned navigation", () => {
   it("renders saved order in both settings and rail using only authorized descriptors", () => {
     workspace();
-    expect(railTitles()).toEqual(["Library", "Students"]);
+    expect(railTitles()).toEqual(["Accounts and access", "Schools"]);
     const list = screen.getByRole("list", { name: "Pinned navigation" });
-    expect(within(list).getAllByRole("listitem").map(row => row.getAttribute("aria-label"))).toEqual(["Library", "Students"]);
+    expect(within(list).getAllByRole("listitem").map(row => row.getAttribute("aria-label"))).toEqual(["Accounts and access", "Schools"]);
     expect(screen.queryByText("unavailable-private")).toBeNull();
   });
   it("moves across hidden pins, updates the rail immediately and retains logical focus", async () => {
     const user = userEvent.setup();
     workspace();
-    expect((screen.getByRole("button", { name: "Move Library up" }) as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole("button", { name: "Move Students down" }) as HTMLButtonElement).disabled).toBe(true);
-    await user.click(screen.getByRole("button", { name: "Move Library down" }));
-    expect(usePreferences.getState().value.pins).toEqual(["students", "unavailable-private", "library"]);
-    expect(railTitles()).toEqual(["Students", "Library"]);
-    expect(document.activeElement).toBe(screen.getByRole("listitem", { name: "Library" }));
+    expect((screen.getByRole("button", { name: "Move Accounts and access up" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Move Schools down" }) as HTMLButtonElement).disabled).toBe(true);
+    await user.click(screen.getByRole("button", { name: "Move Accounts and access down" }));
+    expect(usePreferences.getState().value.pins).toEqual(["tenancy", "unavailable-private", "auth"]);
+    expect(railTitles()).toEqual(["Schools", "Accounts and access"]);
+    expect(document.activeElement).toBe(screen.getByRole("listitem", { name: "Accounts and access" }));
     expect(screen.getByRole("status").textContent).toBe("Preferences saved on this device.");
     const saved = JSON.parse(localStorage.getItem(preferenceKey(person))!);
-    expect(saved.pins).toEqual(["students", "unavailable-private", "library"]);
+    expect(saved.pins).toEqual(["tenancy", "unavailable-private", "auth"]);
   });
   it("distinguishes unavailable catalog from empty pins and offers the directory when empty", () => {
     const view = workspace("unavailable");
@@ -65,17 +65,17 @@ describe("personal pinned navigation", () => {
     usePreferences.getState().update({ locale: "fr" });
     workspace();
     const user = userEvent.setup();
-    const down = screen.getByRole("button", { name: "Descendre Bibliothèque et ressources pédagogiques" });
+    const down = screen.getByRole("button", { name: "Descendre Comptes et accès" });
     down.focus();
     await user.keyboard("{Enter}");
-    expect(railTitles()).toEqual(["Élèves", "Bibliothèque et ressources pédagogiques"]);
+    expect(railTitles()).toEqual(["Établissements", "Comptes et accès"]);
     expect(screen.getByRole("status").textContent).toBe("Préférences enregistrées sur cet appareil.");
   });
   it("announces session-only ordering when device storage rejects a save", async () => {
     workspace();
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new DOMException("Denied", "SecurityError"); });
-    await userEvent.setup().click(screen.getByRole("button", { name: "Move Library down" }));
-    expect(railTitles()).toEqual(["Students", "Library"]);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Move Accounts and access down" }));
+    expect(railTitles()).toEqual(["Schools", "Accounts and access"]);
     expect(screen.getByRole("status").textContent).toContain("session only");
     expect(screen.getByRole("status").textContent).not.toContain("Preferences saved");
   });
@@ -87,7 +87,7 @@ describe("scoped workspace reset", () => {
     const otherUser = { ...person, id: "other" }, otherSchool = { ...person, school: "south" };
     for (const principal of [otherUser, otherSchool]) {
       store.activate(principal);
-      store.update({ appearance: "dark", pins: ["library"] });
+      store.update({ appearance: "dark", pins: ["auth"] });
     }
     const savedOther = [otherUser, otherSchool].map(p => localStorage.getItem(preferenceKey(p)));
     localStorage.setItem("unrelated-session-marker", "untouched");

@@ -28,7 +28,7 @@ def run():
     # Override placement even if the caller has configured another database.
     base = dict(os.environ, DB_CONNECTION="sqlite", DB_DATABASE="database/edupilot.sqlite",
                 EDUPILOT_DEDICATED_DATABASES="[]", EDUPILOT_ENABLED_MODULES="",
-                EDUPILOT_DOCUMENTS_DRIVER="local", APP_HOST="127.0.0.1", APP_PORT="3000",
+                APP_HOST="127.0.0.1", APP_PORT="3000",
                 EDUPILOT_API_ORIGIN="http://127.0.0.1:3000")
     subprocess.run([sys.executable, "scripts/setup.py"], env=base, check=True)
     subprocess.run(["go", "run", "./cmd/migrate"], env=base, check=True)
@@ -62,14 +62,14 @@ def run():
         subprocess.run(command, env=proof, check=True, timeout=180)
         # An independent read proves the native form really wrote a school record.
         with sqlite3.connect(DATABASE.as_uri() + "?mode=ro", uri=True) as db:
-            rows = db.execute("SELECT school_id,given_name,family_name,status FROM students_records").fetchall()
-        if rows != [(SCHOOL, "Jamie", "Demo", "active")]:
-            raise RuntimeError("The student saved in the window did not match the fixture database.")
-        for state in ("signin", "directory", "students"):
+            rows = db.execute("SELECT school_id,title,status FROM ws_tenancy").fetchall()
+        if rows != [(SCHOOL, "Campus review", "open")]:
+            raise RuntimeError("The entry saved in the window did not match the fixture database.")
+        for state in ("signin", "directory", "workspace"):
             image = OUTPUT / f"{PLATFORM}-{state}.png"
             if not image.is_file() or image.stat().st_size < 1024:
                 raise RuntimeError("Missing native capture for " + state)
-        print(f"{PLATFORM}: signed in, opened the directory, saved a student, verified the database and signed out.")
+        print(f"{PLATFORM}: signed in, opened the directory, saved a school work-list entry, verified the database and signed out.")
     finally:
         if api.poll() is None:
             api.terminate()

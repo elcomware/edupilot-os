@@ -3,7 +3,8 @@ package bootstrap
 import (
 	edupilot "github.com/elcomware/edupilot/app/providers"
 	schoolauth "github.com/elcomware/edupilot/modules/auth/providers"
-	"github.com/goravel/framework/ai"
+	core "github.com/elcomware/edupilot/modules/core/providers"
+	tenancy "github.com/elcomware/edupilot/modules/tenancy/providers"
 	"github.com/goravel/framework/auth"
 	"github.com/goravel/framework/cache"
 	"github.com/goravel/framework/contracts/foundation"
@@ -26,7 +27,6 @@ import (
 	"github.com/goravel/framework/validation"
 	"github.com/goravel/framework/view"
 	"github.com/goravel/gin"
-	"github.com/goravel/openai"
 	"github.com/goravel/postgres"
 	"github.com/goravel/sqlite"
 )
@@ -43,8 +43,6 @@ func Providers() []foundation.ServiceProvider {
 		&view.ServiceProvider{},
 		&route.ServiceProvider{},
 		&gin.ServiceProvider{},
-		&ai.ServiceProvider{},
-		&openai.ServiceProvider{},
 		&database.ServiceProvider{},
 		&postgres.ServiceProvider{},
 		&sqlite.ServiceProvider{},
@@ -58,7 +56,9 @@ func Providers() []foundation.ServiceProvider {
 		&schedule.ServiceProvider{},
 		&telemetry.ServiceProvider{},
 		&testing.ServiceProvider{},
+		&core.CoreServiceProvider{},
 		&schoolauth.AuthServiceProvider{},
+		&tenancy.TenancyServiceProvider{},
 		&edupilot.EduPilotOS{},
 	}
 }

@@ -3,9 +3,9 @@ package services
 import (
 	"context"
 
-	"github.com/elcomware/edupilot/modules/tenancy/app/contracts"
+	"github.com/elcomware/edupilot/modules/core/contracts/tenancy"
+	"github.com/elcomware/edupilot/modules/core/scope"
 	"github.com/elcomware/edupilot/modules/tenancy/app/models"
-	"github.com/elcomware/edupilot/platform/scope"
 )
 
 // TopologyStore loads one tenant snapshot. Implementations must reject a stale

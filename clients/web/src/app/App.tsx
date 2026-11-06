@@ -1,17 +1,19 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Session } from "@edupilot/api-client";
-import { api, useAuth } from "./session";
-import { useLocale, usePreferences } from "./preferences";
-import { useRoute } from "./router";
-import { t } from "./copy";
-import { errorKey } from "./errors";
-import { Login } from "../../../../modules/auth/resources/js/pages/Login";
-import { Directory } from "../features/directory/Directory";
-import { WorkspacePage } from "../features/collections/WorkspacePage";
-import { PreferencesPage } from "../features/preferences/PreferencesPage";
-import { Shell } from "../shell/Shell";
-import { StatePanel } from "../components/primitives";
+import { api, useAuth } from "../../../../resources/js/app/session";
+import {
+  useLocale,
+  usePreferences,
+} from "../../../../resources/js/app/preferences";
+import { useRoute } from "../../../../resources/js/app/router";
+import { t } from "../../../../resources/js/app/copy";
+import { errorKey } from "../../../../resources/js/app/errors";
+import { LoginPage, workspacePages } from "../../../../resources/js/pages.web";
+import { Directory } from "../../../../resources/js/features/directory/Directory";
+import { PreferencesPage } from "../../../../resources/js/features/preferences/PreferencesPage";
+import { TenantAdminLayout } from "../../../../resources/js/layouts/TenantAdminLayout";
+import { StatePanel } from "../../../../resources/js/components/primitives";
 function PreferencesEffect() {
   const prefs = usePreferences((s) => s.value);
   useEffect(() => {
@@ -51,12 +53,26 @@ function SignedIn({ session }: { session: Session }) {
     queryFn: ({ signal }) => api.modules(signal),
     enabled: allowed,
   });
+  const WorkspacePage =
+    route.page === "module" ? workspacePages.get(route.key) : undefined;
   let content;
-  if (route.page === "settings") content = <PreferencesPage
-    modules={allowed ? modules.data?.items ?? [] : []}
-    catalogStatus={!allowed || modules.isError ? "unavailable" : modules.isPending ? "loading" : "ready"}
-  />;
-  else if (route.page === "unknown")
+  if (route.page === "settings")
+    content = (
+      <PreferencesPage
+        modules={allowed ? (modules.data?.items ?? []) : []}
+        catalogStatus={
+          !allowed || modules.isError
+            ? "unavailable"
+            : modules.isPending
+              ? "loading"
+              : "ready"
+        }
+      />
+    );
+  else if (
+    route.page === "unknown" ||
+    (route.page === "module" && !WorkspacePage)
+  )
     content = (
       <StatePanel
         type="error"
@@ -70,14 +86,6 @@ function SignedIn({ session }: { session: Session }) {
     );
   else if (!allowed)
     content = <StatePanel type="error" title={t(l, "denied")} />;
-  else if (route.page === "module")
-    content = (
-      <WorkspacePage
-        key={route.key}
-        moduleKey={route.key}
-        principal={principal}
-      />
-    );
   else if (modules.isPending)
     content = <StatePanel type="busy" title={t(l, "loading")} />;
   else if (modules.isError)
@@ -93,11 +101,24 @@ function SignedIn({ session }: { session: Session }) {
         }
       />
     );
+  else if (route.page === "module" && WorkspacePage)
+    content = modules.data.items.some((m) => m.key === route.key) ? (
+      <WorkspacePage
+        key={route.key}
+        moduleKey={route.key}
+        principal={principal}
+      />
+    ) : (
+      <StatePanel type="error" title={t(l, "unavailable")} />
+    );
   else content = <Directory modules={modules.data.items} />;
   return (
-    <Shell principal={principal} modules={modules.data?.items ?? []}>
+    <TenantAdminLayout
+      principal={principal}
+      modules={modules.data?.items ?? []}
+    >
       {content}
-    </Shell>
+    </TenantAdminLayout>
   );
 }
 export function App() {
@@ -105,7 +126,7 @@ export function App() {
   return (
     <>
       <PreferencesEffect />
-      {session ? <SignedIn session={session} /> : <Login />}
+      {session ? <SignedIn session={session} /> : <LoginPage />}
     </>
   );
 }

@@ -6,7 +6,7 @@ Product name: **EduPilot OS**. Repository and technical identifier: **edupilot-o
 
 A tenant operating one school or a group of organizations, schools and campuses can install EduPilot OS natively, configure its institutions and academic policies, invite staff, operate the complete student lifecycle, teach and assess, collect and reconcile fees, manage staff and resources, and publish appropriately scoped information to families. Web, desktop and mobile use the same authenticated API. Every shipped capability has a usable interface, persisted business behavior and verified authorization. A module directory or a general work list does not complete a business module.
 
-The starting point is commit `ae7a791cdbbdc1bf76be7f1a166e9a226c3da177`: 42 module registrations; working student registration, enrollment placements, document storage, sessions and per-module work lists; shared React web/Wails UI and Expo client. The original 20 iterations were a starter phase, not a production release.
+The installed foundation is Auth, Tenancy and Core. The release board tracks verified workflows.
 
 ## Binding constraints
 
@@ -25,7 +25,7 @@ The starting point is commit `ae7a791cdbbdc1bf76be7f1a166e9a226c3da177`: 42 modu
 
 ## Group tenancy and placement
 
-The binding [tenancy and placement specification](tenancy-and-placement.md) defines tenant, organization, school, campus, location, team, curriculum, scope grants, configuration inheritance, database placement and safe moves. The starter currently conflates school and tenant; resolving that is a prerequisite for domain expansion. Context selection and physical database selection are separate concepts. All organizations in a tenant share its active placement and move together.
+The binding [tenancy and placement specification](tenancy-and-placement.md) defines tenant, organization, school, campus, location, team, curriculum, scope grants, configuration inheritance, database placement and safe moves. The current session is scoped to one school. Group-wide session selection is a prerequisite for domain expansion. Context selection and physical database selection are separate concepts. All organizations in a tenant share its active placement and move together.
 
 ## Professional frontend contract
 

@@ -23,13 +23,13 @@ import {
   type ModuleDescriptor,
 } from "@edupilot/api-client";
 import { apiRoot } from "./src/endpoint";
-import { SessionModel } from "./src/session";
+import { SessionModel } from "../../resources/native/session";
 import { tokenStore } from "./src/storage";
-import { copy, type Locale, type Translator } from "./src/strings";
-import { Action, Notice, Spinner, s } from "./src/ui";
-import { Login } from "../../modules/auth/resources/js/native/Login";
-import { Catalog } from "./src/screens/Catalog";
-import { Register, blank, type Draft } from "./src/screens/Register";
+import { copy, type Locale, type Translator } from "../../resources/native/strings";
+import { Action, Notice, Spinner, s } from "../../resources/native/ui";
+import { LoginPage, workspacePages } from "../../resources/js/pages.native";
+import { Catalog } from "../../resources/native/screens/Catalog";
+import { blank, type Draft } from "../../resources/native/screens/Register";
 
 const root = apiRoot(process.env.EXPO_PUBLIC_API_ORIGIN, __DEV__);
 const timeoutFetch: typeof fetch = (input, init) => {
@@ -68,13 +68,14 @@ function Member({
     });
     return () => sub.remove();
   }, [module]);
+  const Register=module && workspacePages.get(module.key);
   return (
     <>
       <View style={s.row}>
         {module && <Action label={t("back")} onPress={() => setModule(null)} />}
         <Action label={t("logout")} onPress={logout} />
       </View>
-      {module ? (
+      {module && !Register ? <Notice error>{t("forbidden")}</Notice> : module && Register ? (
         <Register
           key={module.key}
           api={api}
@@ -132,7 +133,7 @@ function SessionContent({
   switch (state.kind) {
     case "guest":
     case "signingIn":
-      return <Login model={model} state={state} t={t} />;
+      return <LoginPage model={model} state={state} t={t} />;
     case "checking":
     case "signingOut":
       return <Spinner t={t} />;

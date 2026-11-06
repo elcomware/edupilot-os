@@ -1,6 +1,6 @@
 import { expect, type APIRequestContext, type Page } from "@playwright/test";
 
-type Slot = "AUTH" | "A" | "B" | "ROSTER" | "PREFS" | "PREFS_OTHER" | "NAV" | "NAV_OTHER";
+type Slot = "AUTH" | "A" | "B" | "NAV" | "NAV_OTHER";
 type Account = { school: string; email: string; password: string };
 
 export function account(slot: Slot): Account {

@@ -14,8 +14,8 @@ import (
 	"github.com/elcomware/edupilot/database/edumigrations"
 	"github.com/elcomware/edupilot/modules/auth/app/services"
 	"github.com/elcomware/edupilot/modules/auth/database/seeders"
-	"github.com/elcomware/edupilot/platform/access"
-	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/modules/core/access"
+	"github.com/elcomware/edupilot/modules/core/database"
 )
 
 func main() {

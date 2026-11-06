@@ -26,31 +26,11 @@ export interface ModuleDescriptor {
   title: Record<Locale, string>;
   capabilities: string[];
 }
-export interface StudentNames {
-  givenName: string;
-  familyName: string;
-}
-export interface Student extends StudentNames {
-  id: string;
-  version: number;
-  status: string;
-}
 export interface WorkspaceEntry {
   id: string;
   title: string;
   status: string;
   version: number;
-}
-export interface PlacementInput {
-  studentId: string;
-  academicYear: string;
-  grade: string;
-  course?: string;
-}
-export interface Placement extends PlacementInput {
-  id: string;
-  version: number;
-  status: "active" | "withdrawn";
 }
 export interface Page<T> {
   items: T[];
@@ -178,55 +158,6 @@ export function createApiClient({
   const workspacePath = (module: string) =>
     "/modules/" + key(module) + "/workspace";
   return {
-    placements: (
-      page: Paging & { studentId?: string } = {},
-      signal?: AbortSignal,
-    ) =>
-      request<Page<Placement>>(
-        "/enrollment/placements" +
-          paging(page) +
-          (page.studentId ? "&studentId=" + key(page.studentId) : ""),
-        "GET",
-        undefined,
-        signal,
-      ),
-    place: (data: PlacementInput) =>
-      request<Placement>("/enrollment/placements", "POST", data),
-    withdraw: (id: string, version: number) =>
-      request<Placement>("/enrollment/placements/" + key(id), "PATCH", {
-        status: "withdrawn",
-        version,
-      }),
-    uploadDocument: async (
-      file: Blob,
-      contentType = file.type,
-    ): Promise<{ id: string }> => {
-      return send(
-        "/documents/files",
-        "POST",
-        file,
-        contentType,
-        (r) => r.json(),
-        undefined,
-        true,
-        60000,
-      );
-    },
-    downloadDocument: async (
-      id: string,
-      signal?: AbortSignal,
-    ): Promise<Blob> => {
-      return send(
-        "/documents/files/" + key(id),
-        "GET",
-        undefined,
-        undefined,
-        (r) => r.blob(),
-        signal,
-        true,
-        60000,
-      );
-    },
     login: (credentials: Credentials) =>
       request<Session>("/session", "POST", credentials, undefined, false),
     session: (signal?: AbortSignal) =>
@@ -273,24 +204,6 @@ export function createApiClient({
         workspacePath(module) + "/" + key(id),
         "PATCH",
         data,
-      ),
-    students: (page?: Paging, signal?: AbortSignal) =>
-      request<Page<Student>>(
-        "/students" + paging(page),
-        "GET",
-        undefined,
-        signal,
-      ),
-    student: (id: string, signal?: AbortSignal) =>
-      request<Student>("/students/" + key(id), "GET", undefined, signal),
-    createStudent: (names: StudentNames) =>
-      request<Student>("/students", "POST", names),
-    updateStudent: (id: string, names: StudentNames & { version: number }) =>
-      request<Student>("/students/" + key(id), "PATCH", names),
-    archiveStudent: (id: string, version: number) =>
-      request<void | Student>(
-        "/students/" + key(id) + "?version=" + encodeURIComponent(version),
-        "DELETE",
       ),
   };
 }

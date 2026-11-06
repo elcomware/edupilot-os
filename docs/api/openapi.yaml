@@ -15,9 +15,6 @@ tags:
 - name: Sessions
 - name: Modules
 - name: Workspaces
-- name: Students
-- name: Enrollment
-- name: Documents
 security:
 - bearerSession: []
 paths:
@@ -53,7 +50,8 @@ paths:
           $ref: '#/components/responses/Unavailable'
   /auth/me:
     get:
-      tags: [Sessions]
+      tags:
+      - Sessions
       operationId: getCurrentUser
       summary: Read the signed-in user's account, school membership, role and effective permissions
       parameters:
@@ -199,8 +197,7 @@ paths:
       - Workspaces
       operationId: listEntries
       summary: List a module’s workspace entries
-      description: Available for enabled modules with a generic work list. Students uses its dedicated
-        roster.
+      description: The Schools module exposes a tenant-scoped work list.
       x-required-permissions:
       - workspace.read
       parameters:
@@ -335,427 +332,6 @@ paths:
           $ref: '#/components/responses/Internal'
         '503':
           $ref: '#/components/responses/Unavailable'
-  /students:
-    get:
-      tags:
-      - Students
-      operationId: listStudents
-      summary: List active students
-      x-required-permissions:
-      - students.read
-      parameters:
-      - $ref: '#/components/parameters/Scope'
-      - $ref: '#/components/parameters/Limit'
-      - $ref: '#/components/parameters/Offset'
-      responses:
-        '200':
-          description: Active records ordered by family name, given name, and ID.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StudentPage'
-        '400':
-          $ref: '#/components/responses/InvalidJSON'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/MissingModuleRoute'
-        '422':
-          $ref: '#/components/responses/InvalidFields'
-        '500':
-          $ref: '#/components/responses/Internal'
-        '503':
-          $ref: '#/components/responses/Unavailable'
-    post:
-      tags:
-      - Students
-      operationId: createStudent
-      summary: Register a student
-      x-required-permissions:
-      - students.write
-      parameters:
-      - $ref: '#/components/parameters/Scope'
-      requestBody:
-        required: true
-        description: One JSON object, up to 16 KiB. Unknown properties are rejected.
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateStudent'
-      responses:
-        '201':
-          description: Active student at version 1.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Student'
-          headers:
-            Location:
-              description: Path to the student.
-              schema:
-                type: string
-                format: uri-reference
-        '400':
-          $ref: '#/components/responses/InvalidJSON'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/MissingModuleRoute'
-        '413':
-          $ref: '#/components/responses/TooLarge'
-        '422':
-          $ref: '#/components/responses/InvalidFields'
-        '500':
-          $ref: '#/components/responses/Internal'
-        '503':
-          $ref: '#/components/responses/Unavailable'
-  /students/{id}:
-    get:
-      tags:
-      - Students
-      operationId: getStudent
-      summary: Read an active or archived student
-      x-required-permissions:
-      - students.read
-      parameters:
-      - $ref: '#/components/parameters/Scope'
-      - $ref: '#/components/parameters/StudentID'
-      responses:
-        '200':
-          description: Current student.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Student'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/MissingModuleRoute'
-        '500':
-          $ref: '#/components/responses/Internal'
-        '503':
-          $ref: '#/components/responses/Unavailable'
-    patch:
-      tags:
-      - Students
-      operationId: updateStudent
-      summary: Rename an active student
-      x-required-permissions:
-      - students.write
-      parameters:
-      - $ref: '#/components/parameters/Scope'
-      - $ref: '#/components/parameters/StudentID'
-      requestBody:
-        required: true
-        description: One JSON object, up to 16 KiB. Unknown properties are rejected.
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateStudent'
-      responses:
-        '200':
-          description: Updated student with incremented version.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Student'
-        '400':
-          $ref: '#/components/responses/InvalidJSON'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/MissingModuleRoute'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '413':
-          $ref: '#/components/responses/TooLarge'
-        '422':
-          $ref: '#/components/responses/InvalidFields'
-        '500':
-          $ref: '#/components/responses/Internal'
-        '503':
-          $ref: '#/components/responses/Unavailable'
-    delete:
-      tags:
-      - Students
-      operationId: archiveStudent
-      summary: Archive an active student
-      description: The record leaves the active list and remains readable by ID.
-      x-required-permissions:
-      - students.write
-      parameters:
-      - $ref: '#/components/parameters/Scope'
-      - $ref: '#/components/parameters/StudentID'
-      - $ref: '#/components/parameters/ExpectedVersion'
-      responses:
-        '204':
-          description: Student archived and version incremented.
-        '400':
-          $ref: '#/components/responses/InvalidJSON'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/MissingModuleRoute'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '422':
-          $ref: '#/components/responses/InvalidFields'
-        '500':
-          $ref: '#/components/responses/Internal'
-        '503':
-          $ref: '#/components/responses/Unavailable'
-  /enrollment/placements:
-    get:
-      tags:
-      - Enrollment
-      operationId: listPlacements
-      summary: List school placements
-      x-required-permissions:
-      - students.read
-      - workspace.read
-      parameters:
-      - $ref: '#/components/parameters/Scope'
-      - $ref: '#/components/parameters/StudentFilter'
-      - $ref: '#/components/parameters/Limit'
-      - $ref: '#/components/parameters/Offset'
-      responses:
-        '200':
-          description: Active and withdrawn placements ordered by academic year descending then ID.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PlacementPage'
-        '400':
-          $ref: '#/components/responses/InvalidJSON'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/MissingModuleRoute'
-        '422':
-          $ref: '#/components/responses/InvalidFields'
-        '500':
-          $ref: '#/components/responses/Internal'
-        '503':
-          $ref: '#/components/responses/Unavailable'
-    post:
-      tags:
-      - Enrollment
-      operationId: recordPlacement
-      summary: Record a placement for an active student
-      description: One placement per school, student and academic year. An identical retry of an existing
-        active placement returns the original record. A conflicting grade or course, an archived student
-        on first registration, or an already withdrawn placement returns 409.
-      x-required-permissions:
-      - students.write
-      - workspace.write
-      parameters:
-      - $ref: '#/components/parameters/Scope'
-      requestBody:
-        required: true
-        description: One JSON object, up to 16 KiB. Unknown properties are rejected.
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreatePlacement'
-      responses:
-        '201':
-          description: New active placement.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Placement'
-        '400':
-          $ref: '#/components/responses/InvalidJSON'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/MissingModuleRoute'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '413':
-          $ref: '#/components/responses/TooLarge'
-        '422':
-          $ref: '#/components/responses/InvalidFields'
-        '500':
-          $ref: '#/components/responses/Internal'
-        '503':
-          $ref: '#/components/responses/Unavailable'
-        '200':
-          description: Identical existing active placement.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Placement'
-  /enrollment/placements/{id}:
-    patch:
-      tags:
-      - Enrollment
-      operationId: withdrawPlacement
-      summary: Withdraw an active placement
-      x-required-permissions:
-      - students.write
-      - workspace.write
-      parameters:
-      - $ref: '#/components/parameters/Scope'
-      - $ref: '#/components/parameters/PlacementID'
-      requestBody:
-        required: true
-        description: One JSON object, up to 16 KiB. Unknown properties are rejected.
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/WithdrawPlacement'
-      responses:
-        '200':
-          description: Withdrawn placement with incremented version.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Placement'
-        '400':
-          $ref: '#/components/responses/InvalidJSON'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/MissingModuleRoute'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '413':
-          $ref: '#/components/responses/TooLarge'
-        '422':
-          $ref: '#/components/responses/InvalidFields'
-        '500':
-          $ref: '#/components/responses/Internal'
-        '503':
-          $ref: '#/components/responses/Unavailable'
-  /documents/files:
-    post:
-      tags:
-      - Documents
-      operationId: uploadDocument
-      summary: Upload a private document
-      x-required-permissions:
-      - documents.write
-      parameters:
-      - $ref: '#/components/parameters/Scope'
-      requestBody:
-        required: true
-        description: Send 1 to 8,388,608 raw bytes. Content-Type must match the detected contents. UTF-8
-          text may specify charset=utf-8. Multipart and JSON wrappers are unsupported.
-        content:
-          application/pdf:
-            schema:
-              type: string
-              format: binary
-          image/png:
-            schema:
-              type: string
-              format: binary
-          image/jpeg:
-            schema:
-              type: string
-              format: binary
-          text/plain:
-            schema:
-              type: string
-              format: binary
-      responses:
-        '201':
-          description: New file ID.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DocumentCreated'
-          headers:
-            Location:
-              description: Path to download this file.
-              schema:
-                type: string
-                format: uri-reference
-        '400':
-          $ref: '#/components/responses/InvalidJSON'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/MissingModuleRoute'
-        '413':
-          $ref: '#/components/responses/TooLarge'
-        '415':
-          $ref: '#/components/responses/Unsupported'
-        '500':
-          $ref: '#/components/responses/Internal'
-        '503':
-          $ref: '#/components/responses/Storage'
-  /documents/files/{id}:
-    get:
-      tags:
-      - Documents
-      operationId: downloadDocument
-      summary: Download a private document
-      x-required-permissions:
-      - documents.read
-      parameters:
-      - $ref: '#/components/parameters/Scope'
-      - $ref: '#/components/parameters/DocumentID'
-      responses:
-        '200':
-          description: Raw file bytes with the detected media type.
-          headers:
-            Content-Disposition:
-              description: Attachment filename uses the server-issued ID and validated extension.
-              schema:
-                type: string
-            Content-Length:
-              description: File size in bytes.
-              schema:
-                type: integer
-                minimum: 1
-                maximum: 8388608
-          content:
-            application/pdf:
-              schema:
-                type: string
-                format: binary
-            image/png:
-              schema:
-                type: string
-                format: binary
-            image/jpeg:
-              schema:
-                type: string
-                format: binary
-            text/plain:
-              schema:
-                type: string
-                format: binary
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/MissingModuleRoute'
-        '500':
-          $ref: '#/components/responses/Internal'
-        '503':
-          $ref: '#/components/responses/Storage'
 components:
   securitySchemes:
     bearerSession:
@@ -785,27 +361,6 @@ components:
       description: Workspace entry ID.
       schema:
         type: string
-    StudentID:
-      name: id
-      in: path
-      required: true
-      description: Student ID.
-      schema:
-        $ref: '#/components/schemas/StudentID'
-    PlacementID:
-      name: id
-      in: path
-      required: true
-      description: Placement ID returned by the collection.
-      schema:
-        type: string
-    DocumentID:
-      name: id
-      in: path
-      required: true
-      description: Canonical lowercase UUIDv4 returned by upload.
-      schema:
-        $ref: '#/components/schemas/DocumentID'
     Limit:
       name: limit
       in: query
@@ -825,21 +380,6 @@ components:
         type: integer
         minimum: 0
         default: 0
-    StudentFilter:
-      name: studentId
-      in: query
-      required: false
-      description: Optional student ID for narrowing a placement list.
-      schema:
-        type: string
-        maxLength: 64
-    ExpectedVersion:
-      name: version
-      in: query
-      required: true
-      description: Current version of the student to archive. Supply exactly one value.
-      schema:
-        $ref: '#/components/schemas/Version'
   responses:
     Unauthorized:
       description: Invalid credentials, or missing, expired or revoked bearer token.
@@ -882,12 +422,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-    TooLarge:
-      description: Request exceeds the endpoint size limit.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
     Unavailable:
       description: Application configuration or storage is unavailable.
       content:
@@ -912,34 +446,6 @@ components:
           schema:
             type: integer
             const: 60
-    Storage:
-      description: Document store unavailable, integrity check failed, or transfer capacity is exhausted.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-      headers:
-        Retry-After:
-          description: Present when transfer capacity is exhausted.
-          schema:
-            type: integer
-            const: 1
-    Unsupported:
-      description: Missing, unsupported, or mismatched Content-Type.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    MissingModuleRoute:
-      description: Module is disabled, or the requested record is absent or belongs to another school.
-        A disabled route returns the router’s plain-text 404.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-        text/plain:
-          schema:
-            type: string
   schemas:
     SchoolID:
       type: string
@@ -951,20 +457,13 @@ components:
       minimum: 1
       description: Pass the most recently read version when updating or archiving. A successful change
         increments it.
-    StudentID:
-      type: string
-      pattern: ^[a-f0-9]{32}$
     Permission:
       type: string
       enum:
-      - modules.read
+      - auth.members.manage
       - workspace.read
       - workspace.write
-      - students.read
-      - students.write
-      - documents.read
-      - documents.write
-      - identity.members.manage
+      - modules.read
     Principal:
       type: object
       required:
@@ -983,7 +482,11 @@ components:
       additionalProperties: false
     CurrentUser:
       type: object
-      required: [id, email, membership, permissions]
+      required:
+      - id
+      - email
+      - membership
+      - permissions
       additionalProperties: false
       properties:
         id:
@@ -993,7 +496,10 @@ components:
           format: email
         membership:
           type: object
-          required: [userId, school, role]
+          required:
+          - userId
+          - school
+          - role
           additionalProperties: false
           properties:
             userId:
@@ -1002,7 +508,10 @@ components:
               $ref: '#/components/schemas/SchoolID'
             role:
               type: string
-              enum: [admin, registrar, viewer]
+              enum:
+              - admin
+              - registrar
+              - viewer
         permissions:
           type: array
           items:
@@ -1166,169 +675,6 @@ components:
           $ref: '#/components/schemas/EntryStatus'
         version:
           $ref: '#/components/schemas/Version'
-      additionalProperties: false
-    StudentName:
-      type: string
-      minLength: 1
-      maxLength: 100
-      description: One to 100 Unicode characters after trimming. Control characters are rejected.
-    CreateStudent:
-      type: object
-      required:
-      - givenName
-      - familyName
-      properties:
-        givenName:
-          $ref: '#/components/schemas/StudentName'
-        familyName:
-          $ref: '#/components/schemas/StudentName'
-      additionalProperties: false
-    UpdateStudent:
-      type: object
-      required:
-      - givenName
-      - familyName
-      - version
-      properties:
-        givenName:
-          $ref: '#/components/schemas/StudentName'
-        familyName:
-          $ref: '#/components/schemas/StudentName'
-        version:
-          $ref: '#/components/schemas/Version'
-      additionalProperties: false
-    Student:
-      type: object
-      required:
-      - id
-      - givenName
-      - familyName
-      - version
-      - status
-      properties:
-        id:
-          $ref: '#/components/schemas/StudentID'
-        givenName:
-          $ref: '#/components/schemas/StudentName'
-        familyName:
-          $ref: '#/components/schemas/StudentName'
-        version:
-          $ref: '#/components/schemas/Version'
-        status:
-          type: string
-          enum:
-          - active
-          - archived
-      additionalProperties: false
-    StudentPage:
-      type: object
-      required:
-      - items
-      - total
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/Student'
-        total:
-          type: integer
-          format: int64
-          minimum: 0
-      additionalProperties: false
-    CreatePlacement:
-      type: object
-      required:
-      - studentId
-      - academicYear
-      - grade
-      properties:
-        studentId:
-          $ref: '#/components/schemas/StudentID'
-        academicYear:
-          type: string
-          pattern: ^[1-9][0-9]{3}-[1-9][0-9]{3}$
-          description: Two consecutive years, for example 2026-2027.
-        grade:
-          type: string
-          minLength: 1
-          maxLength: 48
-        course:
-          type: string
-          maxLength: 120
-          description: Optional course label. Omitted from responses when empty.
-      additionalProperties: false
-    Placement:
-      type: object
-      required:
-      - id
-      - studentId
-      - academicYear
-      - grade
-      - status
-      - version
-      properties:
-        id:
-          type: string
-        studentId:
-          $ref: '#/components/schemas/StudentID'
-        academicYear:
-          type: string
-          pattern: ^[1-9][0-9]{3}-[1-9][0-9]{3}$
-          description: Two consecutive years, for example 2026-2027.
-        grade:
-          type: string
-          minLength: 1
-          maxLength: 48
-        course:
-          type: string
-          maxLength: 120
-          description: Optional course label. Omitted from responses when empty.
-        status:
-          type: string
-          enum:
-          - active
-          - withdrawn
-        version:
-          $ref: '#/components/schemas/Version'
-      additionalProperties: false
-    WithdrawPlacement:
-      type: object
-      required:
-      - status
-      - version
-      properties:
-        status:
-          type: string
-          const: withdrawn
-        version:
-          $ref: '#/components/schemas/Version'
-      additionalProperties: false
-    PlacementPage:
-      type: object
-      required:
-      - items
-      - total
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/Placement'
-        total:
-          type: integer
-          format: int64
-          minimum: 0
-      additionalProperties: false
-    DocumentID:
-      type: string
-      format: uuid
-      pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
-    DocumentCreated:
-      type: object
-      required:
-      - id
-      properties:
-        id:
-          $ref: '#/components/schemas/DocumentID'
       additionalProperties: false
     Live:
       type: object

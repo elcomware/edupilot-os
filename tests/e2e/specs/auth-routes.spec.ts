@@ -9,6 +9,11 @@ test("Goravel serves the web sign-in and keeps API requests JSON", async ({ page
   await loginForm(page, account("AUTH"));
   await expect(page.getByRole("heading", { name: "Module directory", exact: true })).toBeVisible();
 
+  await page.getByRole("link", { name: "Accounts and access", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "My account" })).toBeVisible();
+  await expect(page.getByText(account("AUTH").email, { exact: true })).toBeVisible();
+  await expect(page.getByText("School administrator", { exact: true })).toBeVisible();
+
   for (const [path, accept] of [
     ["/login", "application/json"],
     ["/api/v1/session", "text/html"],

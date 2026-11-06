@@ -7,6 +7,9 @@ on:
       - '.github/workflows/mobile-login.yml'
       - 'clients/mobile/**'
       - 'modules/auth/**'
+      - 'resources/**'
+      - 'modules/core/**'
+      - 'modules/tenancy/**'
       - 'packages/api-client/**'
       - 'tests/mobile/**'
       - 'package*.json'
@@ -107,6 +110,6 @@ jobs:
           path: |
             ${{ runner.temp }}/mobile-screens/${{ matrix.platform }}-signin.png
             ${{ runner.temp }}/mobile-screens/${{ matrix.platform }}-directory.png
-            ${{ runner.temp }}/mobile-screens/${{ matrix.platform }}-students.png
+            ${{ runner.temp }}/mobile-screens/${{ matrix.platform }}-workspace.png
           if-no-files-found: warn
           retention-days: 14

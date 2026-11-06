@@ -11,7 +11,8 @@ import (
 	"github.com/elcomware/edupilot/modules/auth/app/http/responses"
 	"github.com/elcomware/edupilot/modules/auth/app/services"
 	authv1 "github.com/elcomware/edupilot/modules/auth/proto/v1"
-	"github.com/elcomware/edupilot/platform/presentation"
+	"github.com/elcomware/edupilot/modules/core/access"
+	"github.com/elcomware/edupilot/modules/core/presentation"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -62,12 +63,9 @@ func (c *AuthController) service(w http.ResponseWriter) *services.Service {
 }
 
 func (c *AuthController) showSession(w http.ResponseWriter, r *http.Request) {
-	s := c.service(w)
-	if s == nil {
-		return
-	}
-	p, err := middleware.RequestPrincipal(s, r)
-	if err != nil {
+	var p access.Principal
+	guard := services.Guard{Request: r, Resolve: c.sessions}
+	if err := guard.User(&p); err != nil {
 		responses.ServiceError(w, err)
 		return
 	}
@@ -106,19 +104,8 @@ func (c *AuthController) login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *AuthController) logout(w http.ResponseWriter, r *http.Request) {
-	s := c.service(w)
-	if s == nil {
-		return
-	}
-	if _, err := middleware.RequestPrincipal(s, r); err != nil {
-		responses.ServiceError(w, err)
-		return
-	}
-	token, err := middleware.Bearer(r.Header.Values("Authorization"))
-	if err == nil {
-		err = s.Logout(r.Context(), token)
-	}
-	if err != nil {
+	guard := services.Guard{Request: r, Resolve: c.sessions}
+	if err := guard.Logout(); err != nil {
 		responses.ServiceError(w, err)
 		return
 	}
@@ -136,7 +123,7 @@ func (c *AuthController) CurrentUser(w http.ResponseWriter, r *http.Request) {
 	if s == nil {
 		return
 	}
-	user, err := middleware.SessionUser(r.Context(), s, r.Header.Values("Authorization"), r.Header.Values("X-School-ID"))
+	user, err := s.SessionUser(r.Context(), r.Header.Values("Authorization"), r.Header.Values("X-School-ID"))
 	if err != nil {
 		responses.ServiceError(w, err)
 		return
@@ -150,7 +137,7 @@ func (c *AuthController) GetCurrentUser(ctx context.Context, _ *authv1.GetCurren
 		return nil, status.Error(codes.Unavailable, "School storage is unavailable.")
 	}
 	md, _ := metadata.FromIncomingContext(ctx)
-	user, err := middleware.SessionUser(ctx, s, md.Get("authorization"), md.Get("x-school-id"))
+	user, err := s.SessionUser(ctx, md.Get("authorization"), md.Get("x-school-id"))
 	if err != nil {
 		return nil, responses.RPCError(err)
 	}

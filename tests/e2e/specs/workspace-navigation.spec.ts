@@ -34,7 +34,7 @@ test("personal pins reorder, survive reload and reset only the current workspace
   await loginForm(page, other);
   await page.getByLabel("Accent", { exact: true }).selectOption("clay");
   await page.getByRole("link", { name: "Module directory", exact: true }).click();
-  await page.getByRole("button", { name: "Pin Library", exact: true }).click();
+  await page.getByRole("button", { name: "Pin Accounts and access", exact: true }).click();
   await page.getByRole("link", { name: "Preferences", exact: true }).click();
   await signOut(page);
 
@@ -42,25 +42,25 @@ test("personal pins reorder, survive reload and reset only the current workspace
   await expect(page.getByLabel("Accent", { exact: true })).toHaveValue("pine");
   await expect(page.getByRole("list", { name: "Pinned navigation", exact: true })).toHaveCount(0);
   await page.getByRole("link", { name: "Back to directory", exact: true }).click();
-  await expect(page.getByRole("button", {name:"Pin Students",exact:true})).toBeVisible();
+  await expect(page.getByRole("button", {name:"Pin Schools",exact:true})).toBeVisible();
   await captureWorkspace(page, "directory-desktop");
   await expect(page.getByRole("link", { name: "EduPilot OS", exact: true }).getByRole("img", { name: "EduPilot OS", exact: true })).toBeVisible();
   await expectAccessible(page, "directory-desktop");
-  for (const title of ["Students", "Library", "Family and student portal"]) {
+  for (const title of ["Schools", "Accounts and access"]) {
     await page.getByRole("button", { name: "Pin " + title, exact: true }).click();
   }
   await page.getByRole("link", { name: "Preferences", exact: true }).click();
   const rail = page.locator(".pin-zone a");
-  await expect(rail).toHaveText(["Students", "Library", "Family and student portal"]);
-  const up = page.getByRole("button", { name: "Move Library up", exact: true });
+  await expect(rail).toHaveText(["Schools", "Accounts and access"]);
+  const up = page.getByRole("button", { name: "Move Accounts and access up", exact: true });
   await up.focus();
   await page.keyboard.press("Enter");
-  await expect(rail).toHaveText(["Library", "Students", "Family and student portal"]);
-  await expect(page.getByRole("listitem", { name: "Library", exact: true })).toBeFocused();
-  await expect(page.getByRole("button", { name: "Move Library up", exact: true })).toBeDisabled();
+  await expect(rail).toHaveText(["Accounts and access", "Schools"]);
+  await expect(page.getByRole("listitem", { name: "Accounts and access", exact: true })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Move Accounts and access up", exact: true })).toBeDisabled();
   await page.reload();
   await loginForm(page, primary);
-  await expect(rail).toHaveText(["Library", "Students", "Family and student portal"]);
+  await expect(rail).toHaveText(["Accounts and access", "Schools"]);
 
   await captureWorkspace(page, "preferences-desktop");
   await expectAccessible(page, "preferences-desktop");
@@ -69,7 +69,7 @@ test("personal pins reorder, survive reload and reset only the current workspace
   await page.getByLabel("Reading width", { exact: true }).selectOption("wide");
   await page.getByLabel("Language", { exact: true }).selectOption("fr");
   await page.setViewportSize({ width: 320, height: 780 });
-  await expect(page.getByRole("listitem", { name: "Portail familles et élèves", exact: true })).toBeVisible();
+  await expect(page.getByRole("listitem", { name: "Comptes et accès", exact: true })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await expect(page.locator("html")).toHaveAttribute("data-density", "compact");
   await expectPageReflow(page);
@@ -77,7 +77,7 @@ test("personal pins reorder, survive reload and reset only the current workspace
   await expectAccessible(page, "preferences-narrow-fr");
   await openNavigation(page);
   await page.getByRole("link", { name: "Répertoire des modules", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Épingler Identité", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Désépingler Comptes et accès", exact: true })).toBeVisible();
   await expectPageReflow(page);
   await expectAccessible(page, "directory-narrow-fr");
   await openNavigation(page);
@@ -98,7 +98,7 @@ test("personal pins reorder, survive reload and reset only the current workspace
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
   await expect(reset).toBeFocused();
-  await expect(page.getByRole("list", { name: "Navigation épinglée", exact: true }).getByRole("listitem")).toHaveCount(3);
+  await expect(page.getByRole("list", { name: "Navigation épinglée", exact: true }).getByRole("listitem")).toHaveCount(2);
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await reset.click();
   dialog = page.getByRole("dialog", { name: "Réinitialiser cet espace ?", exact: true });
@@ -111,7 +111,7 @@ test("personal pins reorder, survive reload and reset only the current workspace
   await expect(page.getByRole("status")).toHaveText("This workspace’s preferences were reset on this device.");
   // Reset leaves the authenticated session usable; a real school directory still opens.
   await page.getByRole("link", { name: "Back to directory", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Pin Students", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Pin Schools", exact: true })).toBeVisible();
   await page.reload();
   await loginForm(page, primary);
   await openNavigation(page);
@@ -123,9 +123,9 @@ test("personal pins reorder, survive reload and reset only the current workspace
   await openNavigation(page);
   await page.getByRole("link", { name: "Preferences", exact: true }).click();
   await expect(page.getByLabel("Accent", { exact: true })).toHaveValue("clay");
-  await expect(page.getByRole("listitem", { name: "Library", exact: true })).toBeVisible();
+  await expect(page.getByRole("listitem", { name: "Accounts and access", exact: true })).toBeVisible();
   await page.reload();
   await loginForm(page, other);
   await expect(page.getByLabel("Accent", { exact: true })).toHaveValue("clay");
-  await expect(page.getByRole("listitem", { name: "Library", exact: true })).toBeVisible();
+  await expect(page.getByRole("listitem", { name: "Accounts and access", exact: true })).toBeVisible();
 });

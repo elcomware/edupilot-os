@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ArrowRight, KeyRound, Languages } from "lucide-react";
-import { api, useAuth } from "../../../../../clients/web/src/app/session";
-import { t, type CopyKey } from "../../../../../clients/web/src/app/copy";
-import { errorKey } from "../../../../../clients/web/src/app/errors";
-import { useLocale, usePreferences } from "../../../../../clients/web/src/app/preferences";
-import { Brand } from "../../../../../clients/web/src/components/primitives";
+import { api, useAuth } from "@resources/app/session";
+import { t, type CopyKey } from "@resources/app/copy";
+import { errorKey } from "@resources/app/errors";
+import { useLocale, usePreferences } from "@resources/app/preferences";
+import { WelcomeLayout } from "@resources/layouts/WelcomeLayout";
 export function Login() {
   const l = useLocale(),
     update = usePreferences((s) => s.update),
@@ -49,21 +49,7 @@ export function Login() {
     login.mutate({ school: school.trim(), email: email.trim(), password });
   }
   return (
-    <main className="login-page">
-      <aside className="login-cover">
-        <Brand />
-        <div className="register-art" aria-hidden="true">
-          <i />
-          <i />
-          <i />
-          <i />
-        </div>
-        <div className="cover-caption">
-          <span>{t(l, "brand")}</span>
-          <h2>{t(l, "register")}</h2>
-        </div>
-      </aside>
-      <section className="login-pane">
+    <WelcomeLayout>
         <div className="login-locale">
           <Languages aria-hidden="true" size={16} />
           <select
@@ -172,7 +158,6 @@ export function Login() {
             </button>
           </form>
         </div>
-      </section>
-    </main>
+    </WelcomeLayout>
   );
 }

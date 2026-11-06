@@ -3,7 +3,8 @@ package responses
 import (
 	"context"
 	"errors"
-	"github.com/elcomware/edupilot/platform/access"
+
+	"github.com/elcomware/edupilot/modules/core/access"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

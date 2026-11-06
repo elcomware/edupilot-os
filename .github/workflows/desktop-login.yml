@@ -16,8 +16,9 @@ on:
       - 'routes/**'
       - 'cmd/seed-admin/**'
       - 'modules/auth/**'
-      - 'platform/database/**'
-      - 'modules/students/**'
+      - 'modules/core/database/**'
+      - 'modules/tenancy/**'
+      - 'resources/**'
       - 'scripts/setup.py'
       - 'tests/desktop/**'
   workflow_dispatch:
@@ -70,8 +71,8 @@ jobs:
           if (!(Test-Path $tesseract)) { throw "Tesseract executable missing" }
           "DESKTOP_TESSERACT=$tesseract" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
       - name: Verify native SQLite filenames and options
-        run: go test -run TestSQLiteFileDSNOpensExactFile -count=1 ./platform/database
-      - name: Sign in and register a synthetic student in the native window
+        run: go test -run TestSQLiteFileDSNOpensExactFile -count=1 ./modules/core/database
+      - name: Sign in and save a school work-list entry in the native window
         run: python tests/desktop/run.py
       - uses: actions/upload-artifact@v4
         if: always()

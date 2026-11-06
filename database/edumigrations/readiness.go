@@ -7,7 +7,7 @@ import (
 	"regexp"
 
 	"github.com/elcomware/edupilot/app/facades"
-	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/modules/core/database"
 	"github.com/goravel/framework/contracts/database/schema"
 	"github.com/goravel/framework/database/migration"
 )
@@ -34,6 +34,20 @@ func Run(ctx context.Context, catalog *database.Catalog) error {
 	table, err := historyTable()
 	if err != nil {
 		return err
+	}
+	// Inspect every selected target before creating any tables. Refuse a nonempty
+	// unrecognized database, including a dedicated target on a fresh control.
+	pools := catalog.Named()
+	for _, step := range s.Migrations() {
+		if m, ok := step.(*registered); ok && m.baseline {
+			pool, exists := pools[m.node.Name]
+			if !exists {
+				return fmt.Errorf("configured pool %s unavailable", m.node.Name)
+			}
+			if err := checkBaseline(ctx, pool, table, m); err != nil {
+				return fmt.Errorf("inspect pool %s: %w", m.node.Name, err)
+			}
+		}
 	}
 	// Goravel's PostgreSQL HasTable implementation enumerates every schema and
 	// then compares only the unqualified table name. A migrations table in an
@@ -77,7 +91,7 @@ func ensureHistoryRepository(ctx context.Context, control database.Pool, s schem
 func historyRepositoryExists(ctx context.Context, control database.Pool, table string) (bool, error) {
 	query := "SELECT count(*) FROM sqlite_master WHERE type='table' AND name=?"
 	if control.Driver == "postgres" {
-		query = "SELECT count(*) FROM information_schema.tables WHERE table_schema=current_schema() AND table_name=?"
+		query = "SELECT count(*) FROM information_schema.tables WHERE table_schema=current_schema() AND table_type='BASE TABLE' AND table_name=?"
 	}
 	var count int
 	if err := control.DB.QueryRowContext(ctx, control.Bind(query), table).Scan(&count); err != nil {
@@ -126,7 +140,7 @@ func CheckReady(ctx context.Context, catalog *database.Catalog, expected []schem
 			return fmt.Errorf("migration %s has no configured pool %s", id, name)
 		}
 		if receipts[name] == nil {
-			receipts[name], err = signatures(ctx, p, "SELECT signature FROM edu_migration_receipts")
+			receipts[name], err = signatures(ctx, p, "SELECT signature FROM "+receiptTable)
 			if err != nil {
 				return fmt.Errorf("read %s migration receipts: %w", name, err)
 			}
@@ -134,7 +148,7 @@ func CheckReady(ctx context.Context, catalog *database.Catalog, expected []schem
 		if receipts[name][id] != 1 {
 			return fmt.Errorf("missing local migration receipt for %s on %s", id, name)
 		}
-		if plan.plan.placement {
+		if plan.baseline {
 			placements[name] = true
 		}
 	}
@@ -161,4 +175,56 @@ func signatures(ctx context.Context, pool database.Pool, sql string) (map[string
 		result[id]++
 	}
 	return result, rows.Err()
+}
+
+func checkBaseline(ctx context.Context, p database.Pool, ledger string, baseline *registered) error {
+	found, err := historyRepositoryExists(ctx, p, receiptTable)
+	if err != nil {
+		return err
+	}
+	if found {
+		var owner, poolID string
+		err = p.DB.QueryRowContext(ctx, "SELECT owner, pool_id FROM edu_pool_marker WHERE singleton=1").Scan(&owner, &poolID)
+		if err != nil {
+			return fmt.Errorf("read pool marker: %w", err)
+		}
+		if owner != baseline.node.Owner() || poolID == "" {
+			return database.ErrPlacement
+		}
+		var recorded int
+		err = p.DB.QueryRowContext(ctx, p.Bind("SELECT count(*) FROM "+receiptTable+" WHERE signature=?"), baseline.Signature()).Scan(&recorded)
+		if err != nil {
+			return err
+		}
+		if recorded != 1 {
+			return errors.New("missing pool baseline receipt")
+		}
+		return nil
+	}
+	objects := applicationRelations(p.Driver)
+	query := "SELECT count(*) FROM " + objects.catalog + " WHERE " + objects.filter
+	var n int
+	if err := p.DB.QueryRowContext(ctx, query).Scan(&n); err != nil {
+		return err
+	}
+	if n == 0 {
+		return nil
+	}
+	// A crash before the first migration may leave an empty native history table.
+	if n == 1 && baseline.node.Tenant == "" {
+		exists, err := historyRepositoryExists(ctx, p, ledger)
+		if err != nil {
+			return err
+		}
+		if exists {
+			var count int
+			if err := p.DB.QueryRowContext(ctx, `SELECT count(*) FROM "`+ledger+`"`).Scan(&count); err != nil {
+				return err
+			}
+			if count == 0 {
+				return nil
+			}
+		}
+	}
+	return errors.New("unrecognized database schema; select a new empty database for this installation")
 }

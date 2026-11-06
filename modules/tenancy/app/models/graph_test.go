@@ -1,9 +1,10 @@
 package models_test
 
 import (
-	d "github.com/elcomware/edupilot/modules/tenancy/app/models"
-	s "github.com/elcomware/edupilot/platform/scope"
 	"testing"
+
+	s "github.com/elcomware/edupilot/modules/core/scope"
+	d "github.com/elcomware/edupilot/modules/tenancy/app/models"
 )
 
 func must[T any](v T, err error) T {

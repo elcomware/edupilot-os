@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { URL } from "node:url";
-import { copy } from "../src/strings.ts";
+import { copy } from "../../../resources/native/strings.ts";
 
 test("the installed app and both language headers identify EduPilot OS", () => {
   const manifest = JSON.parse(

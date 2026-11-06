@@ -8,8 +8,8 @@ import (
 	"github.com/elcomware/edupilot/app/facades"
 	"github.com/elcomware/edupilot/database/edumigrations"
 	"github.com/elcomware/edupilot/modules/auth/app/services"
-	"github.com/elcomware/edupilot/platform/access"
-	"github.com/elcomware/edupilot/platform/database"
+	"github.com/elcomware/edupilot/modules/core/access"
+	"github.com/elcomware/edupilot/modules/core/database"
 )
 
 // SchoolAdminSeeder is opt-in. It never generates a default credential.

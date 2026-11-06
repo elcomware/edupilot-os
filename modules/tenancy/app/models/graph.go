@@ -5,7 +5,7 @@ import (
 	"math"
 	"slices"
 
-	"github.com/elcomware/edupilot/platform/scope"
+	"github.com/elcomware/edupilot/modules/core/scope"
 )
 
 // Graph is an immutable topology snapshot for one tenant. Insert parents

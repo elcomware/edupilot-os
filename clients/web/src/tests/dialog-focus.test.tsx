@@ -2,7 +2,7 @@
 import { afterEach, beforeAll, expect, it } from "vitest";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Dialog } from "../components/primitives";
+import { Dialog } from "../../../../resources/js/components/primitives";
 
 beforeAll(() => {
   // jsdom has no native showModal/inert implementation. Exercise the shared

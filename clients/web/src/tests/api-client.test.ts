@@ -34,16 +34,16 @@ describe("versioned transport", () => {
       }),
     );
   });
-  it("submits the version and encodes the archive ID; no JSON parsing for 204", async () => {
+  it("accepts an empty 204 on sign-out", async () => {
     const fetcher = vi.fn(async () => new Response(null, { status: 204 }));
     const client = createApiClient({
       baseUrl: "/api/v1",
       getToken: () => "token",
       fetcher,
     });
-    await expect(client.archiveStudent("a/b", 7)).resolves.toBeUndefined();
+    await expect(client.logout()).resolves.toBeUndefined();
     expect(fetcher).toHaveBeenCalledWith(
-      "/api/v1/students/a%2Fb?version=7",
+      "/api/v1/session",
       expect.objectContaining({
         method: "DELETE",
         headers: { Accept: "application/json", Authorization: "Bearer token" },

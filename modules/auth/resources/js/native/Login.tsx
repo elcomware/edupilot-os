@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { View } from "react-native";
-import type { SessionModel, SessionState } from "../../../../../clients/mobile/src/session";
-import type { Translator } from "../../../../../clients/mobile/src/strings";
-import { Action, Field, Heading, Notice, s } from "../../../../../clients/mobile/src/ui";
+import type { SessionModel, SessionState } from "@native/session";
+import type { Translator } from "@native/strings";
+import { Action, Field, Heading, Notice, s } from "@native/ui";
 
 export function Login({
   model,

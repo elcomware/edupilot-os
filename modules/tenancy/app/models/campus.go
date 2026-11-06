@@ -5,7 +5,7 @@ import (
 	"time"
 	_ "time/tzdata" // Keep IANA zone validation available in minimal distributions.
 
-	"github.com/elcomware/edupilot/platform/scope"
+	"github.com/elcomware/edupilot/modules/core/scope"
 )
 
 type Campus struct {

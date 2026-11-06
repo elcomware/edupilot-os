@@ -6,7 +6,7 @@ case "$platform" in android|ios) ;; *) exit 2 ;; esac
 test "${RUNNER_ENVIRONMENT:-}" = github-hosted
 test ! -e .env && test ! -e database/edupilot.sqlite || exit 1
 export APP_HOST=127.0.0.1 APP_PORT=3000 DB_CONNECTION=sqlite DB_DATABASE=database/edupilot.sqlite
-export EDUPILOT_DEDICATED_DATABASES='[]' EDUPILOT_DOCUMENTS_DRIVER=local EDUPILOT_ENABLED_MODULES='tenancy,identity,students,guardians,enrollment,attendance,documents'
+export EDUPILOT_DEDICATED_DATABASES='[]' EDUPILOT_ENABLED_MODULES='tenancy,auth'
 export EDUPILOT_SEED_SCHOOL="demo-$platform" EDUPILOT_SEED_EMAIL=registrar@example.test
 EDUPILOT_SEED_PASSWORD=$(openssl rand -hex 12)
 export EDUPILOT_SEED_PASSWORD
@@ -69,7 +69,7 @@ if [[ "$platform" = ios ]]; then
     xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/proof.xcresult" | python3 -c 'import json,sys; print([f.get("failureText","")[:800] for f in json.load(sys.stdin).get("testFailures",[])])' || true
   fi
   appdata=$(xcrun simctl get_app_container "$IPHONE_UDID" org.edupilot.proof.tests.xctrunner data)
-  for state in directory students; do
+  for state in directory workspace; do
     if [[ -f "$appdata/Documents/edupilot-$state.png" ]]; then
       cp "$appdata/Documents/edupilot-$state.png" "$driver/"
     fi
@@ -86,7 +86,7 @@ platform, driver, output, result = sys.argv[1:]
 # Keep test logs and debug screenshots private. Only the three explicitly captured
 # states can enter a published artifact.
 roots = [Path(driver)]
-for state in ("signin", "directory", "students"):
+for state in ("signin", "directory", "workspace"):
     matches = {p.resolve() for root in roots for p in root.rglob(f"edupilot-{state}.png")}
     if len(matches) == 1:
         source = matches.pop()
@@ -98,9 +98,9 @@ for state in ("signin", "directory", "students"):
 if result != "0":
     raise SystemExit(int(result))
 with sqlite3.connect("file:database/edupilot.sqlite?mode=ro", uri=True) as db:
-    rows = db.execute("SELECT school_id, given_name, family_name, status FROM students_records").fetchall()
-    sessions = db.execute("SELECT count(*) FROM identity_sessions").fetchone()[0]
-if rows != [("demo-" + platform, "Jamie", "Demo", "active")] or sessions:
-    raise SystemExit("Unexpected student or remaining session in the fixture database")
-print(f"{platform}: native sign-in and registration verified, one active school record, zero remaining sessions.")
+    rows = db.execute("SELECT school_id, title, status FROM ws_tenancy").fetchall()
+    sessions = db.execute("SELECT count(*) FROM auth_sessions").fetchone()[0]
+if rows != [("demo-" + platform, "Campus review", "open")] or sessions:
+    raise SystemExit("Unexpected school work-list entry or remaining session in the fixture database")
+print(f"{platform}: native sign-in and work-list entry verified, one school record, zero remaining sessions.")
 PYTHON

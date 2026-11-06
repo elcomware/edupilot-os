@@ -1,89 +1,48 @@
-import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { account, session } from "./accounts";
 
-test("another school cannot enumerate, read, change or archive a student", async ({
+test("school grants protect the catalog and isolate school work lists", async ({
   request,
 }) => {
   const a = account("A"),
     b = account("B");
-  expect(a.school).not.toBe(b.school);
-  const [owner, stranger] = await Promise.all([
-    session(request, a),
-    session(request, b),
-  ]);
-  const ownProfile = await request.get("/api/v1/auth/me", { headers: owner });
-  expect(ownProfile.status()).toBe(200);
-  expect(await ownProfile.json()).toMatchObject({
-    email: a.email,
-    membership: { school: a.school },
-  });
-  expect((await request.get("/api/v1/auth/me", {
-    headers: { ...owner, "X-School-ID": b.school },
-  })).status()).toBe(403);
-  const givenName = "River",
-    familyName = "Isolation " + randomUUID().slice(0, 8);
-  const created = await request.post("/api/v1/students", {
+  const owner = await session(request, a),
+    other = await session(request, b);
+  const base = "/api/v1/modules/tenancy/workspace";
+  const catalog = await request.get("/api/v1/modules", { headers: owner });
+  expect(catalog.status()).toBe(200);
+  expect(
+    (await catalog.json()).items.map((m: { key: string }) => m.key),
+  ).toEqual(["tenancy", "auth"]);
+  expect(
+    (
+      await request.get("/api/v1/modules", {
+        headers: { ...owner, "X-School-ID": b.school },
+      })
+    ).status(),
+  ).toBe(403);
+  const created = await request.post(base, {
     headers: owner,
-    data: { givenName, familyName },
+    data: { title: "Campus review" },
   });
   expect(created.status()).toBe(201);
-  const student = await created.json();
-  const url = "/api/v1/students/" + encodeURIComponent(student.id);
-  try {
-    const before = await request.get(url, { headers: owner });
-    expect(before.status()).toBe(200);
-    expect((await before.json()).id).toBe(student.id);
-    expect((await request.get(url)).status()).toBe(401);
-    // Iterate every page; checking just page 1 can hide a scope leak.
-    for (let offset = 0; ; offset += 100) {
-      const roster = await request.get("/api/v1/students", {
-        headers: stranger,
-        params: { limit: 100, offset },
-      });
-      expect(roster.status()).toBe(200);
-      const { items, total } = await roster.json();
-      expect(items.map((s: { id: string }) => s.id)).not.toContain(student.id);
-      if (offset + 100 >= total) break;
-    }
-    expect((await request.get(url, { headers: stranger })).status()).toBe(404);
-    expect(
-      (
-        await request.patch(url, {
-          headers: stranger,
-          data: { givenName: "Changed", familyName, version: student.version },
-        })
-      ).status(),
-    ).toBe(404);
-    expect(
-      (
-        await request.delete(url, {
-          headers: stranger,
-          params: { version: student.version },
-        })
-      ).status(),
-    ).toBe(404);
-    expect(
-      (
-        await request.get(url, {
-          headers: { ...stranger, "X-School-ID": a.school },
-        })
-      ).status(),
-    ).toBe(403);
-    const after = await request.get(url, { headers: owner });
-    expect(after.status()).toBe(200);
-    expect(await after.json()).toMatchObject({
-      givenName,
-      familyName,
-      status: "active",
-      version: 1,
-    });
-  } finally {
-    // Archive only the row this test created and only if its version is unchanged.
-    const cleanup = await request.delete(url, {
-      headers: owner,
-      params: { version: student.version },
-    });
-    expect(cleanup.status()).toBe(204);
-  }
+  const item = await created.json(),
+    path = base + "/" + item.id;
+  expect((await request.get(path, { headers: owner })).status()).toBe(200);
+  expect((await request.get(path, { headers: other })).status()).toBe(404);
+  expect(
+    (
+      await request.patch(path, {
+        headers: other,
+        data: { title: "Changed", status: "closed", version: 1 },
+      })
+    ).status(),
+  ).toBe(404);
+  expect(
+    (await request.get("/api/v1/students", { headers: owner })).status(),
+  ).toBe(404);
+  expect(
+    (await request.delete("/api/v1/session", { headers: owner })).status(),
+  ).toBe(204);
+  expect((await request.get(path, { headers: owner })).status()).toBe(401);
 });

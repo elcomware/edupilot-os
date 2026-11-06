@@ -1,6 +1,6 @@
 package models
 
-import "github.com/elcomware/edupilot/platform/access"
+import "github.com/elcomware/edupilot/modules/core/access"
 
 // Role identifies one of the fixed school membership roles.
 type Role string
@@ -11,15 +11,15 @@ const (
 	RoleViewer    = "viewer"
 )
 
-func (r Role) Permissions() ([]string, error) {
+func (r Role) DefaultPermissions() ([]string, error) {
 	var grants []string
 	switch r {
 	case RoleAdmin:
-		grants = []string{access.ModulesRead, access.StudentsRead, access.StudentsWrite, access.WorkspaceRead, access.WorkspaceWrite, access.DocumentsRead, access.DocumentsWrite, access.ManageMembers}
+		grants = []string{access.ModulesRead, access.WorkspaceRead, access.WorkspaceWrite, access.ManageMembers}
 	case RoleRegistrar:
-		grants = []string{access.ModulesRead, access.StudentsRead, access.StudentsWrite, access.WorkspaceRead, access.WorkspaceWrite, access.DocumentsRead, access.DocumentsWrite}
+		grants = []string{access.ModulesRead, access.WorkspaceRead, access.WorkspaceWrite}
 	case RoleViewer:
-		grants = []string{access.ModulesRead, access.StudentsRead, access.WorkspaceRead, access.DocumentsRead}
+		grants = []string{access.ModulesRead, access.WorkspaceRead}
 	default:
 		return nil, access.ErrForbidden
 	}

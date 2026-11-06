@@ -15,7 +15,9 @@ FROM node:24-bookworm-slim AS web-build
 WORKDIR /src
 COPY package*.json ./
 COPY clients/web ./clients/web
-COPY modules/auth/resources/js/pages ./modules/auth/resources/js/pages
+COPY modules/auth/resources ./modules/auth/resources
+COPY modules/tenancy/resources ./modules/tenancy/resources
+COPY resources ./resources
 COPY clients/mobile/package.json ./clients/mobile/package.json
 COPY packages/api-client ./packages/api-client
 RUN --mount=type=cache,target=/root/.npm \
@@ -32,8 +34,6 @@ ENV PATH="/srv/edupilot:$PATH"
 COPY --from=go-build /out/ /srv/edupilot/
 COPY --from=go-build /src/.env.example .env
 COPY --from=web-build /src/clients/web/dist ./clients/web/dist
-COPY --from=go-build /src/public ./public
-COPY --from=go-build /src/resources ./resources
 RUN mkdir -p database storage && chown -R edupilot:edupilot database storage
 USER edupilot
 EXPOSE 3000

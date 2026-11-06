@@ -2,10 +2,11 @@ package responses
 
 import (
 	"errors"
-	"github.com/elcomware/edupilot/modules/auth/app/services"
-	"github.com/elcomware/edupilot/platform/access"
-	"github.com/elcomware/edupilot/platform/presentation"
 	"net/http"
+
+	"github.com/elcomware/edupilot/modules/auth/app/services"
+	"github.com/elcomware/edupilot/modules/core/access"
+	"github.com/elcomware/edupilot/modules/core/presentation"
 )
 
 func Error(w http.ResponseWriter, status int, code, message string) {

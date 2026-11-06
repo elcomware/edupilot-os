@@ -3,7 +3,7 @@ package models
 import (
 	"strings"
 
-	"github.com/elcomware/edupilot/platform/scope"
+	"github.com/elcomware/edupilot/modules/core/scope"
 )
 
 type School struct {

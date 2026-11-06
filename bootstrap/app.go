@@ -1,20 +1,20 @@
 package bootstrap
 
 import (
-	"github.com/elcomware/edupilot/app/facades"
-	"github.com/elcomware/edupilot/app/providers"
-	"github.com/elcomware/edupilot/modules/auth/app/http/controllers"
-	"github.com/elcomware/edupilot/modules/auth/app/services"
-	authroutes "github.com/elcomware/edupilot/modules/auth/routes"
-	contractsfoundation "github.com/goravel/framework/contracts/foundation"
-	"github.com/goravel/framework/foundation"
 	"os"
 	"path/filepath"
 
-	"github.com/elcomware/edupilot/app/jobs"
+	"github.com/elcomware/edupilot/app/facades"
+	"github.com/elcomware/edupilot/app/providers"
 	"github.com/elcomware/edupilot/config"
+	"github.com/elcomware/edupilot/modules/auth/app/http/controllers"
+	"github.com/elcomware/edupilot/modules/auth/app/jobs"
+	"github.com/elcomware/edupilot/modules/auth/app/services"
 	auth "github.com/elcomware/edupilot/modules/auth/providers"
+	authroutes "github.com/elcomware/edupilot/modules/auth/routes"
 	"github.com/elcomware/edupilot/routes"
+	contractsfoundation "github.com/goravel/framework/contracts/foundation"
+	"github.com/goravel/framework/foundation"
 )
 
 func Boot() contractsfoundation.Application {
