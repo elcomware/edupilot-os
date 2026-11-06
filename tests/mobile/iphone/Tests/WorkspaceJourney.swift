@@ -53,7 +53,18 @@ final class WorkspaceJourney: XCTestCase {
         let field = app.descendants(matching: .any).matching(identifier: id).firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 15), "Missing field " + id)
         field.tap()
-        field.typeText(text)
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "Title keyboard unavailable")
+        // Synchronize hardware-key injection with the focused native field.
+        // Never retry a character or replace the value after a mismatch.
+        var prefix = ""
+        for character in text {
+            field.typeText(String(character))
+            prefix.append(character)
+            let received = XCTNSPredicateExpectation(
+                predicate: NSPredicate(format: "value == %@", prefix), object: field)
+            XCTAssertEqual(XCTWaiter.wait(for: [received], timeout: 3), .completed,
+                           "Title diverged at character " + String(prefix.count))
+        }
         XCTAssertEqual(field.value as? String, text, "Incorrect entry before submit")
         field.typeText("\n")
         let dismissed = NSPredicate(format: "exists == false")

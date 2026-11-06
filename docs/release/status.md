@@ -53,3 +53,5 @@ intermittently reached a populated table without finding the expected edit
 button after typing. The driver now waits for native keyboard focus and checks
 the synthetic title in WebKit before submitting. The window, accessible edit
 button, screenshot and independent database assertions still have to pass.
+
+The iPhone simulator subsequently restored the expected school but rapid XCTest key injection still produced a truncated title. The work-list journey now waits for keyboard focus and acknowledges each injected character once; it fails at the first missing character. It still requires the complete on-screen title and server row. Passing this paced journey does not qualify rapid typing or physical-device behavior.
