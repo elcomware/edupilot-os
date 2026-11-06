@@ -70,3 +70,6 @@ Reusable templates: record collection/detail/editor, settings sections, roster/g
 ## Evidence recording
 
 For each accepted row record commit, tested roles, desktop/narrow captures, keyboard result, locale/theme coverage, browser cases and any unavailable hardware. A screenshot alone does not prove that its API or permissions work. No screen is marked complete until the corresponding domain acceptance journey passes.
+
+
+Current S02 evidence covers the shared component and starter flows. The [hosted client run](https://github.com/elcomware/edupilot-os/actions/runs/42152847857) exercises sign-in, module navigation, preferences, the reset dialog and student register columns at desktop width and in narrow French layouts. The [accessibility reports and measured contrast](https://github.com/elcomware/edupilot-os/actions/runs/42152847857/artifacts/13473676683) are scoped to these states. Every planned domain workflow retains its own permission, data, localization, device and accessibility acceptance criteria.
