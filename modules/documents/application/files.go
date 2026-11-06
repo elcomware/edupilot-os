@@ -162,6 +162,12 @@ func (f Files) Download(ctx context.Context, id string) (Download, error) {
 	if err != nil {
 		return Download{}, err
 	}
+	return verifyRecord(k, record)
+}
+
+// verifyRecord is shared by authenticated downloads and offline backup inspection.
+// It binds the original verified storage key to the envelope and supported bytes.
+func verifyRecord(k FileKey, record []byte) (Download, error) {
 	header := len(signature) + sha256.Size
 	if len(record) <= header || len(record) > MaxRecordSize || !bytes.Equal(record[:len(signature)], []byte(signature)) {
 		return Download{}, ErrFileIntegrity
@@ -175,6 +181,25 @@ func (f Files) Download(ctx context.Context, id string) (Download, error) {
 		return Download{}, ErrFileIntegrity
 	}
 	return Download{Content: data, MediaType: mediaType, Extension: extension[mediaType]}, nil
+}
+
+// VerifyStoredRecord is a pure, bounded validator for trusted offline adapters.
+// It returns the canonical original storage key and verified file bytes. This
+// validates storage integrity only; it does not authenticate or authorize a user.
+func VerifyStoredRecord(school, id string, input io.Reader) (FileKey, Download, error) {
+	k, err := key(school, id)
+	if err != nil {
+		return FileKey{}, Download{}, ErrFileIntegrity
+	}
+	record, err := ReadRecord(input)
+	if err != nil {
+		return FileKey{}, Download{}, ErrFileIntegrity
+	}
+	file, err := verifyRecord(k, record)
+	if err != nil {
+		return FileKey{}, Download{}, err
+	}
+	return k, file, nil
 }
 
 // ReadRecord bounds reads even if the configured storage backend is damaged.
