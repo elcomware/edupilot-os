@@ -127,3 +127,12 @@ expected values after blur. The sign-in form now records the native field's
 final edit event as well as each change and uses the submitted password text
 for keyboard submission. The test requires edits to clear the initial
 validation message before attempting the authenticated journey.
+
+The [iPhone and Android simulator run](https://github.com/elcomware/edupilot-os/actions/runs/42303275286)
+passed on the verification branch. On iPhone, tapping Sign in on the empty
+form showed validation. After native credential entry, the keyboard's Go key
+created a school session through HTTPS. A separate cold launch restored the
+school, wrote the expected row and signed out. SQLite contained exactly one
+matching workspace row and zero sessions afterward. Android passed using the
+form button. Successful submission by tapping the populated iPhone form and
+physical-device acceptance remain open.

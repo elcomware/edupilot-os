@@ -126,7 +126,7 @@ final class WorkspaceJourney: XCTestCase {
         XCTAssertFalse(field["login-error-incomplete-school"].exists, "Credential edits did not clear validation")
         XCTAssertTrue(field["school-id"].value as? String == input.school, "School changed after focus left")
         XCTAssertTrue(field["email"].value as? String == input.email, "Email changed after focus left")
-        XCTAssertTrue((field["password"].value as? String)?.count == input.password.count, "Secure length changed after focus left")
+        XCTAssertTrue((field["password"].value as? String)?.count == input.password.count, "Secure length changed before submit")
         let go = app.keyboards.buttons.matching(NSPredicate(format: "label ==[c] %@", "Go")).firstMatch
         XCTAssertTrue(go.waitForExistence(timeout: 8) && go.isHittable, "Native Go key unavailable")
         go.tap()
@@ -135,10 +135,7 @@ final class WorkspaceJourney: XCTestCase {
             let reason = reasons.first { field["login-error-" + $0].exists }
             let system = XCUIApplication(bundleIdentifier: "com.apple.springboard")
             let fallback = system.alerts.firstMatch.exists ? "system-alert" : (field["sign-in"].exists ? "guest" : "unknown")
-            let proofs = ["idle", "rejected-empty", "submitted-guest", "submitted-checking", "resolved-member",
-                          "resolved-guest", "resolved-guest-network", "resolved-guest-credentials", "resolved-guest-storage"]
-            let proof = proofs.first { field["login-proof-" + $0].exists } ?? "unmatched"
-            XCTFail("Sign-in outcome: " + (reason ?? fallback) + " phase-" + proof)
+            XCTFail("Sign-in outcome: " + (reason ?? fallback))
         }
     }
 

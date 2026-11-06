@@ -16,7 +16,6 @@ export function Login({
   const credentials = useRef({ school: "", email: "", password: "" });
   const [visible, show] = useState(false),
     [missing, setMissing] = useState("");
-  const [proof, setProof] = useState("idle");
   const pending = state.kind === "signingIn";
   function record(field: keyof typeof credentials.current, value: string) {
     credentials.current[field] = value;
@@ -25,17 +24,12 @@ export function Login({
   const submit = () => {
     const { school, email, password } = credentials.current;
     if (!school.trim() || !email.trim() || !password) {
-      setProof("rejected-empty");
       setMissing(!school.trim() ? "school" : !email.trim() ? "email" : "password");
       return;
     }
     setMissing("");
     show(false);
-    setProof("submitted-" + model.snapshot().kind);
-    void model.login({ school: school.trim(), email: email.trim(), password }).then(() => {
-      const result = model.snapshot();
-      setProof("resolved-" + result.kind + (result.kind === "guest" && result.reason ? "-" + result.reason : ""));
-    });
+    void model.login({ school: school.trim(), email: email.trim(), password });
   };
   return (
     <>
@@ -44,7 +38,7 @@ export function Login({
         title={t("signIn")}
         detail={t("signInIntro")}
       />
-      <View testID={`login-proof-${proof}`} style={s.panel}>
+      <View style={s.panel}>
         <Field
           testID="school-id"
           label={t("school")}
