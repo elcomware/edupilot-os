@@ -101,3 +101,10 @@ twice finished keyboard submission without creating the expected school session.
 The iPhone login drill now dismisses the keyboard and taps the visible Sign in
 button. The independent SQLite session check,
 cold-launch school check, workspace write and revocation checks still apply.
+
+The [follow-up iPhone job](https://github.com/elcomware/edupilot-os/actions/runs/42283470468/job/128118171172)
+stopped at keyboard dismissal before it could tap Sign in. iPhone login and
+workspace interaction now use XCTest. The login test checks the school and
+email as typed and checks only the length of the secure password field before
+tapping Sign in. The runner checks the persisted session before starting the
+separate cold-launch workspace test. Only named fixture screenshots are uploaded.

@@ -49,27 +49,58 @@ final class WorkspaceJourney: XCTestCase {
         try screen.screenshot.pngRepresentation.write(to: documents.appendingPathComponent("edupilot-" + name + ".png"))
     }
 
-    private func fill(_ id: String, _ text: String) throws {
+    private func enter(_ id: String, _ text: String, secure: Bool = false) throws -> XCUIElement {
         let field = app.descendants(matching: .any).matching(identifier: id).firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 15), "Missing field " + id)
         field.tap()
-        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "Title keyboard unavailable")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "Keyboard unavailable for " + id)
         // Synchronize hardware-key injection with the focused native field.
         // Never retry a character or replace the value after a mismatch.
         var prefix = ""
         for character in text {
             field.typeText(String(character))
             prefix.append(character)
-            let received = XCTNSPredicateExpectation(
-                predicate: NSPredicate(format: "value == %@", prefix), object: field)
+            let expected = secure
+                ? NSPredicate(format: "value MATCHES %@", ".{\(prefix.count)}")
+                : NSPredicate(format: "value == %@", prefix)
+            let received = XCTNSPredicateExpectation(predicate: expected, object: field)
             XCTAssertEqual(XCTWaiter.wait(for: [received], timeout: 3), .completed,
-                           "Title diverged at character " + String(prefix.count))
+                           "Input diverged for " + id + " at character " + String(prefix.count))
         }
+        return field
+    }
+
+    private func fill(_ id: String, _ text: String) throws {
+        let field = try enter(id, text)
         XCTAssertEqual(field.value as? String, text, "Incorrect entry before submit")
         field.typeText("\n")
         let dismissed = NSPredicate(format: "exists == false")
         let hidden = XCTNSPredicateExpectation(predicate: dismissed, object: app.keyboards.firstMatch)
         XCTAssertEqual(XCTWaiter.wait(for: [hidden], timeout: 10), .completed, "Keyboard still covers the form")
+    }
+
+    func testSignIn() throws {
+        continueAfterFailure = false
+        struct Credentials: Decodable {
+            let school: String
+            let email: String
+            let password: String
+        }
+        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "fixture", withExtension: "json"))
+        let input = try JSONDecoder().decode(Credentials.self, from: Data(contentsOf: url))
+        app.launch()
+        try save(showing(["School ID", "Show password"]), "signin")
+        _ = try enter("school-id", input.school)
+        _ = try enter("email", input.email)
+        _ = try enter("password", input.password, secure: true)
+        let button = app.buttons["sign-in"]
+        for _ in 0..<4 {
+            if button.isHittable { break }
+            app.scrollViews.firstMatch.swipeUp()
+        }
+        XCTAssertTrue(button.isHittable, "Sign in button unavailable")
+        button.tap()
+        XCTAssertTrue(app.staticTexts[input.school].waitForExistence(timeout: 30), "School directory missing after sign-in")
     }
 
     func testSchoolWorkList() throws {

@@ -56,8 +56,30 @@ driver="$RUNNER_TEMP/mobile-maestro"
 mkdir "$driver"
 result=0
 if [[ "$platform" = ios ]]; then
-  (cd "$driver" && maestro test -e "SCHOOL=$EDUPILOT_SEED_SCHOOL" -e "PASSWORD=$EDUPILOT_SEED_PASSWORD" \
-    --test-output-dir "$driver" "$root/tests/mobile/iphone-login.yml")
+  cp -R tests/mobile/iphone "$driver/project"
+  # Keep the disposable login in the runner's private XCTest bundle.
+  python3 - "$driver/project/Tests/fixture.json" <<'CREDENTIALS'
+import json, os, sys
+with open(sys.argv[1], "x", opener=lambda path, flags: os.open(path, flags, 0o600)) as out:
+    json.dump({k: os.environ["EDUPILOT_SEED_" + k.upper()] for k in ("school", "email", "password")}, out)
+CREDENTIALS
+  (cd "$driver/project" && xcodegen generate)
+  run_iphone_test() {
+    local method=$1
+    (cd "$driver/project" && xcodebuild test -project MobileProof.xcodeproj -scheme MobileProof \
+      -parallel-testing-enabled NO -destination "id=$IPHONE_UDID" -only-testing:"DeviceTests/WorkspaceJourney/$method" \
+      -resultBundlePath "$RUNNER_TEMP/$method.xcresult" -derivedDataPath "$RUNNER_TEMP/mobile-uitests" \
+      > "$RUNNER_TEMP/$method.log" 2>&1)
+  }
+  if ! run_iphone_test testSignIn; then
+    # Input-driver errors can contain typed characters. Emit known markers only.
+    grep -Eo 'Input diverged for (school-id|email|password) at character [0-9]+|Keyboard unavailable for (school-id|email|password)|Missing field (school-id|email|password)|Sign in button unavailable|School directory missing after sign-in|Timed out waiting for visible labels: School ID, Show password' \
+      "$RUNNER_TEMP/testSignIn.log" | tail -4 || true
+    echo 'iPhone sign-in XCTest failed'
+    exit 1
+  fi
+  appdata=$(xcrun simctl get_app_container "$IPHONE_UDID" org.edupilot.proof.tests.xctrunner data)
+  cp "$appdata/Documents/edupilot-signin.png" "$driver/"
   # Wait for the real UI request to create the school session before the
   # separate XCTest process cold-launches the app and verifies Keychain restore.
   python3 - <<'SESSION'
@@ -71,15 +93,11 @@ with sqlite3.connect("file:database/edupilot.sqlite?mode=ro", uri=True) as db:
     else:
         raise SystemExit("The native sign-in did not create the expected school session")
 SESSION
-  cp -R tests/mobile/iphone "$driver/project"
-  (cd "$driver/project" && xcodegen generate &&
-    xcodebuild test -project MobileProof.xcodeproj -scheme MobileProof \
-      -parallel-testing-enabled NO -destination "id=$IPHONE_UDID" \
-      -resultBundlePath "$RUNNER_TEMP/proof.xcresult" -derivedDataPath "$RUNNER_TEMP/mobile-uitests" > "$RUNNER_TEMP/mobile-xctest.log" 2>&1) || result=$?
+  run_iphone_test testSchoolWorkList || result=$?
   # XCTest logs can contain text entered into fields. Only surface assertion/build failure lines.
   if [[ "$result" != 0 ]]; then
-    grep -E 'error:|Waited for|Timed out waiting|Missing field|TEST FAILED|failure:' "$RUNNER_TEMP/mobile-xctest.log" | tail -30 || true
-    xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/proof.xcresult" | python3 -c 'import json,sys; print([f.get("failureText","")[:800] for f in json.load(sys.stdin).get("testFailures",[])])' || true
+    grep -E 'error:|Waited for|Timed out waiting|Missing field|TEST FAILED|failure:' "$RUNNER_TEMP/testSchoolWorkList.log" | tail -30 || true
+    xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/testSchoolWorkList.xcresult" | python3 -c 'import json,sys; print([f.get("failureText","")[:800] for f in json.load(sys.stdin).get("testFailures",[])])' || true
   fi
   appdata=$(xcrun simctl get_app_container "$IPHONE_UDID" org.edupilot.proof.tests.xctrunner data)
   for state in directory workspace; do
