@@ -1,10 +1,10 @@
 # Inventory a frozen starter document backup
 
-`tenant-document-inventory` is an offline, read-only inspection command for the Documents module’s local private storage. It verifies the starter record envelope and its original school/UUID path, then returns a deterministic version 1 aggregate. It does not start EduPilot OS, open SQL, load a session, invent a principal, upload files, or contact S3.
+`tenant-document-inventory` is an offline, read-only inspection command for the Documents module’s local private storage. It verifies the starter record envelope and its original school/UUID path, then returns a deterministic version 1 byte aggregate. With an independently preserved object-reference manifest and approved version 1 digest, it also produces version 2 reconciled evidence for the complete source inventory. It does not start EduPilot OS, open SQL, load a session, invent a principal, upload files, or contact S3.
 
 Use an approved version 1 upgrade mapping manifest accepted by the existing `tenantupgrade.ReadManifest` validator. Every school directory must match a `legacySchool` in that mapping. The complete mapping is validated, but this document component digest binds only the sorted legacy-school allowlist (including empty schools), verified paths and original content. It deliberately excludes `sourceSha256`, target identities, timezone and locale: the document digest can become an input to an aggregate frozen source digest without circular dependence. Finalizing that aggregate or reallocating target UUIDs does not change this source-content digest. Syntactic validation does not approve a mapping on an operator’s behalf.
 
-This increment is a **post-preparation verifier**, not the initial baseline generator. A real operation requires a complete, already approved manifest with the actual prepared `sourceSha256` and allocated target IDs. Do not guess those values, insert placeholder hashes/IDs, or treat syntax validation as approval. The future source-preparation phase owns establishing the first baseline and its validated input; this command does not yet accept a separate legacy-school allowlist for that cold-start step.
+This command is a verifier, not a baseline generator. A real operation requires a complete approved mapping plus a reference manifest exported from the authoritative legacy records before storage inspection. Do not guess values, copy examples, derive references by listing the storage root or treat syntax validation as approval. Doing so would make a missing object disappear from both sides of the comparison.
 
 ## Freeze the source first
 
@@ -44,6 +44,32 @@ To check the same frozen backup and mapping against an independently retained ba
 ```
 
 Expected digests must be exactly 64 lowercase hexadecimal characters. Explicitly supplying an empty value (including an unset shell variable) is an error; only omitting the flag opts out of comparison. A mismatch fails without printing either digest or a partial summary. Treat a failure as a reason to review the private backup, mapping, shape and limits; do not remove unexpected files or recalculate the baseline simply to make the comparison pass.
+
+## Reconcile the preserved reference baseline
+
+Export the complete expected object references from authoritative legacy records into a private mode `0600` JSON file. Schools and objects must be strictly sorted, every object school must appear in `schools`, and each ID must be a canonical lowercase random UUID v4. Empty schools remain listed. The file is limited to 4 MiB, 4,096 schools and 10,000 references.
+
+```json
+{
+  "version": 1,
+  "schools": ["north", "south"],
+  "objects": [
+    {"school": "north", "id": "00000001-0000-4000-8000-000000000001"}
+  ]
+}
+```
+
+Run reconciliation only with the independently retained version 1 byte digest:
+
+```sh
+./tmp/tenant-document-inventory \
+  -manifest "$APPROVED_MAPPING_JSON" \
+  -references "$PRESERVED_OBJECT_REFERENCES_JSON" \
+  -root "$FROZEN_PRIVATE_DOCUMENT_ROOT" \
+  -expected-sha256 "$APPROVED_DOCUMENT_INVENTORY_SHA256" > "$PRIVATE_RECONCILED_JSON"
+```
+
+The command fails without output if a referenced object is absent, an enumerated object is unreferenced, the reference schools differ from the approved mapping, any path/envelope/media/byte check fails, or the byte inventory differs from the approved digest. The reference file follows the same private regular-file and no-disclosure rules as the mapping. Version 2 output contains `version`, `schools`, `references`, `documents`, `contentBytes`, `referencesSha256`, `inventorySha256` and `sha256`; it contains no school names, object keys, source paths or content. `references` must equal `documents`. The aggregate digest canonically binds the counts and both component digests and is revalidated by the version 2 SQL source-selection parser.
 
 ## Accepted layout and limits
 

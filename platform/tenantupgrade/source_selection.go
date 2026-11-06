@@ -2,6 +2,9 @@ package tenantupgrade
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
@@ -24,18 +27,32 @@ type SourceSelection struct {
 // SourceDocumentEvidence optionally binds an independently verified document
 // inventory to the SQL inventory without disclosing object keys or contents.
 type SourceDocumentEvidence struct {
-	Present      bool   `json:"-"`
-	Version      int    `json:"version"`
-	Schools      int    `json:"schools"`
-	Documents    int64  `json:"documents"`
-	ContentBytes int64  `json:"contentBytes"`
-	SHA256       string `json:"sha256"`
+	Present          bool   `json:"-"`
+	Version          int    `json:"version"`
+	Schools          int    `json:"schools"`
+	References       int64  `json:"references,omitempty"`
+	Documents        int64  `json:"documents"`
+	ContentBytes     int64  `json:"contentBytes"`
+	ReferencesSHA256 string `json:"referencesSha256,omitempty"`
+	InventorySHA256  string `json:"inventorySha256,omitempty"`
+	SHA256           string `json:"sha256"`
 }
 
 type sourceSelectionWire struct {
-	Version   int                     `json:"version"`
-	Schools   []string                `json:"schools"`
-	Documents *SourceDocumentEvidence `json:"documents,omitempty"`
+	Version   int                         `json:"version"`
+	Schools   []string                    `json:"schools"`
+	Documents *sourceDocumentEvidenceWire `json:"documents,omitempty"`
+}
+
+type sourceDocumentEvidenceWire struct {
+	Version          *int    `json:"version"`
+	Schools          *int    `json:"schools"`
+	References       *int64  `json:"references,omitempty"`
+	Documents        *int64  `json:"documents"`
+	ContentBytes     *int64  `json:"contentBytes"`
+	ReferencesSHA256 *string `json:"referencesSha256,omitempty"`
+	InventorySHA256  *string `json:"inventorySha256,omitempty"`
+	SHA256           *string `json:"sha256"`
 }
 
 func ReadSourceSelection(input io.Reader) (SourceSelection, error) {
@@ -60,8 +77,11 @@ func ReadSourceSelection(input io.Reader) (SourceSelection, error) {
 	}
 	selection := SourceSelection{Version: wire.Version, Schools: wire.Schools}
 	if wire.Documents != nil {
-		selection.Documents = *wire.Documents
-		selection.Documents.Present = true
+		documents, err := wire.Documents.evidence(wire.Version)
+		if err != nil {
+			return SourceSelection{}, err
+		}
+		selection.Documents = documents
 	}
 	if err := selection.Validate(); err != nil {
 		return SourceSelection{}, err
@@ -118,7 +138,7 @@ func sourceSelectionObject(d *json.Decoder, allowed []string, root bool) error {
 			continue
 		}
 		if root && name == "documents" {
-			if err := sourceSelectionObject(d, []string{"version", "schools", "documents", "contentBytes", "sha256"}, false); err != nil {
+			if err := sourceSelectionObject(d, []string{"version", "schools", "references", "documents", "contentBytes", "referencesSha256", "inventorySha256", "sha256"}, false); err != nil {
 				return err
 			}
 			continue
@@ -134,14 +154,37 @@ func sourceSelectionObject(d *json.Decoder, allowed []string, root bool) error {
 	if !seen["version"] || (root && !seen["schools"]) {
 		return errSourceSelection
 	}
-	if !root && len(seen) != len(allowed) {
-		return errSourceSelection
-	}
 	return nil
 }
 
+func (w sourceDocumentEvidenceWire) evidence(selectionVersion int) (SourceDocumentEvidence, error) {
+	if w.Version == nil || w.Schools == nil || w.Documents == nil || w.ContentBytes == nil || w.SHA256 == nil {
+		return SourceDocumentEvidence{}, errSourceSelection
+	}
+	result := SourceDocumentEvidence{
+		Present: true, Version: *w.Version, Schools: *w.Schools, Documents: *w.Documents,
+		ContentBytes: *w.ContentBytes, SHA256: *w.SHA256,
+	}
+	switch selectionVersion {
+	case 1:
+		if result.Version != 1 || w.References != nil || w.ReferencesSHA256 != nil || w.InventorySHA256 != nil {
+			return SourceDocumentEvidence{}, errSourceSelection
+		}
+	case 2:
+		if result.Version != 2 || w.References == nil || w.ReferencesSHA256 == nil || w.InventorySHA256 == nil {
+			return SourceDocumentEvidence{}, errSourceSelection
+		}
+		result.References = *w.References
+		result.ReferencesSHA256 = *w.ReferencesSHA256
+		result.InventorySHA256 = *w.InventorySHA256
+	default:
+		return SourceDocumentEvidence{}, errSourceSelection
+	}
+	return result, nil
+}
+
 func (s SourceSelection) Validate() error {
-	if s.Version != 1 || len(s.Schools) == 0 || len(s.Schools) > maxSchools {
+	if (s.Version != 1 && s.Version != 2) || len(s.Schools) == 0 || len(s.Schools) > maxSchools {
 		return errSourceSelection
 	}
 	for i, school := range s.Schools {
@@ -151,11 +194,41 @@ func (s SourceSelection) Validate() error {
 	}
 	if s.Documents.Present {
 		d := s.Documents
-		if d.Version != 1 || d.Schools != len(s.Schools) || d.Documents < 0 || d.ContentBytes < 0 || !sourceDigest.MatchString(d.SHA256) {
+		if d.Schools != len(s.Schools) || d.Documents < 0 || d.ContentBytes < 0 || !sourceDigest.MatchString(d.SHA256) {
 			return errSourceSelection
 		}
-	} else if s.Documents.Version != 0 || s.Documents.Schools != 0 || s.Documents.Documents != 0 || s.Documents.ContentBytes != 0 || s.Documents.SHA256 != "" {
+		if s.Version == 1 {
+			if d.Version != 1 || d.References != 0 || d.ReferencesSHA256 != "" || d.InventorySHA256 != "" {
+				return errSourceSelection
+			}
+		} else {
+			reconciled, err := ReconciledDocumentSHA256(d.Schools, d.References, d.Documents, d.ContentBytes, d.ReferencesSHA256, d.InventorySHA256)
+			if d.Version != 2 || err != nil || reconciled != d.SHA256 {
+				return errSourceSelection
+			}
+		}
+	} else if s.Version == 2 || s.Documents.Version != 0 || s.Documents.Schools != 0 || s.Documents.References != 0 || s.Documents.Documents != 0 || s.Documents.ContentBytes != 0 || s.Documents.ReferencesSHA256 != "" || s.Documents.InventorySHA256 != "" || s.Documents.SHA256 != "" {
 		return errSourceSelection
 	}
 	return nil
+}
+
+// ReconciledDocumentSHA256 is shared by the document verifier and source
+// selection validator so retained evidence cannot claim inconsistent counts or
+// component digests.
+func ReconciledDocumentSHA256(schools int, references, documents, contentBytes int64, referencesSHA256, inventorySHA256 string) (string, error) {
+	if schools <= 0 || references < 0 || references != documents || contentBytes < 0 ||
+		!sourceDigest.MatchString(referencesSHA256) || !sourceDigest.MatchString(inventorySHA256) {
+		return "", errSourceSelection
+	}
+	digest := sha256.New()
+	writeFrame(digest, []byte("EDUPILOT-RECONCILED-LOCAL-DOCUMENT-INVENTORY/2"))
+	for _, count := range []uint64{uint64(schools), uint64(references), uint64(documents), uint64(contentBytes)} {
+		var raw [8]byte
+		binary.BigEndian.PutUint64(raw[:], count)
+		digest.Write(raw[:])
+	}
+	writeFrame(digest, []byte(referencesSHA256))
+	writeFrame(digest, []byte(inventorySHA256))
+	return hex.EncodeToString(digest.Sum(nil)), nil
 }

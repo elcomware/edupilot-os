@@ -426,6 +426,7 @@ type SourceInventory struct {
 	Version        int                     `json:"version"`
 	Classification string                  `json:"classification"`
 	Complete       bool                    `json:"complete"`
+	ReadyForCopy   bool                    `json:"readyForCopy,omitempty"`
 	Schools        int                     `json:"schools"`
 	Documents      *SourceDocumentEvidence `json:"documents,omitempty"`
 	Pools          []SourcePoolInventory   `json:"pools"`
@@ -453,7 +454,11 @@ func InventorySource(ctx context.Context, settings database.Settings, workspaceK
 }
 
 func inventorySource(ctx context.Context, settings database.Settings, workspaceKeys []string, selection SourceSelection, openSource func(context.Context, database.Connection) (*sql.DB, error)) SourceInventory {
-	report := SourceInventory{Version: 1, Classification: "frozen-source-sql", Complete: true, Schools: len(selection.Schools), Pools: []SourcePoolInventory{}, Issues: []SourceInventoryIssue{}}
+	classification := "frozen-source-sql"
+	if selection.Version == 2 {
+		classification = "frozen-source-sql-objects"
+	}
+	report := SourceInventory{Version: selection.Version, Classification: classification, Complete: true, Schools: len(selection.Schools), Pools: []SourcePoolInventory{}, Issues: []SourceInventoryIssue{}}
 	issues := map[SourceInventoryIssue]bool{}
 	problem := func(code, pool, table string) {
 		issue := SourceInventoryIssue{Code: code, Pool: pool, Table: table}
@@ -554,6 +559,7 @@ func inventorySource(ctx context.Context, settings database.Settings, workspaceK
 	})
 	if report.Complete {
 		report.SHA256 = digestSourceReport(report)
+		report.ReadyForCopy = report.Version == 2
 	}
 	return report
 }
@@ -573,7 +579,11 @@ func digestSourcePool(pool SourcePoolInventory) string {
 
 func digestSourceReport(report SourceInventory) string {
 	hash := sha256.New()
-	writeFrame(hash, []byte("EDUPILOT-SOURCE-INVENTORY/1"))
+	domain := "EDUPILOT-SOURCE-INVENTORY/1"
+	if report.Version == 2 {
+		domain = "EDUPILOT-SOURCE-INVENTORY/2"
+	}
+	writeFrame(hash, []byte(domain))
 	writeFrame(hash, []byte(strconv.Itoa(report.Schools)))
 	for _, pool := range report.Pools {
 		writeFrame(hash, []byte(pool.Name))
@@ -581,6 +591,11 @@ func digestSourceReport(report SourceInventory) string {
 	}
 	if report.Documents != nil {
 		writeFrame(hash, []byte("documents"))
+		if report.Version == 2 {
+			writeFrame(hash, []byte(strconv.FormatInt(report.Documents.References, 10)))
+			writeFrame(hash, []byte(report.Documents.ReferencesSHA256))
+			writeFrame(hash, []byte(report.Documents.InventorySHA256))
+		}
 		writeFrame(hash, []byte(strconv.FormatInt(report.Documents.Documents, 10)))
 		writeFrame(hash, []byte(strconv.FormatInt(report.Documents.ContentBytes, 10)))
 		writeFrame(hash, []byte(report.Documents.SHA256))

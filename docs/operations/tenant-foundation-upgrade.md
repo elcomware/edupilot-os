@@ -1,6 +1,6 @@
 # Prepare the group tenancy upgrade
 
-The current release checkpoint can inventory a frozen SQL source before mapping, validate a proposed mapping file offline and inspect legacy SQL placement using read-only connections. Use the native command from the repository root:
+The current release checkpoint can prepare a reconciled frozen SQL+object source, validate a proposed mapping file offline and inspect legacy SQL placement using read-only connections. Use the native command from the repository root:
 
 ```sh
 go run ./cmd/tenant-upgrade -mode=validate-manifest -manifest=/private/upgrade.json
@@ -34,7 +34,7 @@ The example below illustrates the format. For a real upgrade, the source digest 
 
 Each starter school receives its own tenant at upgrade. Creating additional schools in a group is a later, explicitly authorized provisioning operation. The validator checks that source names and markers agree across mappings, target UUIDs are unique, each school has an explicit IANA timezone and initial UI locale, and the JSON uses the expected fields exactly once. Reordering school entries preserves the fingerprint. Changing a mapping, timezone, locale or source digest changes it. One file can contain up to 4,096 schools and 4 MiB of JSON.
 
-A successful validation covers the submitted file. Database inspection, private-object reconciliation, a verified backup, maintenance fencing, copy with per-pool receipts and verification against the frozen source are separate requirements. Operators should keep the current runtime in school scope. The [release board](../release/status.md) records which upgrade phases have passed.
+A successful validation covers the submitted file. Database inspection, a verified backup, maintenance fencing, copy with per-pool receipts and verification against the frozen source are separate requirements. Operators should keep the current runtime in school scope. The [release board](../release/status.md) records which upgrade phases have passed.
 
 ## Inventory a frozen SQL source before mapping
 
@@ -49,7 +49,7 @@ Create a mode `0600` selection file containing the complete, sorted list of legi
 }
 ```
 
-If a verified local-document inventory already exists, its complete aggregate can be bound without exposing object keys:
+If only a verified local-document inventory exists, its version 1 aggregate can be bound without exposing object keys. This remains preflight evidence and is not ready for copy because the exact legacy reference set has not been reconciled:
 
 ```json
 {
@@ -76,9 +76,34 @@ The selection is limited to 4 MiB and 4,096 unique, strictly sorted legacy schoo
 
 Every original physical pool is bound by its configured name and original singleton marker content. The report inventories 55 control tables and 47 tables on each dedicated pool: native migration history, local migration receipts, routing metadata, identity, jobs, Students, enrollment, outbox/audit and all 41 registered workspace tables. Rows are ordered by their declared primary keys. Canonical values preserve NULL versus empty, Unicode and binary bytes, normalize integers and UTC timestamps, and produce per-schema, per-table, per-pool and overall SHA-256 digests. The report contains counts and digests only, not row values, primary keys, student IDs, credentials, object keys, connection strings or file/database paths. It does not repeat the selected school list, but configured pool names can encode historical school names and remain sensitive operational metadata, so keep the report private.
 
-Exit 0 requires exact schema compatibility, complete reads, an exact match between selected schools and the placement inventory, no unknown school scope, and no placement issue. Exit 1 emits either a redacted configuration diagnostic or a JSON report with `complete=false`, issue codes and no overall digest. An absent SQLite database is not created. Never use an incomplete report as `sourceSha256`. The successful report's top-level `sha256` is the SQL source fingerprint to approve and place in the final mapping manifest.
+Exit 0 requires exact schema compatibility, complete reads, an exact match between selected schools and the placement inventory, no unknown school scope, and no placement issue. Exit 1 emits either a redacted configuration diagnostic or a JSON report with `complete=false`, issue codes and no overall digest. An absent SQLite database is not created. Never use an incomplete report as `sourceSha256`.
 
-Optional document evidence binds a previously verified aggregate to this report; this checkpoint does not yet reconcile SQL/object references or re-read live object bytes. That reconciliation, backup/restore proof, maintenance fencing, copy/resume and post-copy verification remain required before activation.
+Version 1 reports are classified `frozen-source-sql` and never set `readyForCopy=true`, including when they bind a version 1 document aggregate. Preserve them as preflight evidence; do not place their digest in a copy manifest.
+
+## Assemble authoritative SQL+object source evidence
+
+First complete the reference reconciliation in [Inventory a frozen starter document backup](legacy-local-document-inventory.md). Its successful version 2 result contains counts plus three digests and no object keys. Copy those exact fields into a version 2 source selection:
+
+```json
+{
+  "version": 2,
+  "schools": ["north", "south"],
+  "documents": {
+    "version": 2,
+    "schools": 2,
+    "references": 37,
+    "documents": 37,
+    "contentBytes": 184302,
+    "referencesSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "inventorySha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  }
+}
+```
+
+The example hashes are format placeholders only; a real selection must use the retained reconciler output. The parser recomputes the reconciled digest from the counts and component hashes and rejects mismatches, missing fields, duplicate fields, unequal reference/document counts or a version 2 selection without document evidence.
+
+Run the same `inventory-source` command while the SQL pools and document backup still describe the approved freeze. A successful version 2 result is classified `frozen-source-sql-objects`, has `readyForCopy=true`, and binds each per-pool SQL digest, the exact reference-set digest, the independently approved version 1 byte-inventory digest and the reconciled document digest. Only that complete report's top-level `sha256` is the authoritative source fingerprint for the later mapping/copy/verification stages. The command does not itself prove the deployment freeze, copy data or activate tenants; backup/restore proof, maintenance fencing, copy/resume and post-copy verification remain required.
 
 
 ## Inspect legacy SQL placement

@@ -97,6 +97,71 @@ func TestLocalInventoryUsesUploadedRecordsAndIsDeterministicReadOnly(t *testing.
 		t.Fatal("inventory modified source tree")
 	}
 }
+
+func TestReconcileLocalRequiresExactReferencesAndApprovedBytes(t *testing.T) {
+	root := privateRoot(t)
+	path := uploadInventoryFile(t, root, "north", []byte("private-reference-content\n"))
+	manifest := inventoryManifest()
+	baseline, err := blob.InventoryLocal(t.Context(), root, manifest, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	references := tenantupgrade.ObjectReferences{
+		Version: 1,
+		Schools: []string{"north", "west"},
+		Objects: []tenantupgrade.ObjectReference{{School: "north", ID: filepath.Base(path)}},
+	}
+	before := treeState(t, root)
+	result, err := blob.ReconcileLocal(t.Context(), root, manifest, references, baseline.SHA256)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Version != 2 || result.Schools != 2 || result.References != 1 || result.Documents != 1 ||
+		result.ContentBytes != 26 || len(result.ReferencesSHA256) != 64 ||
+		result.InventorySHA256 != baseline.SHA256 || len(result.SHA256) != 64 {
+		t.Fatalf("invalid reconciled inventory: %#v", result)
+	}
+	if !reflect.DeepEqual(before, treeState(t, root)) {
+		t.Fatal("reconciliation modified the frozen source")
+	}
+	for _, expected := range []string{"", strings.Repeat("b", 64)} {
+		failed, err := blob.ReconcileLocal(t.Context(), root, manifest, references, expected)
+		if err == nil || !reflect.ValueOf(failed).IsZero() {
+			t.Fatal("missing or wrong independent byte digest accepted")
+		}
+	}
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	failed, err := blob.ReconcileLocal(t.Context(), root, manifest, references, baseline.SHA256)
+	if err == nil || !reflect.ValueOf(failed).IsZero() {
+		t.Fatal("missing referenced object accepted")
+	}
+}
+
+func TestReconcileLocalRejectsUnreferencedObjectsAndSchoolMismatch(t *testing.T) {
+	root := privateRoot(t)
+	first := uploadInventoryFile(t, root, "north", []byte("first private reference\n"))
+	baseline, err := blob.InventoryLocal(t.Context(), root, inventoryManifest(), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	references := tenantupgrade.ObjectReferences{Version: 1, Schools: []string{"north", "west"}, Objects: []tenantupgrade.ObjectReference{{School: "north", ID: filepath.Base(first)}}}
+	uploadInventoryFile(t, root, "west", []byte("unreferenced private object\n"))
+	current, err := blob.InventoryLocal(t.Context(), root, inventoryManifest(), "")
+	if err != nil || current.SHA256 == baseline.SHA256 {
+		t.Fatal("unreferenced object did not change byte inventory", err)
+	}
+	failed, err := blob.ReconcileLocal(t.Context(), root, inventoryManifest(), references, current.SHA256)
+	if err == nil || !reflect.ValueOf(failed).IsZero() {
+		t.Fatal("unreferenced object accepted")
+	}
+	references.Schools = []string{"north", "south"}
+	failed, err = blob.ReconcileLocal(t.Context(), root, inventoryManifest(), references, current.SHA256)
+	if err == nil || !reflect.ValueOf(failed).IsZero() {
+		t.Fatal("reference schools that differ from the approved mapping were accepted")
+	}
+}
 func TestLocalInventoryEmptyRequiresExistingValidPrivateRoot(t *testing.T) {
 	m := inventoryManifest()
 	root := privateRoot(t)

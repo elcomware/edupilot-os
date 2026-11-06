@@ -23,6 +23,10 @@ func validSourceSelection() string {
 	return `{"version":1,"schools":["east","west"],"documents":{"version":1,"schools":2,"documents":7,"contentBytes":301,"sha256":"` + strings.Repeat("a", 64) + `"}}`
 }
 
+func validReconciledSourceSelection() string {
+	return `{"version":2,"schools":["east","west"],"documents":{"version":2,"schools":2,"references":2,"documents":2,"contentBytes":301,"referencesSha256":"` + strings.Repeat("a", 64) + `","inventorySha256":"` + strings.Repeat("b", 64) + `","sha256":"92b406b1452cdbd7ce4a927ed31b05b7301a7921401c61f8be3abea8409728f9"}}`
+}
+
 func TestReadSourceSelectionAcceptsOnlyLegacySourceIdentity(t *testing.T) {
 	selection, err := ReadSourceSelection(strings.NewReader(validSourceSelection()))
 	if err != nil {
@@ -49,6 +53,81 @@ func TestReadSourceSelectionAcceptsOnlyLegacySourceIdentity(t *testing.T) {
 				t.Fatal("invalid source selection accepted")
 			}
 		})
+	}
+}
+
+func TestReadSourceSelectionVersion2RequiresReconciledObjectEvidence(t *testing.T) {
+	selection, err := ReadSourceSelection(strings.NewReader(validReconciledSourceSelection()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if selection.Version != 2 || !selection.Documents.Present || selection.Documents.Version != 2 ||
+		selection.Documents.References != 2 || selection.Documents.ReferencesSHA256 != strings.Repeat("a", 64) ||
+		selection.Documents.InventorySHA256 != strings.Repeat("b", 64) || selection.Documents.SHA256 != "92b406b1452cdbd7ce4a927ed31b05b7301a7921401c61f8be3abea8409728f9" {
+		t.Fatalf("reconciled evidence was not preserved: %#v", selection)
+	}
+	for name, raw := range map[string]string{
+		"missing evidence":         `{"version":2,"schools":["east","west"]}`,
+		"legacy evidence":          strings.Replace(validReconciledSourceSelection(), `"version":2,"schools":2,"references":2,"documents":2,"contentBytes":301,"referencesSha256":"`+strings.Repeat("a", 64)+`","inventorySha256":"`+strings.Repeat("b", 64)+`","sha256":"92b406b1452cdbd7ce4a927ed31b05b7301a7921401c61f8be3abea8409728f9"`, `"version":1,"schools":2,"documents":2,"contentBytes":301,"sha256":"`+strings.Repeat("c", 64)+`"`, 1),
+		"missing reference digest": strings.Replace(validReconciledSourceSelection(), `,"referencesSha256":"`+strings.Repeat("a", 64)+`"`, ``, 1),
+		"missing byte digest":      strings.Replace(validReconciledSourceSelection(), `,"inventorySha256":"`+strings.Repeat("b", 64)+`"`, ``, 1),
+		"count mismatch":           strings.Replace(validReconciledSourceSelection(), `"references":2`, `"references":1`, 1),
+		"aggregate mismatch":       strings.Replace(validReconciledSourceSelection(), `92b406b1452cdbd7ce4a927ed31b05b7301a7921401c61f8be3abea8409728f9`, strings.Repeat("c", 64), 1),
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := ReadSourceSelection(strings.NewReader(raw)); err == nil {
+				t.Fatal("incomplete reconciled evidence accepted")
+			}
+		})
+	}
+}
+
+func TestVersion2SourceDigestBindsReferencesAndVerifiedBytes(t *testing.T) {
+	selection, err := ReadSourceSelection(strings.NewReader(validReconciledSourceSelection()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	report := SourceInventory{
+		Version: 2, Classification: "frozen-source-sql-objects", Complete: true, Schools: 2,
+		Documents: &selection.Documents,
+		Pools:     []SourcePoolInventory{{Name: "control", SHA256: strings.Repeat("d", 64)}},
+	}
+	first := digestSourceReport(report)
+	changed := report
+	documents := *report.Documents
+	documents.ReferencesSHA256 = strings.Repeat("e", 64)
+	changed.Documents = &documents
+	if len(first) != 64 || digestSourceReport(changed) == first {
+		t.Fatal("complete source digest did not bind the preserved reference set")
+	}
+	documents = *report.Documents
+	documents.InventorySHA256 = strings.Repeat("f", 64)
+	changed.Documents = &documents
+	if digestSourceReport(changed) == first {
+		t.Fatal("complete source digest did not bind the independently approved byte inventory")
+	}
+}
+
+func TestSourceInventoryJSONPreservesVersion1ShapeAndMarksVersion2Ready(t *testing.T) {
+	legacy, err := json.Marshal(SourceInventory{
+		Version: 1, Classification: "frozen-source-sql", Complete: true,
+		Schools: 2, Pools: []SourcePoolInventory{}, Issues: []SourceInventoryIssue{},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Contains(legacy, []byte(`"readyForCopy"`)) {
+		t.Fatal("version 1 report shape changed")
+	}
+	reconciled, err := json.Marshal(SourceInventory{
+		Version: 2, Classification: "frozen-source-sql-objects", Complete: true, ReadyForCopy: true,
+		Schools: 2, Pools: []SourcePoolInventory{}, Issues: []SourceInventoryIssue{},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(reconciled, []byte(`"readyForCopy":true`)) {
+		t.Fatal("version 2 report did not expose copy readiness")
 	}
 }
 

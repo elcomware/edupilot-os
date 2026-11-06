@@ -11,6 +11,7 @@ import (
 	"github.com/elcomware/edupilot-os/modules/documents/adapters/outbound/blob"
 	"github.com/elcomware/edupilot-os/modules/documents/application"
 	"github.com/elcomware/edupilot-os/platform/access"
+	"github.com/elcomware/edupilot-os/platform/tenantupgrade"
 )
 
 func privateManifest(t *testing.T) string {
@@ -66,6 +67,68 @@ func TestCommandInventoriesActualUploadOfflineWithNoSourceMutation(t *testing.T)
 	}
 	if _, err = os.Stat(db); !os.IsNotExist(err) {
 		t.Fatal("opened database")
+	}
+}
+
+func TestCommandReconcilesPreservedReferencesBeforeCopyEvidence(t *testing.T) {
+	root := privateRoot(t)
+	manifestPath := privateManifest(t)
+	manifestFile, err := os.Open(manifestPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	manifest, err := tenantupgrade.ReadManifest(manifestFile)
+	manifestFile.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	store, err := blob.Configured(func(key, fallback string) string {
+		if key == "EDUPILOT_DOCUMENTS_ROOT" {
+			return root
+		}
+		return fallback
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := access.WithPrincipal(t.Context(), access.Principal{ID: "fixture-user", School: "north", Permissions: []string{access.DocumentsWrite}})
+	id, err := (application.Files{Resolve: func() (application.BlobStore, error) { return store, nil }}).Upload(ctx, "text/plain", []byte("private reconciled payload"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	baseline, err := blob.InventoryLocal(t.Context(), root, manifest, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	referencesPath := filepath.Join(t.TempDir(), "private-references.json")
+	references := `{"version":1,"schools":["north"],"objects":[{"school":"north","id":"` + id + `"}]}`
+	if err := os.WriteFile(referencesPath, []byte(references), 0600); err != nil {
+		t.Fatal(err)
+	}
+	var output, diagnostics bytes.Buffer
+	args := []string{"-manifest", manifestPath, "-references", referencesPath, "-root", root, "-expected-sha256", baseline.SHA256}
+	if code := run(args, &output, &diagnostics); code != 0 {
+		t.Fatal(code, diagnostics.String())
+	}
+	var result blob.ReconciledLocalInventory
+	if err := json.Unmarshal(output.Bytes(), &result); err != nil || result.Version != 2 || result.References != 1 || result.Documents != 1 || len(result.SHA256) != 64 {
+		t.Fatal("invalid reconciled command result", err)
+	}
+	if strings.Contains(output.String()+diagnostics.String(), id) || strings.Contains(output.String()+diagnostics.String(), referencesPath) {
+		t.Fatal("reconciled output disclosed a private object reference")
+	}
+	if err := os.Remove(filepath.Join(root, "schools", "north", "documents", id)); err != nil {
+		t.Fatal(err)
+	}
+	output.Reset()
+	diagnostics.Reset()
+	if code := run(args, &output, &diagnostics); code == 0 || output.Len() != 0 {
+		t.Fatal("missing referenced object produced copy evidence")
+	}
+	output.Reset()
+	diagnostics.Reset()
+	if code := run([]string{"-manifest", manifestPath, "-references", referencesPath, "-root", root}, &output, &diagnostics); code == 0 || output.Len() != 0 {
+		t.Fatal("reconciliation silently omitted the independent byte baseline")
 	}
 }
 func TestCommandErrorsArePrivateAndNeverEmitPartialInventory(t *testing.T) {
