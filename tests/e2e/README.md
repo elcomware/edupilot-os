@@ -29,13 +29,16 @@ checkbox focus, dialog focus wrap/Escape/trigger restoration, and narrow page
 reflow. The original reload, scoped preferences and student lifecycle assertions
 still run on the same accounts.
 
-Each checkpoint attaches a small `accessibility-*.json` report containing only
+Each checkpoint on disposable native fixture CI writes an explicit
+`accessibility-*.json` file to its test output directory, containing only
 the engine version, selected tags, passing-rule count, and violated/incomplete
 rule IDs with structural child-position targets. These targets can locate a
 node in the same page state without exposing IDs, attributes, page HTML, record
 text or credentials. Do not attach raw axe results, DOM snapshots, or sign-in
 captures. Native CI saves these reports in `accessibility-evidence` for 14 days
-and audits the separate browser-runner dependency lockfile. Reproduce with
+and audits the separate browser-runner dependency lockfile. A successful job
+requires these report files to exist; failures retain any reports written
+before the failure. Reproduce with
 `bash scripts/ci-e2e.sh specs/workspace-navigation.spec.ts specs/students.spec.ts`.
 
 Automated scans and keyboard regressions are partial evidence, not WCAG

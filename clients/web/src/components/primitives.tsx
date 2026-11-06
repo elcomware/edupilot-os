@@ -115,6 +115,43 @@ export function Dialog({
       className="dialog"
       aria-labelledby={id}
       ref={ref}
+      onKeyDown={(event) => {
+        if (
+          event.key !== "Tab" || event.defaultPrevented ||
+          event.altKey || event.ctrlKey || event.metaKey
+        ) return;
+        // showModal makes the page inert, but boundary Tab can still move to
+        // browser chrome. Wrap only the endpoints; leave middle controls alone.
+        const dialog = event.currentTarget;
+        const controls = Array.from(dialog.querySelectorAll<HTMLElement>(
+          "a[href], button, input, select, textarea, summary, [tabindex]",
+        )).filter((control) => {
+          if (
+            control.tabIndex < 0 || control.matches(":disabled, input[type='hidden']") ||
+            control.closest("[hidden], [inert]")
+          ) return false;
+          const visibility = getComputedStyle(control).visibility;
+          if (visibility === "hidden" || visibility === "collapse") return false;
+          for (let node: HTMLElement | null = control; node && node !== dialog; node = node.parentElement) {
+            if (getComputedStyle(node).display === "none") return false;
+            if (node instanceof HTMLDetailsElement && !node.open) {
+              const summary = node.querySelector(":scope > summary");
+              if (!summary?.contains(control)) return false;
+            }
+          }
+          return true;
+        });
+        const first = controls[0], last = controls[controls.length - 1];
+        if (!first) {
+          event.preventDefault();
+        } else if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }}
       onCancel={(event) => {
         event.preventDefault();
         if (!busy) onClose();

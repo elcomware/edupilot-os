@@ -1,4 +1,6 @@
 import { createRequire } from "node:module";
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import type * as axeCore from "axe-core";
 
@@ -62,10 +64,23 @@ export async function expectAccessible(page: Page, checkpoint: Checkpoint) {
         throw new Error("Automated accessibility scan could not complete");
       }
     });
-    await test.info().attach("accessibility-" + checkpoint + ".json", {
-      body: JSON.stringify(summary, null, 2),
-      contentType: "application/json",
-    });
+    const report = JSON.stringify(summary, null, 2);
+    if (
+      process.env.EDUPILOT_CAPTURE_FIXTURE_UI === "1" &&
+      process.env.GITHUB_ACTIONS === "true"
+    ) {
+      if (new URL(page.url()).hostname !== "127.0.0.1")
+        throw new Error("Accessibility fixture artifacts require loopback");
+      // Buffer attachments are reporter-owned and need not become files with
+      // the list reporter. Persist the already-redacted report explicitly.
+      const path = test.info().outputPath("accessibility-" + checkpoint + ".json");
+      await mkdir(dirname(path), { recursive: true, mode: 0o700 });
+      await writeFile(path, report, { encoding: "utf8", mode: 0o600 });
+      await test.info().attach("accessibility-" + checkpoint, {
+        path,
+        contentType: "application/json",
+      });
+    }
     if (summary.needsReview.length)
       test.info().annotations.push({
         type: "accessibility-manual-review",
