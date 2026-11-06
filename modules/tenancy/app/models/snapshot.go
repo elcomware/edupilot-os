@@ -69,6 +69,10 @@ func Restore(row Snapshot) (Graph, error) {
 			return Graph{}, err
 		}
 	}
+	// Every persisted node required one successful versioned insertion.
+	if row.Version < graph.version {
+		return Graph{}, ErrInvalid
+	}
 	graph.version = row.Version
 	graph.active = row.Active
 	return graph, nil

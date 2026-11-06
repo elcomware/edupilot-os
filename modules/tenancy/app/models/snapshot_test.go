@@ -56,3 +56,11 @@ func TestSelectionWireAndOwner(t *testing.T) {
 		t.Fatal("missing campus widened ownership")
 	}
 }
+
+func TestRestoreRejectsVersionBelowPersistedNodeCount(t *testing.T) {
+	row := setup().g.Snapshot()
+	row.Version--
+	if _, err := d.Restore(row); err == nil {
+		t.Fatal("accepted a hierarchy version lower than the history required to create its nodes")
+	}
+}
