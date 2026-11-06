@@ -1,5 +1,8 @@
 # EduPilot OS Production Release Implementation Plan
 
+**Reference module decision.** Auth is the reference for new work. Use the [module convention and relationship walkthrough](../../../modules/auth/README.md). Preserve the legacy identity catalog key, tenant fences and shared client contracts.
+
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking. Continue within the user's existing implementation and push authorization.
 
 **Goal:** Deliver the complete EduPilot OS product, including a professionally finished frontend, verified domain workflows and an operable native production release.
@@ -217,7 +220,7 @@ All domain stories below include unit rules, SQLite/PostgreSQL repository tests,
 
 ## Task 3: Deliver group tenancy and full frontend foundation (S02)
 
-**Files:** `platform/access`, `platform/database`, `platform/identity`, `modules/tenancy`, `database/edumigrations`, `clients/web/src/app`, `clients/web/src/shell`, `clients/web/src/components`, `clients/web/src/features/preferences`, `clients/web/src/tests`, `tests/e2e/specs`, design documents.
+**Files:** `platform/access`, `platform/database`, `modules/auth`, `modules/tenancy`, `database/edumigrations`, `clients/web/src/app`, `clients/web/src/shell`, `clients/web/src/components`, `clients/web/src/features/preferences`, `clients/web/src/tests`, `tests/e2e/specs`, design documents.
 **Interfaces:** Extend existing `Preferences`, `readRoute` and shared primitives; keep API DTOs in `packages/api-client`. Use one shared confirmation/navigation controller for dirty editors, not per-page browser dialogs. Route metadata maps existing module keys to UI capability/status; it does not grant permissions.
 
 - [ ] Refine TEN-02..04, ORG/CTX/CFG/LNG enabling stories from the tenancy specification before broad UI/domain changes. Implement scope mapping/migration/authorization first with upgrade and sibling-scope isolation tests.

@@ -21,11 +21,11 @@ import (
 	"github.com/elcomware/edupilot/bootstrap"
 	"github.com/elcomware/edupilot/database/edumigrations"
 	"github.com/elcomware/edupilot/modules"
-	"github.com/elcomware/edupilot/modules/documents/adapters/outbound/blob"
-	files "github.com/elcomware/edupilot/modules/documents/application"
+	"github.com/elcomware/edupilot/modules/auth/app/services"
+	files "github.com/elcomware/edupilot/modules/documents/app/services"
+	"github.com/elcomware/edupilot/modules/documents/app/services/filesystem"
 	"github.com/elcomware/edupilot/platform/access"
 	"github.com/elcomware/edupilot/platform/database"
-	"github.com/elcomware/edupilot/platform/identity"
 	goraveldatabase "github.com/goravel/framework/database"
 	"github.com/goravel/framework/log"
 	"github.com/goravel/postgres"
@@ -523,7 +523,7 @@ func verifyStarterCompatibilityReaders(t *testing.T, f StarterFixture) {
 	for _, s := range f.Schools {
 		// Existing session authenticates the exact legacy school/user. Equal emails
 		// have independent credentials; the other school's password never works.
-		service := identity.New(&f.Control)
+		service := services.New(&f.Control)
 		principal, err := service.Authenticate(t.Context(), s.Token)
 		if err != nil || principal.ID != s.User || principal.School != s.School {
 			t.Fatalf("legacy session: %v", err)
@@ -534,13 +534,13 @@ func verifyStarterCompatibilityReaders(t *testing.T, f StarterFixture) {
 		}
 		for _, other := range f.Schools {
 			if other.School != s.School {
-				if _, err := service.Login(t.Context(), s.School, "same@example.test", other.Password); !errors.Is(err, identity.ErrInvalidCredentials) {
+				if _, err := service.Login(t.Context(), s.School, "same@example.test", other.Password); !errors.Is(err, services.ErrInvalidCredentials) {
 					t.Fatal("credentials merged across equal email")
 				}
 			}
 		}
 	}
-	store, err := blob.Configured(func(k, fallback string) string {
+	store, err := filesystem.Configured(func(k, fallback string) string {
 		if k == "EDUPILOT_DOCUMENTS_ROOT" {
 			return f.BlobRoot
 		}

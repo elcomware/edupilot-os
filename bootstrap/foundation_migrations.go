@@ -3,12 +3,12 @@ package bootstrap
 import (
 	"github.com/elcomware/edupilot/database/edumigrations"
 	"github.com/elcomware/edupilot/modules"
-	documents "github.com/elcomware/edupilot/modules/documents/migrations"
-	enrollment "github.com/elcomware/edupilot/modules/enrollment/migrations"
-	students "github.com/elcomware/edupilot/modules/students/migrations"
-	tenancy "github.com/elcomware/edupilot/modules/tenancy/migrations"
+	auth "github.com/elcomware/edupilot/modules/auth/providers"
+	documents "github.com/elcomware/edupilot/modules/documents/database/migrations"
+	enrollment "github.com/elcomware/edupilot/modules/enrollment/database/migrations"
+	students "github.com/elcomware/edupilot/modules/students/database/migrations"
+	tenancy "github.com/elcomware/edupilot/modules/tenancy/database/migrations"
 	"github.com/elcomware/edupilot/platform/database"
-	"github.com/elcomware/edupilot/platform/identity"
 	"github.com/elcomware/edupilot/platform/outbox"
 	"github.com/elcomware/edupilot/platform/workspace/sqlstore"
 )
@@ -18,7 +18,7 @@ import (
 func FoundationPlans() []edumigrations.Plan {
 	plans := []edumigrations.Plan{
 		{ID: "20261106010001_control", ControlOnly: true, ForwardOnly: true, DriverUp: map[string][]string{"sqlite": database.FoundationControlDDL("sqlite"), "postgres": database.FoundationControlDDL("postgres")}},
-		{ID: "20261106010002_identity", ControlOnly: true, ForwardOnly: true, Up: identity.FoundationDDL()},
+		auth.FoundationMigration(),
 		{ID: "20261106010003_topology", ForwardOnly: true, Up: tenancy.TopologyDDL()},
 		{ID: "20261106010004_students", ForwardOnly: true, Up: students.OwnershipDDL()},
 		{ID: "20261106010005_placements", ForwardOnly: true, Up: enrollment.OwnershipDDL()},

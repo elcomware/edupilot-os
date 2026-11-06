@@ -14,8 +14,11 @@ import (
 	"github.com/elcomware/edupilot/app/schoolapi"
 	"github.com/elcomware/edupilot/database/edumigrations"
 	"github.com/elcomware/edupilot/modules"
+	"github.com/elcomware/edupilot/modules/auth/app/http/controllers"
+	"github.com/elcomware/edupilot/modules/auth/app/services"
+	"github.com/elcomware/edupilot/modules/auth/database/migrations"
+	authroutes "github.com/elcomware/edupilot/modules/auth/routes"
 	"github.com/elcomware/edupilot/platform/database"
-	"github.com/elcomware/edupilot/platform/identity"
 	"github.com/elcomware/edupilot/platform/workspace"
 	_ "github.com/ncruces/go-sqlite3/driver"
 	_ "github.com/ncruces/go-sqlite3/embed"
@@ -35,7 +38,7 @@ func TestSchoolWorkListsUseTheSameVersionedAPIForEveryModule(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	plans := []edumigrations.Plan{edumigrations.PlacementPlan(), edumigrations.OutboxPlan(), {Up: identity.SchemaUp}}
+	plans := []edumigrations.Plan{edumigrations.PlacementPlan(), edumigrations.OutboxPlan(), {Up: migrations.SchemaUp}}
 	for _, d := range modules.Definitions() {
 		if d.Migration != nil {
 			plans = append(plans, d.Migration())
@@ -48,10 +51,12 @@ func TestSchoolWorkListsUseTheSameVersionedAPIForEveryModule(t *testing.T) {
 			}
 		}
 	}
-	handler, err := schoolapi.New(db, "")
+	auth := services.New(&db.Control)
+	handler, err := schoolapi.New(db, auth, "")
 	if err != nil {
 		t.Fatal(err)
 	}
+	handler = authroutes.HTTP(controllers.New(func() (*services.Service, error) { return auth, nil }, nil), handler)
 	request := func(method, path, token string, body any, status int) []byte {
 		t.Helper()
 		b, err := json.Marshal(body)
@@ -70,7 +75,6 @@ func TestSchoolWorkListsUseTheSameVersionedAPIForEveryModule(t *testing.T) {
 		}
 		return w.Body.Bytes()
 	}
-	auth := identity.New(&db.Control)
 	login := func(school string) string {
 		t.Helper()
 		password := "fixture-password-please-change"
@@ -78,7 +82,7 @@ func TestSchoolWorkListsUseTheSameVersionedAPIForEveryModule(t *testing.T) {
 			t.Fatal(err)
 		}
 		response := request(http.MethodPost, "/api/v1/session", "", map[string]string{"school": school, "email": "admin@example.test", "password": password}, 200)
-		var s identity.Session
+		var s services.Session
 		if err := json.Unmarshal(response, &s); err != nil || s.Token == "" {
 			t.Fatal("missing session", err)
 		}

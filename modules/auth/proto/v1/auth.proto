@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package edupilot.auth.v1;
+option go_package = "github.com/elcomware/edupilot/modules/auth/proto/v1;authv1";
+
+// Supply the existing session as authorization: Bearer <token> metadata.
+// Optional x-school-id metadata must match the session's school.
+service Auth {
+  rpc GetCurrentUser(GetCurrentUserRequest) returns (CurrentUser);
+}
+
+message GetCurrentUserRequest {}
+message CurrentUser {
+  string id = 1;
+  string email = 2;
+  Membership membership = 3;
+  repeated string permissions = 4;
+}
+message Membership {
+  string school = 1;
+  string user_id = 2;
+  string role = 3;
+}

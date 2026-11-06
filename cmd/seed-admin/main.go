@@ -12,8 +12,10 @@ import (
 	"github.com/elcomware/edupilot/app/facades"
 	"github.com/elcomware/edupilot/bootstrap"
 	"github.com/elcomware/edupilot/database/edumigrations"
+	"github.com/elcomware/edupilot/modules/auth/app/services"
+	"github.com/elcomware/edupilot/modules/auth/database/seeders"
+	"github.com/elcomware/edupilot/platform/access"
 	"github.com/elcomware/edupilot/platform/database"
-	"github.com/elcomware/edupilot/platform/identity"
 )
 
 func main() {
@@ -39,7 +41,7 @@ var errMissingMember = errors.New("set EDUPILOT_MEMBER_EMAIL, EDUPILOT_MEMBER_PA
 var errMissingRole = errors.New("set EDUPILOT_MEMBER_ID and EDUPILOT_MEMBER_ROLE")
 
 func safeMessage(err error) string {
-	for _, known := range []error{errMissing, errMissingMember, errMissingRole, identity.ErrInvalidInput, identity.ErrConflict, identity.ErrInvalidCredentials, identity.ErrForbidden, identity.ErrNotFound, identity.ErrUnauthenticated, context.DeadlineExceeded} {
+	for _, known := range []error{errMissing, errMissingMember, errMissingRole, services.ErrInvalidInput, services.ErrConflict, services.ErrInvalidCredentials, access.ErrForbidden, services.ErrNotFound, access.ErrUnauthenticated, context.DeadlineExceeded} {
 		if errors.Is(err, known) {
 			return known.Error()
 		}
@@ -69,13 +71,10 @@ func run(mode string) error {
 	if err = edumigrations.CheckReady(ctx, catalog, facades.Schema().Migrations()); err != nil {
 		return err
 	}
-	service := identity.New(&catalog.Control)
+	service := services.New(&catalog.Control)
 	if mode == "seed" {
-		p, err := service.Seed(ctx, school, email, password)
+		p, err := seeders.Provision(ctx, catalog, school, email, password)
 		if err != nil {
-			return err
-		}
-		if _, err = catalog.ForTenantContext(ctx, p.School); err != nil {
 			return err
 		}
 		fmt.Printf("School %s: administrator %s is provisioned.\n", p.School, p.ID)
@@ -91,7 +90,7 @@ func run(mode string) error {
 		defer stop()
 		_ = service.Logout(cleanup, session.Token)
 	}()
-	if err = session.Principal.Require(school, identity.ManageMembers); err != nil {
+	if err = session.Principal.Require(school, access.ManageMembers); err != nil {
 		return err
 	}
 	role := env("EDUPILOT_MEMBER_ROLE")

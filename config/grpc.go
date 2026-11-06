@@ -9,6 +9,8 @@ func init() {
 	config.Add("grpc", map[string]any{
 		// Configure your server host
 		"host": config.Env("GRPC_HOST"),
+		"cert": config.Env("GRPC_TLS_CERT"),
+		"key": config.Env("GRPC_TLS_KEY"),
 
 		// Configure your server port
 		"port": config.Env("GRPC_PORT"),

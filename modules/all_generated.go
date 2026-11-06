@@ -9,6 +9,7 @@ import (
 	"github.com/elcomware/edupilot/modules/assessments"
 	"github.com/elcomware/edupilot/modules/attendance"
 	"github.com/elcomware/edupilot/modules/audit"
+	"github.com/elcomware/edupilot/modules/auth"
 	"github.com/elcomware/edupilot/modules/billing"
 	"github.com/elcomware/edupilot/modules/classes"
 	"github.com/elcomware/edupilot/modules/curriculum"
@@ -21,7 +22,6 @@ import (
 	"github.com/elcomware/edupilot/modules/gradebook"
 	"github.com/elcomware/edupilot/modules/guardians"
 	"github.com/elcomware/edupilot/modules/hr"
-	"github.com/elcomware/edupilot/modules/identity"
 	"github.com/elcomware/edupilot/modules/inventory"
 	"github.com/elcomware/edupilot/modules/learning"
 	"github.com/elcomware/edupilot/modules/library"
@@ -50,7 +50,7 @@ import (
 func Definitions() []modulekit.Definition {
 	return []modulekit.Definition{
 		tenancy.Definition(),
-		identity.Definition(),
+		auth.Definition(),
 		users.Definition(),
 		permissions.Definition(),
 		school_settings.Definition(),

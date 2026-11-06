@@ -81,19 +81,28 @@ func forbidden(area string, parts []string, name string) bool {
 	if strings.HasPrefix(name, modulePath) {
 		other := strings.Split(strings.TrimPrefix(name, modulePath), "/")
 		if other[0] != parts[1] && other[0] != "modulekit" {
-			return len(other) < 2 || other[1] != "contracts"
+			return len(other) < 3 || other[1] != "app" || other[2] != "contracts"
 		}
 	}
-	isCore := false
-	for _, p := range parts[2 : len(parts)-1] {
-		if p == "application" || p == "domain" || p == "contracts" {
-			isCore = true
-		}
-	}
-	if !isCore {
+	if len(parts) < 4 || parts[2] != "app" {
 		return false
 	}
-	return strings.HasPrefix(name, "github.com/goravel/") || strings.HasPrefix(name, "gorm.io/") || name == "net/http" || name == "database/sql" || strings.Contains(name, "/adapters/") || strings.HasPrefix(name, project+"app/") || strings.HasPrefix(name, project+"platform/database") || strings.HasPrefix(name, project+"platform/identity")
+	switch parts[3] {
+	case "contracts", "models":
+	case "services":
+		// Auth queries read the authoritative control pool. Document storage
+		// implements the private blob service using local and S3 drivers.
+		if parts[1] == "auth" || (len(parts) > 4 && parts[1] == "documents" && parts[4] == "filesystem") {
+			return false
+		}
+	default:
+		return false
+	}
+	return strings.HasPrefix(name, "github.com/goravel/") || strings.HasPrefix(name, "gorm.io/") ||
+		name == "net/http" || name == "database/sql" || strings.Contains(name, "/database/") ||
+		strings.HasSuffix(name, "/database") || strings.Contains(name, "/http/controllers") ||
+		strings.Contains(name, "/services/filesystem") || strings.HasPrefix(name, project+"app/")
+
 }
 
 func TestEveryManifestEntryIsWiredOnce(t *testing.T) {

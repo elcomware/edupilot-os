@@ -200,6 +200,7 @@ def main(argv=None, root=None):
             preparation = [
                 ("local configuration", [sys.executable, "scripts/setup.py"]),
                 ("migrations", ["go", "run", "./cmd/migrate"]),
+                ("web client build", ["npm", "run", "build:web"]),
                 ("API build", ["go", "build", "-o", api, "."]),
                 ("worker build", ["go", "build", "-o", worker, "./cmd/worker"]),
             ]

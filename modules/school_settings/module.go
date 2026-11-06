@@ -3,9 +3,9 @@ package school_settings
 
 import (
 	"github.com/elcomware/edupilot/modules/modulekit"
-	"github.com/elcomware/edupilot/modules/school_settings/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot/modules/school_settings/application"
-	"github.com/elcomware/edupilot/modules/school_settings/migrations"
+	"github.com/elcomware/edupilot/modules/school_settings/app/services"
+	records "github.com/elcomware/edupilot/modules/school_settings/database"
+	"github.com/elcomware/edupilot/modules/school_settings/database/migrations"
 
 	"github.com/elcomware/edupilot/platform/database"
 )
@@ -13,8 +13,8 @@ import (
 func Definition() modulekit.Definition {
 	return modulekit.Definition{
 		Descriptor: Descriptor(),
-		Bind: func(db *database.Catalog) application.Entries {
-			return application.Entries{Store: persistence.New(db)}
+		Bind: func(db *database.Catalog) services.Entries {
+			return services.Entries{Store: records.New(db)}
 		},
 		Migration: migrations.WorkspaceSchema,
 	}

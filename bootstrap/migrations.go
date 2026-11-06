@@ -4,10 +4,10 @@ import (
 	"github.com/elcomware/edupilot/database/edumigrations"
 	"github.com/elcomware/edupilot/database/migrations"
 	"github.com/elcomware/edupilot/modules"
-	"github.com/elcomware/edupilot/modules/enrollment/placements"
-	students "github.com/elcomware/edupilot/modules/students/migrations"
+	auth "github.com/elcomware/edupilot/modules/auth/providers"
+	"github.com/elcomware/edupilot/modules/enrollment/providers"
+	students "github.com/elcomware/edupilot/modules/students/database/migrations"
 	"github.com/elcomware/edupilot/platform/database"
-	"github.com/elcomware/edupilot/platform/identity"
 	"github.com/goravel/framework/contracts/database/schema"
 )
 
@@ -18,9 +18,9 @@ func Migrations() []schema.Migration {
 	}
 	plans := []edumigrations.Plan{
 		edumigrations.PlacementPlan(), edumigrations.OutboxPlan(),
-		{ID: "20260101000003_school_accounts", ControlOnly: true, Up: identity.SchemaUp, Down: identity.SchemaDown},
+		auth.AccountsMigration(),
 		{ID: "20260101000004_students", Up: students.SchemaUp, Down: students.SchemaDown},
-		{ID: "20260101000005_enrollment_placements", Up: placements.SchemaUp, Down: placements.SchemaDown},
+		{ID: "20260101000005_enrollment_placements", Up: providers.SchemaUp, Down: providers.SchemaDown},
 	}
 	for _, d := range modules.Definitions() {
 		if d.Migration != nil {

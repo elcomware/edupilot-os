@@ -15,11 +15,11 @@ import (
 	"time"
 
 	"github.com/elcomware/edupilot/database/edumigrations"
-	"github.com/elcomware/edupilot/modules/enrollment/placements"
-	studentmigrations "github.com/elcomware/edupilot/modules/students/migrations"
+	"github.com/elcomware/edupilot/modules/enrollment/providers"
+	studentmigrations "github.com/elcomware/edupilot/modules/students/database/migrations"
 	studentproviders "github.com/elcomware/edupilot/modules/students/providers"
+	"github.com/elcomware/edupilot/platform/access"
 	"github.com/elcomware/edupilot/platform/database"
-	"github.com/elcomware/edupilot/platform/identity"
 	"github.com/elcomware/edupilot/platform/outbox"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
@@ -77,7 +77,7 @@ func exercisePlacements(t *testing.T, node database.Connection, db *sql.DB) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, group := range [][]string{edumigrations.PlacementPlan().Statements(node, false), outbox.SchemaUp, studentmigrations.SchemaUp, placements.SchemaUp} {
+	for _, group := range [][]string{edumigrations.PlacementPlan().Statements(node, false), outbox.SchemaUp, studentmigrations.SchemaUp, providers.SchemaUp} {
 		for _, ddl := range group {
 			if _, err = db.Exec(ddl); err != nil {
 				t.Fatal(err)
@@ -85,11 +85,11 @@ func exercisePlacements(t *testing.T, node database.Connection, db *sql.DB) {
 		}
 	}
 	students := studentproviders.New(catalog)
-	enrollment := placements.New(catalog, students.Directory)
-	north := identity.Principal{ID: "registrar", School: "north", Permissions: []string{identity.StudentsWrite, identity.StudentsRead, identity.WorkspaceWrite, identity.WorkspaceRead}}
+	enrollment := providers.New(catalog, students.Directory)
+	north := access.Principal{ID: "registrar", School: "north", Permissions: []string{access.StudentsWrite, access.StudentsRead, access.WorkspaceWrite, access.WorkspaceRead}}
 	south := north
 	south.School = "south"
-	call := func(handler http.Handler, p identity.Principal, method, path string, body any, want int) *httptest.ResponseRecorder {
+	call := func(handler http.Handler, p access.Principal, method, path string, body any, want int) *httptest.ResponseRecorder {
 		t.Helper()
 		data, err := json.Marshal(body)
 		if err != nil {
@@ -97,7 +97,7 @@ func exercisePlacements(t *testing.T, node database.Connection, db *sql.DB) {
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		req := httptest.NewRequest(method, path, bytes.NewReader(data)).WithContext(identity.WithPrincipal(ctx, p))
+		req := httptest.NewRequest(method, path, bytes.NewReader(data)).WithContext(access.WithPrincipal(ctx, p))
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		if w.Code != want {
@@ -113,7 +113,7 @@ func exercisePlacements(t *testing.T, node database.Connection, db *sql.DB) {
 	}
 	body := map[string]string{"studentId": student.ID, "academicYear": "2026-2027", "grade": "Grade 8"}
 	restricted := north
-	restricted.Permissions = []string{identity.StudentsWrite}
+	restricted.Permissions = []string{access.StudentsWrite}
 	call(enrollment, restricted, "POST", base, body, 403)
 	call(enrollment, south, "POST", base, body, 404)
 	record = call(enrollment, north, "POST", base, body, 201)

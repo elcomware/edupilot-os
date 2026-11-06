@@ -51,6 +51,24 @@ paths:
                 $ref: '#/components/schemas/Ready'
         '503':
           $ref: '#/components/responses/Unavailable'
+  /auth/me:
+    get:
+      tags: [Sessions]
+      operationId: getCurrentUser
+      summary: Read the signed-in user's account, school membership, role and effective permissions
+      parameters:
+      - $ref: '#/components/parameters/Scope'
+      responses:
+        '200':
+          description: Current account in the authenticated school.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   /session:
     post:
       tags:
@@ -963,6 +981,32 @@ components:
           items:
             $ref: '#/components/schemas/Permission'
       additionalProperties: false
+    CurrentUser:
+      type: object
+      required: [id, email, membership, permissions]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        membership:
+          type: object
+          required: [userId, school, role]
+          additionalProperties: false
+          properties:
+            userId:
+              type: string
+            school:
+              $ref: '#/components/schemas/SchoolID'
+            role:
+              type: string
+              enum: [admin, registrar, viewer]
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Permission'
     Credentials:
       type: object
       required:

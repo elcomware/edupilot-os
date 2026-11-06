@@ -14,7 +14,7 @@ for attempt in {1..60}; do
 done
 
 # Keep browser journeys independent of the real per-account sign-in limit.
-for slot in A B ROSTER PREFS PREFS_OTHER NAV NAV_OTHER; do
+for slot in AUTH A B ROSTER PREFS PREFS_OTHER NAV NAV_OTHER; do
   school="e2e-$(openssl rand -hex 8)"
   email="admin@${school}.example"
   password=$(openssl rand -hex 24)

@@ -10,7 +10,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/elcomware/edupilot/modules/documents/adapters/outbound/blob"
+	"github.com/elcomware/edupilot/modules/documents/app/services/filesystem"
 	"github.com/elcomware/edupilot/platform/tenantupgrade"
 )
 
@@ -83,7 +83,7 @@ func run(args []string, output, diagnostics io.Writer) int {
 	}
 	var result any
 	if *referencesPath == "" {
-		result, err = blob.InventoryLocal(context.Background(), *root, manifest, *expected)
+		result, err = filesystem.InventoryLocal(context.Background(), *root, manifest, *expected)
 		if err != nil {
 			fmt.Fprintln(diagnostics, "Local document inventory failed; check the frozen private backup, approved mapping and expected digest.")
 			return 1
@@ -113,14 +113,14 @@ func run(args []string, output, diagnostics io.Writer) int {
 		if *s3Restore {
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 			defer cancel()
-			result, err = blob.ReconcileS3Restore(ctx, func(key, fallback string) string {
+			result, err = filesystem.ReconcileS3Restore(ctx, func(key, fallback string) string {
 				if value := os.Getenv("EDUPILOT_RESTORE_" + key); value != "" {
 					return value
 				}
 				return fallback
 			}, manifest, references, *expected)
 		} else {
-			result, err = blob.ReconcileLocal(context.Background(), *root, manifest, references, *expected)
+			result, err = filesystem.ReconcileLocal(context.Background(), *root, manifest, references, *expected)
 		}
 		if err != nil {
 			fmt.Fprintln(diagnostics, "Document reconciliation failed; check the frozen backup, preserved references, approved mapping and inventory digest.")

@@ -12,6 +12,9 @@ import (
 	"github.com/elcomware/edupilot/app/facades"
 )
 
+// CatalogBinding identifies the shared, lazily opened pool catalog in the host container.
+const CatalogBinding = "edupilot.database.catalog"
+
 var ErrPlacement = errors.New("tenant placement mismatch")
 
 type Pool struct {

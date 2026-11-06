@@ -7,24 +7,24 @@ import (
 	"strings"
 	"testing"
 
-	studenthttp "github.com/elcomware/edupilot/modules/students/adapters/inbound/http"
-	"github.com/elcomware/edupilot/modules/students/application"
-	"github.com/elcomware/edupilot/modules/students/contracts"
+	"github.com/elcomware/edupilot/modules/students/app/contracts"
+	studenthttp "github.com/elcomware/edupilot/modules/students/app/http/controllers"
+	"github.com/elcomware/edupilot/modules/students/app/services"
 	"github.com/elcomware/edupilot/modules/students/tests/testkit"
-	"github.com/elcomware/edupilot/platform/identity"
+	"github.com/elcomware/edupilot/platform/access"
 )
 
 func TestSchoolScopedRosterAndOptimisticUpdates(t *testing.T) {
-	h := studenthttp.New(application.New(testkit.NewMemory()))
+	h := studenthttp.New(services.New(testkit.NewMemory()))
 	base := "/api/v1/students"
-	north := identity.Principal{ID: "registrar", School: "north", Permissions: []string{identity.StudentsWrite, identity.StudentsRead}}
-	viewer := identity.Principal{ID: "viewer", School: "north", Permissions: []string{identity.StudentsRead}}
-	south := identity.Principal{ID: "other", School: "south", Permissions: north.Permissions}
-	call := func(p identity.Principal, method, path, body string, want int) *httptest.ResponseRecorder {
+	north := access.Principal{ID: "registrar", School: "north", Permissions: []string{access.StudentsWrite, access.StudentsRead}}
+	viewer := access.Principal{ID: "viewer", School: "north", Permissions: []string{access.StudentsRead}}
+	south := access.Principal{ID: "other", School: "south", Permissions: north.Permissions}
+	call := func(p access.Principal, method, path, body string, want int) *httptest.ResponseRecorder {
 		t.Helper()
 		r := httptest.NewRequest(method, path, strings.NewReader(body))
 		if p.ID != "" {
-			r = r.WithContext(identity.WithPrincipal(r.Context(), p))
+			r = r.WithContext(access.WithPrincipal(r.Context(), p))
 		}
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
@@ -34,7 +34,7 @@ func TestSchoolScopedRosterAndOptimisticUpdates(t *testing.T) {
 		return w
 	}
 	names := `{"givenName":"Sam","familyName":"Li"}`
-	call(identity.Principal{}, http.MethodGet, base, "", 401)
+	call(access.Principal{}, http.MethodGet, base, "", 401)
 	call(viewer, http.MethodPost, base, names, 403)
 	call(north, http.MethodPost, base, `{"givenName":"Sam","familyName":"Li","school":"south"}`, 400)
 	w := call(north, http.MethodPost, base, names, 201)

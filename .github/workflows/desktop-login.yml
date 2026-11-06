@@ -15,7 +15,7 @@ on:
       - 'config/**'
       - 'routes/**'
       - 'cmd/seed-admin/**'
-      - 'platform/identity/**'
+      - 'modules/auth/**'
       - 'platform/database/**'
       - 'modules/students/**'
       - 'scripts/setup.py'

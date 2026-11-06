@@ -1,11 +1,13 @@
-# Implementing a module adapter
+# Implementing a Goravel module
 
-The server assigns ownership by business capability. A module contains its domain and application code, data ports, adapter constructors and schema plans. Goravel supplies services at the outside. Web, Wails and Expo send versioned HTTP requests to the same application. The catalog is a list of available actions, and authorization is checked again at the handler.
+[Auth is the reference module](../modules/auth/README.md). Start there for the folder convention, role relationships, route registration, seeding and client resources.
+
+Each Goravel module owns its models, services, database code, controllers and routes. The host registers the module. Web, Wails and Expo send versioned HTTP requests to the same application. The catalog is a list of available actions, and authorization is checked again at the handler.
 
 ## Follow a write
 
 1. A client submits a bearer token to a versioned route. The identity middleware resolves the current membership and attaches its school and grants to the request.
-2. The inbound adapter decodes the DTO and checks the action's grants before passing a command to the application service.
+2. The module controller decodes the DTO and checks the action's grants before passing a command to the application service.
 3. The service enforces domain rules and calls a repository port. The repository resolves the verified school through the database catalog. Each SQL predicate includes its school even on a dedicated database.
 4. A successful mutation writes its event to the outbox inside the same transaction. The outbox worker records durable delivery in the school's audit inbox. Versioned updates reject stale writes.
 5. The client refreshes the affected query. A lost create response asks the user to check the register before repeating the write. Enrollment has an explicit idempotency key in its school, student and academic-year uniqueness rule.
@@ -15,16 +17,16 @@ The server assigns ownership by business capability. A module contains its domai
 | Concern | Implementation point | Contract |
 | --- | --- | --- |
 | New workspace / translated title | Add one tab-separated row to `modules/catalog.tsv` | Group, stable module key, English title, French title |
-| Module bootstrap | `modules/<key>/module.go` and `modules/modulekit/definition.go` | Descriptor, repository binding and module-owned migration |
-| Standard work list | `platform/workspace/service.go` and `modules/<key>/application/workspace.go` | School, entry ID, title, open/closed status and version |
-| Replace standard storage | `modules/<key>/adapters/outbound/persistence/repository.go` | Implement `Get`, `List`, `Create` and versioned `Update`; preserve school scope and atomic event delivery |
-| Specialized aggregate | `modules/students/domain` or `modules/enrollment/internal/domain` | Value validation and state transitions live here |
-| Cross-module query | `modules/students/contracts` | Enrollment consumes `Directory.Lookup` and shares the caller's transaction through the public contract |
-| Additional schema changes | Module `migrations/`, registered in `bootstrap/migrations.go` | Give each new plan a new immutable ID and a down path. Run the deployment migrator across configured pools |
-| Add a protected action | `app/schoolapi/router.go` and the owning inbound adapter | Version the request DTO, check action-specific grants on the server and register the path in `docs/api/openapi.yaml` |
+| Module registration | `modules/<module>/module.go` and `modules/modulekit/definition.go` | Descriptor, repository binding and module-owned migration |
+| Standard work list | `platform/workspace/service.go` and `modules/<module>/app/services/workspace.go` | School, entry ID, title, open/closed status and version |
+| Replace standard storage | `modules/<module>/database/repository.go` | Implement `Get`, `List`, `Create` and versioned `Update`; preserve school scope and atomic event delivery |
+| Specialized aggregate | `modules/students/app/models` or `modules/enrollment/app/models` | Value validation and state transitions live here |
+| Cross-module query | `modules/students/app/contracts` | Enrollment consumes `Directory.Lookup` and shares the caller's transaction through the public contract |
+| Additional schema changes | Module `database/migrations/`, registered in `bootstrap/migrations.go` | Give each new plan a new immutable ID and a down path. Run the deployment migrator across configured pools |
+| Add a protected action | The owning module’s `routes/api.go` and `app/http/controllers/`, wired by the host | Version the request DTO, check action-specific grants on the server and register the path in `docs/api/openapi.yaml` |
 | Shared UI | `clients/web/src/shell`, `src/components`, `src/features/collections`, `src/styles` | Layout, controls, loading and error states, and editable tables are shared |
 | Specialized UI | `clients/web/src/features/specialized/ModulePanel.tsx` | Register a module panel; use the shared API client and scoped query cache |
-| Operator-selected storage | `modules/documents/adapters/outbound/blob` | Local and S3 implementations share the same scoped blob-store port |
+| Operator-selected storage | `modules/documents/app/services/filesystem` | Local and S3 implementations share the same scoped blob-store port |
 
 ## Add or rename a workspace
 

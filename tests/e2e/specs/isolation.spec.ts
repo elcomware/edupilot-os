@@ -12,6 +12,15 @@ test("another school cannot enumerate, read, change or archive a student", async
     session(request, a),
     session(request, b),
   ]);
+  const ownProfile = await request.get("/api/v1/auth/me", { headers: owner });
+  expect(ownProfile.status()).toBe(200);
+  expect(await ownProfile.json()).toMatchObject({
+    email: a.email,
+    membership: { school: a.school },
+  });
+  expect((await request.get("/api/v1/auth/me", {
+    headers: { ...owner, "X-School-ID": b.school },
+  })).status()).toBe(403);
   const givenName = "River",
     familyName = "Isolation " + randomUUID().slice(0, 8);
   const created = await request.post("/api/v1/students", {

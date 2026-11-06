@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	edupilot "github.com/elcomware/edupilot/app/providers"
+	schoolauth "github.com/elcomware/edupilot/modules/auth/providers"
 	"github.com/goravel/framework/ai"
 	"github.com/goravel/framework/auth"
 	"github.com/goravel/framework/cache"
@@ -57,6 +58,7 @@ func Providers() []foundation.ServiceProvider {
 		&schedule.ServiceProvider{},
 		&telemetry.ServiceProvider{},
 		&testing.ServiceProvider{},
+		&schoolauth.AuthServiceProvider{},
 		&edupilot.EduPilotOS{},
 	}
 }

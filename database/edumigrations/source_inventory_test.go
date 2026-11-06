@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/elcomware/edupilot/modules"
-	"github.com/elcomware/edupilot/modules/documents/adapters/outbound/blob"
+	"github.com/elcomware/edupilot/modules/documents/app/services/filesystem"
 	"github.com/elcomware/edupilot/platform/database"
 	"github.com/elcomware/edupilot/platform/tenantupgrade"
 )
@@ -56,11 +56,11 @@ func TestStarterFixtureReconciledSourceInventoryIsReadyForCopy(t *testing.T) {
 		}
 		return strings.Compare(a.ID, b.ID)
 	})
-	baseline, err := blob.InventoryLocal(t.Context(), fixture.BlobRoot, manifest, "")
+	baseline, err := filesystem.InventoryLocal(t.Context(), fixture.BlobRoot, manifest, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	reconciled, err := blob.ReconcileLocal(t.Context(), fixture.BlobRoot, manifest, references, baseline.SHA256)
+	reconciled, err := filesystem.ReconcileLocal(t.Context(), fixture.BlobRoot, manifest, references, baseline.SHA256)
 	if err != nil {
 		t.Fatal(err)
 	}

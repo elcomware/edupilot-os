@@ -6,7 +6,7 @@ import { useLocale, usePreferences } from "./preferences";
 import { useRoute } from "./router";
 import { t } from "./copy";
 import { errorKey } from "./errors";
-import { Login } from "../features/auth/Login";
+import { Login } from "../../../../modules/auth/resources/js/pages/Login";
 import { Directory } from "../features/directory/Directory";
 import { WorkspacePage } from "../features/collections/WorkspacePage";
 import { PreferencesPage } from "../features/preferences/PreferencesPage";

@@ -5,16 +5,20 @@ import (
 	"github.com/elcomware/edupilot/app/facades"
 	"github.com/elcomware/edupilot/database/edumigrations"
 	"github.com/elcomware/edupilot/modules"
+	"github.com/elcomware/edupilot/modules/auth/app/http/middleware"
+	"github.com/elcomware/edupilot/modules/auth/app/services"
 	"github.com/elcomware/edupilot/modules/documents"
-	"github.com/elcomware/edupilot/modules/enrollment/placements"
+	documentsroutes "github.com/elcomware/edupilot/modules/documents/routes"
+	enrollment "github.com/elcomware/edupilot/modules/enrollment/providers"
+	enrollmentroutes "github.com/elcomware/edupilot/modules/enrollment/routes"
 	"github.com/elcomware/edupilot/modules/students/providers"
+	studentsroutes "github.com/elcomware/edupilot/modules/students/routes"
 	"github.com/elcomware/edupilot/platform/database"
-	"github.com/elcomware/edupilot/platform/identity"
 	"net/http"
 	"time"
 )
 
-func New(db *database.Catalog, enabled string) (http.Handler, error) {
+func New(db *database.Catalog, sessions *services.Service, enabled string) (http.Handler, error) {
 	definitions, err := modules.Enabled(modules.Definitions(), enabled)
 	if err != nil {
 		return nil, err
@@ -23,7 +27,6 @@ func New(db *database.Catalog, enabled string) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	sessions := identity.New(&db.Control)
 	students := providers.New(db)
 	api := moduleAPI{registry}
 	mux := http.NewServeMux()
@@ -36,7 +39,6 @@ func New(db *database.Catalog, enabled string) (http.Handler, error) {
 		}
 		respond(w, 200, map[string]string{"status": "ready"})
 	})
-	mux.Handle("/api/v1/session", identity.NewHandler(sessions))
 	protected := http.NewServeMux()
 	protected.HandleFunc("GET /api/v1/modules", api.list)
 	protected.HandleFunc("GET /api/v1/modules/{key}", api.detail)
@@ -45,19 +47,14 @@ func New(db *database.Catalog, enabled string) (http.Handler, error) {
 	protected.HandleFunc("GET /api/v1/modules/{key}/workspace/{id}", api.entry)
 	protected.HandleFunc("PATCH /api/v1/modules/{key}/workspace/{id}", api.entries)
 	if _, ok := registry.Find("students"); ok {
-		protected.Handle("/api/v1/students", students.HTTP)
-		protected.Handle("/api/v1/students/", students.HTTP)
+		studentsroutes.Register(protected, students.HTTP)
 	}
 	if _, ok := registry.Find("enrollment"); ok {
-		handler := placements.New(db, students.Directory)
-		protected.Handle("/api/v1/enrollment/placements", handler)
-		protected.Handle("/api/v1/enrollment/placements/", handler)
+		enrollmentroutes.Register(protected, enrollment.New(db, students.Directory))
 	}
 	if _, ok := registry.Find("documents"); ok {
-		handler := documents.Blobs()
-		protected.Handle("/api/v1/documents/files", handler)
-		protected.Handle("/api/v1/documents/files/", handler)
+		documentsroutes.Register(protected, documents.Blobs())
 	}
-	mux.Handle("/", sessions.Protect(protected))
+	mux.Handle("/", middleware.Protect(sessions, protected))
 	return mux, nil
 }

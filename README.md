@@ -46,7 +46,7 @@ Clone `elcomware/edupilot-os` and use `github.com/elcomware/edupilot` as the imp
 | Task | Start here |
 | --- | --- |
 | Configure services, accounts and database modes | [Local deployment](docs/local-deployment.md) · [Tenant placement](platform/database/README.md) |
-| Add a module, use case, or adapter | [Adapter guide](docs/adapter-guide.md) · [Students](modules/students/README.md) · [Enrollment](modules/enrollment/placements/README.md) |
+| Build a module or trace a user’s access | [Auth reference](modules/auth/README.md) · [Module guide](docs/adapter-guide.md) · [Enrollment](modules/enrollment/providers/README.md) |
 | Inspect the API | [OpenAPI 3.1 contract](docs/api/openapi.yaml) |
 | Change all workspaces or add one specialized panel | [UI design](DESIGN.md) · [Workspace behavior](UX-CONTRACT.md) · [Web client](clients/web/README.md) |
 | Build native clients | [Wails desktop](clients/desktop/README.md) · [Expo mobile](clients/mobile/README.md) |

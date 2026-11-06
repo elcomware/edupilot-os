@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/elcomware/edupilot/modules/documents/adapters/outbound/blob"
-	"github.com/elcomware/edupilot/modules/documents/application"
+	"github.com/elcomware/edupilot/modules/documents/app/services"
+	"github.com/elcomware/edupilot/modules/documents/app/services/filesystem"
 	"github.com/elcomware/edupilot/platform/access"
 	"github.com/elcomware/edupilot/platform/tenantupgrade"
 )
@@ -28,7 +28,7 @@ func TestCommandInventoriesActualUploadOfflineWithNoSourceMutation(t *testing.T)
 	manifest := privateManifest(t)
 	db := filepath.Join(t.TempDir(), "must-not-exist.sqlite")
 	t.Setenv("DB_DATABASE", db)
-	store, err := blob.Configured(func(key, fallback string) string {
+	store, err := filesystem.Configured(func(key, fallback string) string {
 		if key == "EDUPILOT_DOCUMENTS_ROOT" {
 			return root
 		}
@@ -38,7 +38,7 @@ func TestCommandInventoriesActualUploadOfflineWithNoSourceMutation(t *testing.T)
 		t.Fatal(err)
 	}
 	ctx := access.WithPrincipal(t.Context(), access.Principal{ID: "fixture-user", School: "north", Permissions: []string{access.DocumentsWrite}})
-	id, err := (application.Files{Resolve: func() (application.BlobStore, error) { return store, nil }}).Upload(ctx, "text/plain", []byte("private payload"))
+	id, err := (services.Files{Resolve: func() (services.BlobStore, error) { return store, nil }}).Upload(ctx, "text/plain", []byte("private payload"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +48,7 @@ func TestCommandInventoriesActualUploadOfflineWithNoSourceMutation(t *testing.T)
 	if code := run([]string{"-manifest", manifest, "-root", root}, &output, &diagnostics); code != 0 {
 		t.Fatal(code, diagnostics.String())
 	}
-	var result blob.LocalInventory
+	var result filesystem.LocalInventory
 	if err = json.Unmarshal(output.Bytes(), &result); err != nil || result.Documents != 1 || result.ContentBytes != 15 || len(result.SHA256) != 64 {
 		t.Fatal("invalid aggregate", err)
 	}
@@ -82,7 +82,7 @@ func TestCommandReconcilesPreservedReferencesBeforeCopyEvidence(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	store, err := blob.Configured(func(key, fallback string) string {
+	store, err := filesystem.Configured(func(key, fallback string) string {
 		if key == "EDUPILOT_DOCUMENTS_ROOT" {
 			return root
 		}
@@ -92,11 +92,11 @@ func TestCommandReconcilesPreservedReferencesBeforeCopyEvidence(t *testing.T) {
 		t.Fatal(err)
 	}
 	ctx := access.WithPrincipal(t.Context(), access.Principal{ID: "fixture-user", School: "north", Permissions: []string{access.DocumentsWrite}})
-	id, err := (application.Files{Resolve: func() (application.BlobStore, error) { return store, nil }}).Upload(ctx, "text/plain", []byte("private reconciled payload"))
+	id, err := (services.Files{Resolve: func() (services.BlobStore, error) { return store, nil }}).Upload(ctx, "text/plain", []byte("private reconciled payload"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	baseline, err := blob.InventoryLocal(t.Context(), root, manifest, "")
+	baseline, err := filesystem.InventoryLocal(t.Context(), root, manifest, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func TestCommandReconcilesPreservedReferencesBeforeCopyEvidence(t *testing.T) {
 	if code := run(args, &output, &diagnostics); code != 0 {
 		t.Fatal(code, diagnostics.String())
 	}
-	var result blob.ReconciledLocalInventory
+	var result filesystem.ReconciledLocalInventory
 	if err := json.Unmarshal(output.Bytes(), &result); err != nil || result.Version != 2 || result.References != 1 || result.Documents != 1 || len(result.SHA256) != 64 {
 		t.Fatal("invalid reconciled command result", err)
 	}

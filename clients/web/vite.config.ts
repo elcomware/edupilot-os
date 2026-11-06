@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "EDUPILOT_");
+  const backend = env.EDUPILOT_API_PROXY || "http://127.0.0.1:3000";
   return {
     base: "./",
     resolve: { dedupe: ["react", "react-dom"] },
@@ -11,10 +12,9 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       proxy: {
-        "/api": {
-          target: env.EDUPILOT_API_PROXY || "http://127.0.0.1:3000",
-          changeOrigin: true,
-        },
+        "/api": { target: backend, changeOrigin: true },
+        "^/login(?:\\?|$)": { target: backend, changeOrigin: true },
+        "/assets/": { target: backend, changeOrigin: true },
       },
     },
   };

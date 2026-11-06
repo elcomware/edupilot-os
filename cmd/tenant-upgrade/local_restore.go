@@ -7,7 +7,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/elcomware/edupilot/modules/documents/adapters/outbound/blob"
+	"github.com/elcomware/edupilot/modules/documents/app/services/filesystem"
 	"github.com/elcomware/edupilot/platform/tenantupgrade"
 )
 
@@ -25,7 +25,7 @@ func verifyLocalRestore(upgrade tenantupgrade.Upgrade, manifest tenantupgrade.Ma
 		fmt.Fprintln(diagnostics, "Invalid restore evidence.")
 		return 1
 	}
-	actual, err := blob.ReconcileLocal(ctx, root, manifest, references, selection.Documents.InventorySHA256)
+	actual, err := filesystem.ReconcileLocal(ctx, root, manifest, references, selection.Documents.InventorySHA256)
 	if err != nil || actual.SHA256 != selection.Documents.SHA256 {
 		fmt.Fprintln(diagnostics, "Restored documents differ from approved evidence.")
 		return 1

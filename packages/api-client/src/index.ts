@@ -5,6 +5,12 @@ export interface Principal {
   school: string;
   permissions: string[];
 }
+export interface CurrentUser {
+  id: string;
+  email: string;
+  membership: { school: string; userId: string; role: "admin" | "registrar" | "viewer" };
+  permissions: string[];
+}
 export interface Credentials {
   school: string;
   email: string;
@@ -225,6 +231,8 @@ export function createApiClient({
       request<Session>("/session", "POST", credentials, undefined, false),
     session: (signal?: AbortSignal) =>
       request<Principal>("/session", "GET", undefined, signal),
+    currentUser: (signal?: AbortSignal) =>
+      request<CurrentUser>("/auth/me", "GET", undefined, signal),
     logout: () => request<void>("/session", "DELETE"),
     modules: (signal?: AbortSignal) =>
       request<{ items: ModuleDescriptor[] }>(

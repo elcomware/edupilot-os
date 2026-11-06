@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/mobile-login.yml'
       - 'clients/mobile/**'
+      - 'modules/auth/**'
       - 'packages/api-client/**'
       - 'tests/mobile/**'
       - 'package*.json'

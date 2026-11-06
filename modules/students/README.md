@@ -60,12 +60,6 @@ application registry registers them for each physical tenant database. Add
 future schema changes with a new migration ID; do not rewrite a migration
 already applied in a deployment.
 
-## Extending the reference module
+## Extending Students
 
-Put lifecycle rules in `domain`, command/query orchestration in `application`,
-and storage and HTTP mapping in their respective adapters. Other modules
-import only `contracts`. Add coverage at the narrowest useful seam: domain
-invariants, orchestration with a fake repository, route behavior with a trusted
-test principal, or the actual SQL transaction. The repository suite runs on
-SQLite and also on PostgreSQL when `EDUPILOT_TEST_POSTGRES_DSN` is configured
-to create a temporary schema in a disposable database.
+Follow the [Auth module convention](../auth/README.md). Student lifecycle rules live in `app/models`, operations in `app/services`, public interfaces in `app/contracts`, SQL in `database`, and HTTP handlers in `app/http/controllers`. Module-owned API routes are in `routes/api.go`. Test pure rules, service behavior with a fake repository, actual SQL transactions, and authorized routes. The repository suite runs on SQLite and on PostgreSQL when a disposable `EDUPILOT_TEST_POSTGRES_DSN` is supplied.

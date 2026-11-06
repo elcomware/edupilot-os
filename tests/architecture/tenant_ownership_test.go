@@ -9,10 +9,10 @@ import (
 
 	"github.com/elcomware/edupilot/database/edumigrations"
 	"github.com/elcomware/edupilot/modules"
-	enrollment "github.com/elcomware/edupilot/modules/enrollment/placements"
-	students "github.com/elcomware/edupilot/modules/students/migrations"
+	authmigrations "github.com/elcomware/edupilot/modules/auth/database/migrations"
+	enrollment "github.com/elcomware/edupilot/modules/enrollment/providers"
+	students "github.com/elcomware/edupilot/modules/students/database/migrations"
 	"github.com/elcomware/edupilot/platform/database"
-	"github.com/elcomware/edupilot/platform/identity"
 )
 
 // Changing a registered schema or adding durable storage without an ownership
@@ -57,7 +57,7 @@ func TestTenantOwnershipInventoryCoversRegisteredTables(t *testing.T) {
 			t.Errorf("missing ownership/upgrade entry for %s", name)
 		}
 	}
-	plans := []edumigrations.Plan{edumigrations.PlacementPlan(), edumigrations.OutboxPlan(), {ID: "identity", Up: identity.SchemaUp}, {ID: "students", Up: students.SchemaUp}, {ID: "placements", Up: enrollment.SchemaUp}}
+	plans := []edumigrations.Plan{edumigrations.PlacementPlan(), edumigrations.OutboxPlan(), {ID: "identity", Up: authmigrations.SchemaUp}, {ID: "students", Up: students.SchemaUp}, {ID: "placements", Up: enrollment.SchemaUp}}
 	definitions := modules.Definitions()
 	registry, err := modules.NewRegistry(nil, definitions)
 	if err != nil {

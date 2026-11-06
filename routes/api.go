@@ -2,16 +2,27 @@ package routes
 
 import (
 	"github.com/elcomware/edupilot/app/facades"
-	"github.com/elcomware/edupilot/app/providers"
+	authroutes "github.com/elcomware/edupilot/modules/auth/routes"
 	"github.com/goravel/framework/contracts/http"
+	nethttp "net/http"
 )
 
-// Goravel owns the listener and middleware. A single net/http adapter lets the
-// same module handlers run behind that listener and in feature specifications.
-func API() {
-	handler := providers.Handler(facades.App())
-	facades.Route().Any("/api/v1/*path", func(ctx http.Context) http.Response {
-		handler.ServeHTTP(ctx.Response().Writer(), ctx.Request().Origin())
+func dispatch(handler nethttp.Handler) http.HandlerFunc {
+	return func(ctx http.Context) http.Response {
+		w := ctx.Response().Writer()
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		handler.ServeHTTP(w, ctx.Request().Origin())
 		return nil
-	})
+	}
+}
+
+func API(handler nethttp.Handler) {
+	serve := dispatch(handler)
+	router := facades.Route()
+	authroutes.API(router, serve)
+	// Static Auth routes take priority over these legacy dispatch paths.
+	// Regular Goravel routes preserve net/http's default successful status.
+	router.Any("/api/v1/", serve)
+	router.Any("/api/v1/:resource", serve)
+	router.Any("/api/v1/:resource/*path", serve)
 }

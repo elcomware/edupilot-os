@@ -27,7 +27,7 @@ import { SessionModel } from "./src/session";
 import { tokenStore } from "./src/storage";
 import { copy, type Locale, type Translator } from "./src/strings";
 import { Action, Notice, Spinner, s } from "./src/ui";
-import { Login } from "./src/screens/Login";
+import { Login } from "../../modules/auth/resources/js/native/Login";
 import { Catalog } from "./src/screens/Catalog";
 import { Register, blank, type Draft } from "./src/screens/Register";
 

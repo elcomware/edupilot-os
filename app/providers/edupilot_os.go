@@ -2,6 +2,7 @@ package providers
 
 import (
 	"github.com/elcomware/edupilot/app/schoolapi"
+	auth "github.com/elcomware/edupilot/modules/auth/providers"
 	"github.com/elcomware/edupilot/platform/database"
 	"github.com/goravel/framework/contracts/foundation"
 	"net/http"
@@ -12,12 +13,32 @@ type runtimeKey struct{}
 type EduPilotOS struct{}
 
 func (*EduPilotOS) Register(app foundation.Application) {
+	// HTTP and gRPC can be the first request concurrently. Goravel caches a
+	// singleton after its factory returns. Open one pool set and retry failures.
+	var catalogMu sync.Mutex
+	var catalog *database.Catalog
+	app.Singleton(database.CatalogBinding, func(foundation.Application) (any, error) {
+		catalogMu.Lock()
+		defer catalogMu.Unlock()
+		if catalog == nil {
+			opened, err := database.OpenConfigured()
+			if err != nil {
+				return nil, err
+			}
+			catalog = opened
+		}
+		return catalog, nil
+	})
 	app.Singleton(runtimeKey{}, func(app foundation.Application) (any, error) {
-		pools, err := database.OpenConfigured()
+		pools, err := app.Make(database.CatalogBinding)
 		if err != nil {
 			return nil, err
 		}
-		return schoolapi.New(pools, app.MakeConfig().GetString("edupilot.enabled_modules"))
+		sessions, err := auth.Sessions(app)
+		if err != nil {
+			return nil, err
+		}
+		return schoolapi.New(pools.(*database.Catalog), sessions, app.MakeConfig().GetString("edupilot.enabled_modules"))
 	})
 }
 func (*EduPilotOS) Boot(foundation.Application) {}

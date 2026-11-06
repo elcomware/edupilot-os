@@ -12,11 +12,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/elcomware/edupilot/modules/students/adapters/outbound/persistence"
-	"github.com/elcomware/edupilot/modules/students/application"
-	"github.com/elcomware/edupilot/modules/students/contracts"
-	"github.com/elcomware/edupilot/modules/students/domain"
-	"github.com/elcomware/edupilot/modules/students/migrations"
+	"github.com/elcomware/edupilot/modules/students/app/contracts"
+	"github.com/elcomware/edupilot/modules/students/app/models"
+	"github.com/elcomware/edupilot/modules/students/app/services"
+	records "github.com/elcomware/edupilot/modules/students/database"
+	"github.com/elcomware/edupilot/modules/students/database/migrations"
 	"github.com/elcomware/edupilot/platform/database"
 	"github.com/elcomware/edupilot/platform/outbox"
 	"github.com/jackc/pgx/v5"
@@ -81,8 +81,8 @@ func transactionCases(t *testing.T, p database.Pool) {
 		}
 	}
 	apply(migrations.SchemaUp)
-	repo := persistence.New(fixedCatalog{p})
-	svc := application.New(repo)
+	repo := records.New(fixedCatalog{p})
+	svc := services.New(repo)
 	// This simulated incomplete deployment forces Append to fail after INSERT.
 	if _, err := svc.Register(ctx, "north", "actor", "Avery", "Lee"); err == nil {
 		t.Fatal("mutation must fail when event cannot be recorded")
@@ -122,7 +122,7 @@ func transactionCases(t *testing.T, p database.Pool) {
 	if err = repo.Replace(ctx, changed, 1, "editor"); err != nil {
 		t.Fatal(err)
 	}
-	if err = repo.Replace(ctx, competing, 1, "editor2"); !errors.Is(err, domain.ErrConflict) {
+	if err = repo.Replace(ctx, competing, 1, "editor2"); !errors.Is(err, models.ErrConflict) {
 		t.Fatalf("stale write applied: %v", err)
 	}
 	if err = svc.Archive(ctx, "north", "actor", first.ID, 2); err != nil {
