@@ -1,6 +1,6 @@
 # Prepare the group tenancy upgrade
 
-The current release checkpoint can prepare a reconciled frozen SQL+object source, validate a proposed mapping file offline and inspect legacy SQL placement using read-only connections. Use the native command from the repository root:
+The current release checkpoint can prepare a reconciled frozen SQL+object source, validate a proposed mapping file offline, inspect legacy SQL placement and run a final read-only mapping/source reconciliation. Use the native command from the repository root:
 
 ```sh
 go run ./cmd/tenant-upgrade -mode=validate-manifest -manifest=/private/upgrade.json
@@ -105,6 +105,24 @@ The example hashes are format placeholders only; a real selection must use the r
 
 Run the same `inventory-source` command while the SQL pools and document backup still describe the approved freeze. A successful version 2 result is classified `frozen-source-sql-objects`, has `readyForCopy=true`, and binds each per-pool SQL digest, the exact reference-set digest, the independently approved version 1 byte-inventory digest and the reconciled document digest. Only that complete report's top-level `sha256` is the authoritative source fingerprint for the later mapping/copy/verification stages. The command does not itself prove the deployment freeze, copy data or activate tenants; backup/restore proof, maintenance fencing, copy/resume and post-copy verification remain required.
 
+## Reconcile the mapping before prepare
+
+Keep the SQL pools and document backup frozen. Set the mapping's `sourceSha256` to the successful version 2 source inventory digest, retain the exact private version 2 selection used to generate it, and run:
+
+```sh
+chmod 600 /private/upgrade.json /private/source-selection.json
+go run ./cmd/tenant-upgrade \
+  -mode=dry-run \
+  -manifest=/private/upgrade.json \
+  -selection=/private/source-selection.json > /private/upgrade-dry-run.json
+```
+
+`dry-run` regenerates the complete SQL+object inventory from the current read-only sources, re-inspects legacy placement, and compares every mapping pool and physical marker with native configuration. It requires the mapping and selection to contain exactly the same sorted legacy-school set. Version 1 or incomplete document evidence, a changed source digest, missing/extra school, routing issue, pool mismatch or marker mismatch fails closed.
+
+The successful report is classified `legacy-upgrade-dry-run`, sets `complete=true` and `readyForPrepare=true`, and contains only school/pool counts plus the approved manifest and source digests. It omits legacy school names, target IDs, markers, object keys, row values, paths and credentials. Failure reports contain redacted issue codes and no approval digests. Input files must be private regular files; a missing SQLite source is not created.
+
+This is still a read-only precondition, not the mutation phase. It does not acquire a deployment maintenance lock, verify a backup/restore drill, create journal or tenant rows, copy data, activate tenants or fence old binaries. Do not release the freeze or treat `readyForPrepare` as permission to run an unimplemented prepare/copy command. Durable prepare/resume remains blocked until the operator-confirmed maintenance mechanism can prove the old API, worker, seed and migrator processes are stopped and their source access is fenced.
+
 
 ## Inspect legacy SQL placement
 
@@ -114,7 +132,7 @@ From the native deployment directory, with the same environment and `.env` used 
 go run ./cmd/tenant-upgrade -mode=inspect-placement > /private/placement-inspection.json
 ```
 
-The mode must be explicit. A blank/default mode refuses to run. `inspect-placement` takes no manifest; `validate-manifest -manifest=PATH` remains an offline file validator; `inventory-source -selection=PRIVATE_JSON` is the separately frozen content inventory above. Native APP_KEY/configuration validation and process-environment-over-`.env` precedence are preserved. This command does not boot HTTP, run migrations, dispatch events, provision routes or create placement pins. It reads DB_CONNECTION/DB_DATABASE and the native PostgreSQL settings plus EDUPILOT_DEDICATED_DATABASES, using the application's validated connection names and legacy owner strings. PostgreSQL uses the same native public search_path; no arbitrary DSN/SQL input is accepted.
+The mode must be explicit. A blank/default mode refuses to run. `inspect-placement` takes no manifest; `validate-manifest -manifest=PATH` remains an offline file validator; `inventory-source -selection=PRIVATE_JSON` is the separately frozen content inventory above; `dry-run` requires both private mapping and selection files. Native APP_KEY/configuration validation and process-environment-over-`.env` precedence are preserved. This command does not boot HTTP, run migrations, dispatch events, provision routes or create placement pins. It reads DB_CONNECTION/DB_DATABASE and the native PostgreSQL settings plus EDUPILOT_DEDICATED_DATABASES, using the application's validated connection names and legacy owner strings. PostgreSQL uses the same native public search_path; no arbitrary DSN/SQL input is accepted.
 
 SQLite sources must already exist as regular files and are opened with `mode=ro` and `query_only=1`; an absent source is never created. SQLite uses deferred read transactions, and PostgreSQL uses read-only repeatable-read transactions plus a read-only connection default. PostgreSQL credentials are used only to connect; reports/diagnostics omit passwords, DSNs, hosts, database/file paths, physical marker IDs, user IDs, emails, password/token hashes, payloads and record bodies. School scope IDs and configured connection names remain sensitive operational metadata: keep the report private.
 

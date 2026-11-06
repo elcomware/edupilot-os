@@ -17,15 +17,15 @@ type result struct {
 	ManifestSHA256 string `json:"manifestSha256"`
 }
 
-const usage = "Usage: tenant-upgrade -mode=validate-manifest -manifest=PATH | -mode=inspect-placement | -mode=inventory-source -selection=PRIVATE_JSON"
+const usage = "Usage: tenant-upgrade -mode=validate-manifest -manifest=PATH | -mode=inspect-placement | -mode=inventory-source -selection=PRIVATE_JSON | -mode=dry-run -manifest=PRIVATE_JSON -selection=PRIVATE_JSON"
 
 func run(args []string, output, diagnostics io.Writer) int {
 	flags := flag.NewFlagSet("tenant-upgrade", flag.ContinueOnError)
 	// The flag parser includes unrecognized input in its own messages.
 	flags.SetOutput(io.Discard)
-	mode := flags.String("mode", "", "operation: validate-manifest, inspect-placement or inventory-source")
+	mode := flags.String("mode", "", "operation: validate-manifest, inspect-placement, inventory-source or dry-run")
 	path := flags.String("manifest", "", "path to the private JSON mapping manifest")
-	selection := flags.String("selection", "", "path to the private version 1 source selection")
+	selection := flags.String("selection", "", "path to the private source selection")
 	if err := flags.Parse(args); err != nil {
 		fmt.Fprintln(diagnostics, usage)
 		if err == flag.ErrHelp {
@@ -38,6 +38,9 @@ func run(args []string, output, diagnostics io.Writer) int {
 	}
 	if *mode == "inventory-source" && *path == "" && *selection != "" && flags.NArg() == 0 {
 		return inventorySource(*selection, output, diagnostics)
+	}
+	if *mode == "dry-run" && *path != "" && *selection != "" && flags.NArg() == 0 {
+		return upgradeDryRun(*path, *selection, output, diagnostics)
 	}
 	if *mode != "validate-manifest" || *path == "" || *selection != "" || flags.NArg() != 0 {
 		fmt.Fprintln(diagnostics, usage)

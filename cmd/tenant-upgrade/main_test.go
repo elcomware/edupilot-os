@@ -108,3 +108,43 @@ func TestSourceInventoryRequiresPrivateSelectionAndNeverCreatesMissingDatabase(t
 		t.Fatal("public source selection was accepted or disclosed")
 	}
 }
+
+func TestUpgradeDryRunIsExplicitReadOnlyAndRedacted(t *testing.T) {
+	dir := t.TempDir()
+	manifestPath := filepath.Join(dir, "private-manifest.json")
+	manifest := `{"version":1,"sourceSha256":"` + strings.Repeat("d", 64) + `","schools":[{"legacySchool":"private-school","sourcePool":"sqlite","sourceMarker":"private-marker","tenant":"b0421bcb-122a-4e2d-8294-261864c2e249","organization":"c88e6562-3dd9-4d83-a115-eacd8c791069","school":"558a7688-4335-4b37-b9ca-91b7a5842cc4","campus":"42a8b3dd-1da0-4dcf-a0af-11140e68fa68","timezone":"UTC","locale":"en"}]}`
+	if err := os.WriteFile(manifestPath, []byte(manifest), 0600); err != nil {
+		t.Fatal(err)
+	}
+	selectionPath := filepath.Join(dir, "private-selection.json")
+	selection := `{"version":2,"schools":["private-school"],"documents":{"version":2,"schools":1,"references":0,"documents":0,"contentBytes":0,"referencesSha256":"` + strings.Repeat("a", 64) + `","inventorySha256":"` + strings.Repeat("b", 64) + `","sha256":"09f8ce145f5872b07ab4b09270b3b64d4715b70904dbb58e7b5c199bb56892d0"}}`
+	if err := os.WriteFile(selectionPath, []byte(selection), 0600); err != nil {
+		t.Fatal(err)
+	}
+	missing := filepath.Join(dir, "must-not-exist.sqlite")
+	t.Setenv("APP_KEY", "12345678901234567890123456789012")
+	t.Setenv("DB_CONNECTION", "sqlite")
+	t.Setenv("DB_DATABASE", missing)
+	t.Setenv("EDUPILOT_DEDICATED_DATABASES", "[]")
+	var output, diagnostics bytes.Buffer
+	status := run([]string{"-mode=dry-run", "-manifest", manifestPath, "-selection", selectionPath}, &output, &diagnostics)
+	if status != 1 || !strings.Contains(output.String(), `"classification":"legacy-upgrade-dry-run"`) || !strings.Contains(output.String(), `"code":"source_inventory_incomplete"`) {
+		t.Fatalf("dry-run did not return safe failure evidence: %d %s %s", status, output.String(), diagnostics.String())
+	}
+	for _, private := range []string{missing, "private-school", "private-marker", manifestPath, selectionPath} {
+		if strings.Contains(output.String()+diagnostics.String(), private) {
+			t.Fatalf("dry-run disclosed private input %q", private)
+		}
+	}
+	if _, err := os.Stat(missing); !os.IsNotExist(err) {
+		t.Fatalf("dry-run created the missing database: %v", err)
+	}
+	if err := os.Chmod(selectionPath, 0644); err != nil {
+		t.Fatal(err)
+	}
+	output.Reset()
+	diagnostics.Reset()
+	if status := run([]string{"-mode=dry-run", "-manifest", manifestPath, "-selection", selectionPath}, &output, &diagnostics); status != 1 || output.Len() != 0 {
+		t.Fatal("dry-run accepted a public selection or emitted partial output")
+	}
+}
