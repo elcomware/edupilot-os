@@ -1,0 +1,387 @@
+[
+  {
+    "Name": "edu_audit_inbox",
+    "Owner": "platform/outbox",
+    "Classification": "school/receipt",
+    "Placement": "all",
+    "ScopeColumn": "tenant_id"
+  },
+  {
+    "Name": "edu_migration_receipts",
+    "Owner": "database/edumigrations",
+    "Classification": "infrastructure/control",
+    "Placement": "all",
+    "ScopeColumn": ""
+  },
+  {
+    "Name": "edu_outbox",
+    "Owner": "platform/outbox (producer retains payload ownership)",
+    "Classification": "school/event",
+    "Placement": "all",
+    "ScopeColumn": "tenant_id"
+  },
+  {
+    "Name": "edu_pool_marker",
+    "Owner": "platform/database",
+    "Classification": "infrastructure/control",
+    "Placement": "all",
+    "ScopeColumn": ""
+  },
+  {
+    "Name": "edu_tenant_placement",
+    "Owner": "platform/database",
+    "Classification": "infrastructure/control",
+    "Placement": "control",
+    "ScopeColumn": "tenant_id"
+  },
+  {
+    "Name": "enrollment_placements",
+    "Owner": "modules/enrollment",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "failed_jobs",
+    "Owner": "app/jobs + Goravel queue",
+    "Classification": "infrastructure/control",
+    "Placement": "control",
+    "ScopeColumn": ""
+  },
+  {
+    "Name": "identity_accounts",
+    "Owner": "platform/identity",
+    "Classification": "control/identity",
+    "Placement": "control",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "identity_memberships",
+    "Owner": "platform/identity",
+    "Classification": "control/identity",
+    "Placement": "control",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "identity_schools",
+    "Owner": "platform/identity",
+    "Classification": "control/identity",
+    "Placement": "control",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "identity_sessions",
+    "Owner": "platform/identity",
+    "Classification": "control/identity",
+    "Placement": "control",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "jobs",
+    "Owner": "app/jobs + Goravel queue",
+    "Classification": "infrastructure/control",
+    "Placement": "control",
+    "ScopeColumn": ""
+  },
+  {
+    "Name": "migrations",
+    "Owner": "database/edumigrations + Goravel migrator",
+    "Classification": "infrastructure/control",
+    "Placement": "control",
+    "ScopeColumn": ""
+  },
+  {
+    "Name": "students_records",
+    "Owner": "modules/students",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_academics",
+    "Owner": "modules/academics",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_accounting",
+    "Owner": "modules/accounting",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_admissions",
+    "Owner": "modules/admissions",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_analytics",
+    "Owner": "modules/analytics",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_assessments",
+    "Owner": "modules/assessments",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_attendance",
+    "Owner": "modules/attendance",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_audit",
+    "Owner": "modules/audit",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_billing",
+    "Owner": "modules/billing",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_classes",
+    "Owner": "modules/classes",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_curriculum",
+    "Owner": "modules/curriculum",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_discipline",
+    "Owner": "modules/discipline",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_documents",
+    "Owner": "modules/documents",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_enrollment",
+    "Owner": "modules/enrollment",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_examinations",
+    "Owner": "modules/examinations",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_facilities",
+    "Owner": "modules/facilities",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_fees",
+    "Owner": "modules/fees",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_gradebook",
+    "Owner": "modules/gradebook",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_guardians",
+    "Owner": "modules/guardians",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_hr",
+    "Owner": "modules/hr",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_identity",
+    "Owner": "modules/identity",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_inventory",
+    "Owner": "modules/inventory",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_learning",
+    "Owner": "modules/learning",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_library",
+    "Owner": "modules/library",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_messaging",
+    "Owner": "modules/messaging",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_notifications",
+    "Owner": "modules/notifications",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_payments",
+    "Owner": "modules/payments",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_payroll",
+    "Owner": "modules/payroll",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_permissions",
+    "Owner": "modules/permissions",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_portal",
+    "Owner": "modules/portal",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_procurement",
+    "Owner": "modules/procurement",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_reporting",
+    "Owner": "modules/reporting",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_scholarships",
+    "Owner": "modules/scholarships",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_school_settings",
+    "Owner": "modules/school_settings",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_staff",
+    "Owner": "modules/staff",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_subscriptions",
+    "Owner": "modules/subscriptions",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_tenancy",
+    "Owner": "modules/tenancy",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_timetables",
+    "Owner": "modules/timetables",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_transcripts",
+    "Owner": "modules/transcripts",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_transport",
+    "Owner": "modules/transport",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_users",
+    "Owner": "modules/users",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  },
+  {
+    "Name": "ws_workflows",
+    "Owner": "modules/workflows",
+    "Classification": "school/private",
+    "Placement": "all",
+    "ScopeColumn": "school_id"
+  }
+]

@@ -1,0 +1,79 @@
+[
+  {
+    "School": "east",
+    "ID": "00000001-0000-4000-8000-000000000001",
+    "State": "valid",
+    "Content": "UHJpdmF0ZSBub3RpY2UgZm9yIGVhc3QK",
+    "Record": "RURVUElMT1QtRE9DLzEK1fQkPaSz2gsIbiTo6hcNcUaKiuOkfOiJi423DOmhJMVQcml2YXRlIG5vdGljZSBmb3IgZWFzdAo="
+  },
+  {
+    "School": "east",
+    "ID": "00000001-0000-4000-8000-000000000002",
+    "State": "corrupt",
+    "Content": "UHJpdmF0ZSBub3RpY2UgZm9yIGVhc3QK",
+    "Record": "RURVUElMT1QtRE9DLzEKYJL+NAqe7m0PaPP4jeQr1njfiUIxN2KwbJP9eGGKmYNQcml2YXRlIG5vdGljZSBmb3IgZWFzdAs="
+  },
+  {
+    "School": "east",
+    "ID": "00000001-0000-4000-8000-000000000003",
+    "State": "missing",
+    "Content": "UHJpdmF0ZSBub3RpY2UgZm9yIGVhc3QK",
+    "Record": "RURVUElMT1QtRE9DLzEKzPuBsGqk06JoPktibewcwdXNGowJaEp+93tdgZB/FlVQcml2YXRlIG5vdGljZSBmb3IgZWFzdAo="
+  },
+  {
+    "School": "east",
+    "ID": "00000001-0000-4000-8000-000000000004",
+    "State": "unsupported",
+    "Content": "UHJpdmF0ZSBub3RpY2UgZm9yIGVhc3QK",
+    "Record": "RURVUElMT1QtRE9DLzEKofPIxjhMdUa987APEfhTgCAXtkvKgORBWzN3P9nu2hwAAQID"
+  },
+  {
+    "School": "east",
+    "ID": "00000001-0000-4000-8000-000000000005",
+    "State": "malformed",
+    "Content": "UHJpdmF0ZSBub3RpY2UgZm9yIGVhc3QK",
+    "Record": "dHJ1bmNhdGVkIGxlZ2FjeSByZWNvcmQ="
+  },
+  {
+    "School": "west",
+    "ID": "00000002-0000-4000-8000-000000000001",
+    "State": "valid",
+    "Content": "UHJpdmF0ZSBub3RpY2UgZm9yIHdlc3QK",
+    "Record": "RURVUElMT1QtRE9DLzEKQwljkrXbKelo6Gr2gpzpm+G5Q3KR5qK+eigRaFptP1pQcml2YXRlIG5vdGljZSBmb3Igd2VzdAo="
+  },
+  {
+    "School": "west",
+    "ID": "00000002-0000-4000-8000-000000000002",
+    "State": "corrupt",
+    "Content": "UHJpdmF0ZSBub3RpY2UgZm9yIHdlc3QK",
+    "Record": "RURVUElMT1QtRE9DLzEKeXXnrhUjfBf+b2Die1iCVdcjtsTAZ4EbHwS1YiFLLxdQcml2YXRlIG5vdGljZSBmb3Igd2VzdAs="
+  },
+  {
+    "School": "west",
+    "ID": "00000002-0000-4000-8000-000000000003",
+    "State": "missing",
+    "Content": "UHJpdmF0ZSBub3RpY2UgZm9yIHdlc3QK",
+    "Record": "RURVUElMT1QtRE9DLzEKoXtJb2qs0JthQvLhMjp43I+CQDMCET38u1CMdeoDx/9Qcml2YXRlIG5vdGljZSBmb3Igd2VzdAo="
+  },
+  {
+    "School": "west",
+    "ID": "00000002-0000-4000-8000-000000000004",
+    "State": "unsupported",
+    "Content": "UHJpdmF0ZSBub3RpY2UgZm9yIHdlc3QK",
+    "Record": "RURVUElMT1QtRE9DLzEKjJwgKELs1+3+uCCcYgGU3WOOl0TpKEro5lacj88j5BsAAQID"
+  },
+  {
+    "School": "west",
+    "ID": "00000002-0000-4000-8000-000000000005",
+    "State": "malformed",
+    "Content": "UHJpdmF0ZSBub3RpY2UgZm9yIHdlc3QK",
+    "Record": "dHJ1bmNhdGVkIGxlZ2FjeSByZWNvcmQ="
+  },
+  {
+    "School": "west",
+    "ID": "00000001-0000-4000-8000-000000000001",
+    "State": "copied-path",
+    "Content": "UHJpdmF0ZSBub3RpY2UgZm9yIGVhc3QK",
+    "Record": "RURVUElMT1QtRE9DLzEK1fQkPaSz2gsIbiTo6hcNcUaKiuOkfOiJi423DOmhJMVQcml2YXRlIG5vdGljZSBmb3IgZWFzdAo="
+  }
+]
