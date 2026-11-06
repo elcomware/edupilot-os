@@ -42,7 +42,7 @@ def main():
                 time.sleep(0.25)
             raise RuntimeError(f"Missing {roles} labelled {label!r}; available roles: {sorted(observed)}")
 
-        def type_into(label, value):
+        def focused_field(label):
             field = element(label, {"entry", "text", "password text"})
             if not field.queryComponent().grabFocus():
                 raise RuntimeError("Could not focus " + label)
@@ -51,8 +51,15 @@ def main():
                 if time.monotonic() >= deadline:
                     raise RuntimeError("Native focus did not reach " + label)
                 time.sleep(0.05)
+            return field
+
+        def type_text(value):
             subprocess.run(["xdotool", "type", "--clearmodifiers", "--delay", "30", "--file", "-"],
                            input=value.encode(), check=True)
+
+        def type_into(label, value):
+            focused_field(label)
+            type_text(value)
 
         def activate(label, roles):
             action = element(label, roles).queryAction()
@@ -87,15 +94,18 @@ def main():
         capture("directory", "access")
         activate("Schools", {"link"})
         activate("Add entry", buttons)
-        type_into("Title", "Campus review")
-        # Sending an X key event completes before WebKit necessarily processes
-        # it. Observe the synthetic title in the field before submitting it.
-        title = element("Title", {"entry", "text"}).queryText()
-        deadline = time.monotonic() + 5
-        while title.getText(0, -1) != "Campus review":
-            if time.monotonic() >= deadline:
-                raise RuntimeError("Synthetic title before submit: " + repr(title.getText(0, -1)))
-            time.sleep(0.05)
+        # WebKit can change the accessible name of the labelled input as it
+        # gains a value. Keep the focused field and observe each native edit.
+        title = focused_field("Title").queryText()
+        expected = ""
+        for char in "Campus review":
+            type_text(char)
+            expected += char
+            deadline = time.monotonic() + 5
+            while title.getText(0, -1) != expected:
+                if time.monotonic() >= deadline:
+                    raise RuntimeError("Synthetic title before submit: " + repr(title.getText(0, -1)))
+                time.sleep(0.05)
         activate("Save entry", buttons)
         element("Edit Campus review", buttons)
         capture("workspace", "campus")
