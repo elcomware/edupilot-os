@@ -12,7 +12,7 @@ help:
 	@echo 'make install                install client workspaces (Node matching package.json engines)'
 	@echo 'make up                     migrate, build and supervise native API, worker and web (foreground)'
 	@echo 'make seed-api               provision a school admin in another terminal (hidden password prompt)'
-	@echo 'make check-native           read-only prerequisite check; Go 1.25+, Node, npm, Python 3, Make'
+	@echo 'make check-native           read-only prerequisite check; Go 1.26.10+, Node, npm, Python 3, Make'
 	@echo 'make down                   explain native stop; Ctrl-C in the make up terminal stops its processes'
 	@echo 'make migrate                apply native database migrations from .env (SQLite default)'
 	@echo 'make setup                  generate a private .env (also runs automatically at startup)'

@@ -1,6 +1,6 @@
 import { expect, type APIRequestContext, type Page } from "@playwright/test";
 
-type Slot = "A" | "B";
+type Slot = "A" | "B" | "ROSTER" | "PREFS" | "PREFS_OTHER" | "NAV" | "NAV_OTHER";
 type Account = { school: string; email: string; password: string };
 
 export function account(slot: Slot): Account {
@@ -22,13 +22,20 @@ export async function loginForm(page: Page, user: Account) {
   await page.getByLabel("Email", { exact: true }).fill(user.email);
   await page.getByLabel("Password", { exact: true }).fill(user.password);
   const submit = page.getByRole("button", { name: "Sign in", exact: true });
-  await submit.click();
+  const [response] = await Promise.all([
+    page.waitForResponse((r) =>
+      new URL(r.url()).pathname === "/api/v1/session" && r.request().method() === "POST",
+    ),
+    submit.click(),
+  ]);
+  // Never include the session body, request data or authorization headers in reports.
+  expect(response.status(), "browser sign-in HTTP status").toBe(200);
   await expect(page.getByLabel("School ID", { exact: true })).toHaveCount(0);
 }
 
 export async function session(request: APIRequestContext, user: Account) {
   const response = await request.post("/api/v1/session", { data: user });
-  expect(response.ok()).toBe(true);
+  expect(response.status(), "API sign-in HTTP status").toBe(200);
   const body = await response.json();
   expect(body.principal.school).toBe(user.school);
   expect(typeof body.token).toBe("string");

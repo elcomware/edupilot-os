@@ -4,7 +4,7 @@ A school operating system starter built on Goravel 1.18. The repository contains
 
 ## Start a school workspace
 
-Install Go 1.25 or newer, Python 3, Make, and Node matching `package.json` engines (Node 22.13+, 24.3+, or 26+; Node 24 is a good default). Native supervision requires a POSIX Python build with `waitid`/`WNOWAIT` support (commonly Linux or WSL; availability varies on macOS). From a fresh clone run:
+Install Go 1.26.10 or newer, Python 3, Make, and Node matching `package.json` engines (Node 22.13+, 24.3+, or 26+; Node 24 is a good default). Native supervision requires a POSIX Python build with `waitid`/`WNOWAIT` support (commonly Linux or WSL; availability varies on macOS). From a fresh clone run:
 
 ```sh
 make install
@@ -35,6 +35,10 @@ Docker Compose is optional: `make docker-up` and `make docker-seed` start and pr
 
 The browser keeps its bearer in memory. Reloading requires signing in again. The mobile client stores its bearer in device secure storage and uses the same API. Desktop connects to an operator-configured API origin.
 
+## Release plan and present limits
+
+The [Scrum backlog](docs/superpowers/plans/2026-11-06-production-release.md) and [release status](docs/release/status.md) distinguish delivered workflows from planned features. Today the starter scopes records to a school. The [group tenancy specification](docs/product/tenancy-and-placement.md) defines the verified hierarchy, shared/dedicated placement and controlled tenant moves; those workflows are not yet enabled.
+
 ## Develop and extend
 
 | Task | Start here |
@@ -49,4 +53,4 @@ The browser keeps its bearer in memory. Reloading requires signing in again. The
 
 Set `EDUPILOT_ENABLED_MODULES` to a comma-separated list to restrict the catalog and its routes for a deployment. The default includes all modules. Enable `students` whenever you enable `enrollment`.
 
-The implementation extends the standard Goravel v1.18.0 tree, including its Artisan entry points, app facades, providers, migrations and dependency pins. The upstream MIT license is preserved in [LICENSE](LICENSE).
+The implementation extends the standard Goravel v1.18.0 tree, including its Artisan entry points, app facades, providers, migrations and its module layout. The [dependency evidence](docs/release/evidence/2026-11-06-dependencies.md) documents the pinned upstream compatibility fix. The upstream MIT license is preserved in [LICENSE](LICENSE).

@@ -6,7 +6,7 @@ test("an admin registers, edits and archives a student through the web app", asy
   page,
   request,
 }) => {
-  const user = account("A");
+  const user = account("ROSTER");
   const family = "Lifecycle " + randomUUID().slice(0, 8);
   await page.goto("/#/modules/students");
   await loginForm(page, user);
@@ -72,7 +72,7 @@ test("an admin registers, edits and archives a student through the web app", asy
 test("appearance and density survive reload and sign-in for the same administrator", async ({
   page,
 }) => {
-  const user = account("A");
+  const user = account("PREFS");
   await page.goto("/#/settings");
   await loginForm(page, user);
   const screen = page.locator("html");
@@ -96,7 +96,7 @@ test("appearance and density survive reload and sign-in for the same administrat
 
   // Same browser, second real school: settings are scoped to principal and school.
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
-  await loginForm(page, account("B"));
+  await loginForm(page, account("PREFS_OTHER"));
   await expect(page.getByLabel("Appearance", { exact: true })).toHaveValue(
     "system",
   );

@@ -35,3 +35,5 @@ The starter phase deliberately deferred tests. The production phase now runs ava
 The **Native verification** workflow runs on pushes to main/release branches, pull requests and manual dispatch. It installs PostgreSQL natively for its integration job, runs Go checks, client tests/builds, native launcher tests and the native browser stack. The existing **Manual verification** workflow retains an explicitly optional Docker matrix. Workflow definitions are not evidence of a successful remote run; link actual run results before closing a release gate.
 
 Use `make test-native test-go test-web test-mobile test-desktop` for local suites. Browser setup and disposable accounts are documented in [tests/e2e/README.md](../tests/e2e/README.md). Test imports, migrations, moves and recovery only on disposable data. Every new multi-tenant/group workflow adds sibling-school and cross-tenant cases; the starter's school isolation test alone does not verify the new hierarchy.
+
+The [security and hosted-run follow-up](release/evidence/2026-11-06-dependencies.md) records the first native PostgreSQL and browser results, the isolated fixture fix, and the updated dependency scans.

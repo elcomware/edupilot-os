@@ -166,8 +166,8 @@ def check_environment(root):
     require_process_ownership()
     require_tools(("go", "node", "npm", "make"))
     go = re.search(r"\bgo(\d+)\.(\d+)(?:\.(\d+))?\b", version_output(["go", "version"], "Go"))
-    if not go or tuple(int(part or 0) for part in go.groups()) < (1, 25, 0):
-        raise RequirementError("Go 1.25 or newer is required; ensure the Go compiler is on PATH")
+    if not go or tuple(int(part or 0) for part in go.groups()) < (1, 26, 10):
+        raise RequirementError("Go 1.26.10 or newer is required; ensure the Go compiler is on PATH")
     node = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)", version_output(["node", "--version"], "Node"))
     try:
         engines = json.loads((root / "package.json").read_text())["engines"]["node"]

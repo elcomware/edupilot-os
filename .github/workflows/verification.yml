@@ -41,6 +41,9 @@ jobs:
           echo "EDUPILOT_TEST_POSTGRES_DSN=postgres://edupilot_test:$test_password@127.0.0.1:5432/edupilot_test?sslmode=disable" >> "$GITHUB_ENV"
       - name: Unit, feature, integration and architecture tests
         run: go test -count=1 -p 4 ./...
+      - name: Reachable Go vulnerability check
+        if: matrix.database == 'sqlite'
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
       - name: Static analysis and production build
         run: |
           go vet -p 4 ./...
@@ -60,6 +63,8 @@ jobs:
           go-version-file: clients/desktop/go.mod
       - name: Install client workspaces
         run: npm ci --ignore-scripts
+      - name: Dependency vulnerability check
+        run: npm audit --audit-level=moderate
       - name: Native launcher specifications
         run: python3 -m unittest discover -s scripts/tests -v
       - name: Web and mobile tests and builds

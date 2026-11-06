@@ -15,7 +15,7 @@ Plan: [Production release backlog](../superpowers/plans/2026-11-06-production-re
 | Increment | State | Evidence / next action |
 |---|---|---|
 | Plan / Task 1 | Verified/pushed | Remote commits `2c72280`, `2e03da6`; all 42 modules mapped to full UI stories; independent scope reviews incorporated |
-| S01 Native/test baseline | In progress | Native launcher/branding reviewed; 13 Python, 33 Go test/subtest events, 14 web, 9 mobile, 14 gateway and 3 API E2E passed; CI/browser/PostgreSQL gates pending |
+| S01 Native/test baseline | In progress | Native launcher and dependency checks reviewed. Hosted SQLite and PostgreSQL baseline passed; browser fixture fix awaiting rerun |
 | S02 Group tenancy + full frontend foundation | Planned | Scope/legacy migration, authorized context UI, inherited customization, multilingual records and browser qualification |
 | S03–S17 Domain delivery | Planned | Story-by-story backend + full UI + tests; see dependencies in plan |
 | S18 Operations + tenant mobility | Planned | Fenced shared/isolated/cross-engine moves, native packaging, backup/restore, upgrade and observability |
@@ -35,6 +35,6 @@ Plan: [Production release backlog](../superpowers/plans/2026-11-06-production-re
 
 ## Evidence
 
-See [verification](../verification.md) and [baseline evidence](evidence/2026-11-06-baseline.json). Chromium cannot launch here (Unix socket EPERM), PostgreSQL and S3 services are unavailable. Native CI is configured to run browser/PostgreSQL checks; no remote pass is claimed before observing its results.
+See [verification](../verification.md) and [baseline evidence](evidence/2026-11-06-baseline.json). Chromium cannot launch here (Unix socket EPERM), PostgreSQL and S3 services are unavailable. Both backend jobs passed on [hosted native CI](https://github.com/elcomware/edupilot-os/actions/runs/42140789673); client job passed four of five journeys. The preference reload exposed a shared test identity hitting the real login limit.
 
-Dependency audits are an active release task: the first Go scan reported 36 reachable advisories, including the installed Go 1.26.3 standard library. Patched toolchain/module and frontend tool updates are being verified in a separate checkpoint. No release candidate is tagged.
+[Dependency and fixture evidence](evidence/2026-11-06-dependencies.md): patched source and compiled API scans report zero affected vulnerabilities; root and E2E npm audits report zero. No release candidate is tagged.

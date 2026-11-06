@@ -2,7 +2,7 @@
 
 ## Start natively
 
-Install Go 1.25+, Python 3, Make, and Node matching the root `package.json` engines: `^22.13.0 || ^24.3.0 || >=26` (Node 24.3+ is recommended). Native supervision requires a POSIX Python build with `waitid`/`WNOWAIT` support (commonly Linux or WSL; availability varies on macOS). `make check-native` verifies that capability before any service is started. The normal startup path needs no Docker or PostgreSQL server. From the repository root:
+Install Go 1.26.10+, Python 3, Make, and Node matching the root `package.json` engines: `^22.13.0 || ^24.3.0 || >=26` (Node 24.3+ is recommended). Native supervision requires a POSIX Python build with `waitid`/`WNOWAIT` support (commonly Linux or WSL; availability varies on macOS). `make check-native` verifies that capability before any service is started. The normal startup path needs no Docker or PostgreSQL server. From the repository root:
 
 ```sh
 make install

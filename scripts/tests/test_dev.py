@@ -78,7 +78,7 @@ class NativeLauncherTests(unittest.TestCase):
             time.sleep(0.02)
         self.fail(f"child {pid} survived launcher shutdown")
 
-    def check_fixture(self, node_version="v24.3.0", go_version="go version go1.25.0 linux/amd64"):
+    def check_fixture(self, node_version="v24.3.0", go_version="go version go1.26.10 linux/amd64"):
         tools = self.root / "tools"
         tools.mkdir()
         for name, output in (("go", go_version), ("node", node_version), ("npm", "11.0.0"), ("make", "GNU Make 4.3")):
@@ -117,6 +117,11 @@ class NativeLauncherTests(unittest.TestCase):
         self.assertIn("waitid", result.stderr)
         self.assertIn("docker-up", result.stderr)
         self.assertFalse((self.root / "tmp").exists())
+
+    def test_check_rejects_unpatched_go_toolchain(self):
+        result = self.run_check(self.check_fixture(go_version="go version go1.26.3 linux/amd64"))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("1.26.10", result.stderr)
 
     def test_check_rejects_node_outside_package_engines(self):
         result = self.run_check(self.check_fixture(node_version="v20.19.0"))

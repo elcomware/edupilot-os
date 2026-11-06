@@ -13,7 +13,8 @@ for attempt in {1..60}; do
   sleep 2
 done
 
-for slot in A B; do
+# Keep browser journeys independent of the real per-account sign-in limit.
+for slot in A B ROSTER PREFS PREFS_OTHER NAV NAV_OTHER; do
   school="e2e-$(openssl rand -hex 8)"
   email="admin@${school}.example"
   password=$(openssl rand -hex 24)
@@ -22,4 +23,4 @@ for slot in A B; do
   EDUPILOT_SEED_SCHOOL="$school" EDUPILOT_SEED_EMAIL="$email" EDUPILOT_SEED_PASSWORD="$password" \
     bash scripts/seed-admin.sh "${seed_args[@]}"
 done
-make e2e
+(cd tests/e2e && npm run test --workspaces=false -- "$@")

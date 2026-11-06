@@ -14,5 +14,9 @@
     "dev:web": "npm run dev --workspace @edupilot/web",
     "build:web": "npm run build --workspace @edupilot/web",
     "test:web": "npm run test --workspace @edupilot/web"
+  },
+  "overrides": {
+    "glob": "14.0.2",
+    "minimatch": "11.0.1"
   }
 }
