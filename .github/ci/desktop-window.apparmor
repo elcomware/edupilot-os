@@ -1,0 +1,8 @@
+abi <abi/4.0>,
+include <tunables/global>
+
+# The disposable runner installs this single executable as root. WebKit uses
+# user namespaces to sandbox its child processes on Ubuntu.
+profile edupilot-ci-window /opt/edupilot-ci-window/edupilot flags=(unconfined) {
+  userns,
+}

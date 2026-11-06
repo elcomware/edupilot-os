@@ -82,7 +82,15 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev libx11-dev xvfb xauth xdotool dbus-x11
           node clients/desktop/scripts/build.mjs
-          bash scripts/check-desktop-window.sh clients/desktop/bin/edupilot
+          sudo install -D -o root -g root -m 0755 clients/desktop/bin/edupilot /opt/edupilot-ci-window/edupilot
+          sudo apparmor_parser -a .github/ci/desktop-window.apparmor
+          cleanup_window_fixture() {
+            sudo apparmor_parser -R .github/ci/desktop-window.apparmor
+            sudo rm -f /opt/edupilot-ci-window/edupilot
+            sudo rmdir /opt/edupilot-ci-window
+          }
+          trap cleanup_window_fixture EXIT
+          bash scripts/check-desktop-window.sh /opt/edupilot-ci-window/edupilot
       - name: Build the Windows desktop executable
         working-directory: clients/desktop
         env:
