@@ -10,3 +10,5 @@
 | Combined backend | Full Go suite, vet and build after review fixes | 69 test/subtest passes, 9 explicit local service skips, zero test failures. Vet and build passed. Eight skips require PostgreSQL. One requires a private S3 test bucket. |
 
 The SQL checks protect table structure and ownership constraints. Activation, copy/resume, current grants on every business request and operator-driven placement moves have separate acceptance criteria. Operators must keep the starter runtime in school scope until those criteria pass.
+
+[Hosted qualification of the additive schema](https://github.com/elcomware/edupilot-os/actions/runs/42146773212) passed all three jobs. The PostgreSQL job exercised ownership constraints, immutable pool registrations, starter migration and receipt replay on a native PostgreSQL server. The browser job exercised all six live journeys on the migrated native stack. The private S3 provider test still requires credentials and an isolated bucket.
