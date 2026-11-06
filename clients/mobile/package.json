@@ -13,6 +13,9 @@
   },
   "dependencies": {
     "@edupilot/api-client": "0.1.0",
+    "@edupilot/auth": "0.1.0",
+    "@edupilot/core": "0.1.0",
+    "@edupilot/tenancy": "0.1.0",
     "expo": "58.0.23",
     "expo-localization": "58.0.5",
     "expo-secure-store": "58.0.2",
@@ -25,5 +28,9 @@
     "@types/react": "19.3.0",
     "tsx": "4.20.6",
     "typescript": "5.9.3"
+  },
+  "imports": {
+    "#endpoint": "./src/endpoint.ts",
+    "#manifest": "./app.json"
   }
 }

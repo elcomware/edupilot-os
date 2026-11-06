@@ -7,15 +7,7 @@
     "types": [
       "react",
       "node"
-    ],
-    "paths": {
-      "@resources/*": [
-        "../../resources/js/*"
-      ],
-      "@native/*": [
-        "../../resources/native/*"
-      ]
-    }
+    ]
   },
   "include": [
     "**/*.ts",

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import type { Credentials, Principal } from "@edupilot/api-client";
-import { SessionModel, type TokenStore } from "../../../resources/native/session.ts";
+import { SessionModel, type TokenStore } from "@edupilot/core/native/session";
 
 const principal: Principal = {
   id: "fixture-user",

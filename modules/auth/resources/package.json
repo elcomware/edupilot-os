@@ -1,0 +1,28 @@
+{
+  "name": "@edupilot/auth",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./web": "./js/pages.web.ts",
+    "./native": "./js/pages.native.ts"
+  },
+  "dependencies": {
+    "@edupilot/core": "0.1.0",
+    "@edupilot/api-client": "0.1.0",
+    "@tanstack/react-query": "5.90.7",
+    "lucide-react": "0.552.0"
+  },
+  "peerDependencies": {
+    "react": "19.3.0",
+    "react-native": "0.88.1"
+  },
+  "peerDependenciesMeta": {
+    "react-native": {
+      "optional": true
+    }
+  },
+  "imports": {
+    "#account": "./js/account.ts"
+  }
+}

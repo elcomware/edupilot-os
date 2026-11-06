@@ -5,7 +5,8 @@
   "workspaces": [
     "clients/web",
     "clients/mobile",
-    "packages/*"
+    "packages/*",
+    "modules/*/resources"
   ],
   "engines": {
     "node": "^22.13.0 || ^24.3.0 || >=26"
@@ -13,7 +14,8 @@
   "scripts": {
     "dev:web": "npm run dev --workspace @edupilot/web",
     "build:web": "npm run build --workspace @edupilot/web",
-    "test:web": "npm run test --workspace @edupilot/web"
+    "test:web": "npm run test --workspace @edupilot/web",
+    "test:resources": "node --test tests/architecture/ui-resources.test.mjs && node modules/core/resources/brand/build-palette.mjs --check"
   },
   "overrides": {
     "glob": "14.0.2",

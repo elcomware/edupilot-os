@@ -151,7 +151,7 @@ All domain stories below include unit rules, SQLite/PostgreSQL repository tests,
 
 | Story / pts | Deliverable and owned files | Acceptance |
 |---|---|---|
-| UI-01 / 5 | Shared responsive shell/navigation, route metadata and capability-aware actions (`resources/js/layouts`, `app/router.ts`, shared client contracts) | Mobile navigation closes/restores focus; active page/breadcrumb correct; revoked permission removes actions; no cross-user content flash |
+| UI-01 / 5 | Shared responsive shell/navigation, route metadata and capability-aware actions (`modules/core/resources/js/layouts`, `app/router.ts`, shared client contracts) | Mobile navigation closes/restores focus; active page/breadcrumb correct; revoked permission removes actions; no cross-user content flash |
 | UI-02 / 8 | Shared list/detail/editor/calendar/board/roster/ledger/report/settings templates (`components`, `features`) | Each template has a real consuming domain page, consistent spacing and all asynchronous states; no unused template catalog masquerading as pages |
 | UI-03 / 5 | Workspace preferences: theme, accent, density, width, pins/order, selected views/columns (`features/preferences`, `app/preferences.ts`) | Changes apply across pages and Wails; reset works; school/user isolation; denied storage handled gracefully |
 | UI-04 / 8 | Durable navigation and recovery: URL-safe filters, unsaved-change dialog, error boundary, session/offline/conflict feedback | Browser back/forward preserves safe filters, cancellation retains drafts, unknown write result never says success, no native confirm dialog for app navigation |
@@ -219,7 +219,7 @@ All domain stories below include unit rules, SQLite/PostgreSQL repository tests,
 
 ## Task 3: Deliver group tenancy and full frontend foundation (S02)
 
-**Files:** `modules/core/access`, `modules/core/database`, `modules/auth`, `modules/tenancy`, `database/edumigrations`, `clients/web/src/app`, `resources/js/layouts`, `resources/js/components`, `resources/js/features/preferences`, `clients/web/src/tests`, `tests/e2e/specs`, design documents.
+**Files:** `modules/core/access`, `modules/core/database`, `modules/auth`, `modules/tenancy`, `database/edumigrations`, `clients/web/src/app`, `modules/core/resources/js/layouts`, `modules/core/resources/js/components`, `modules/core/resources/js/features/preferences`, `clients/web/src/tests`, `tests/e2e/specs`, design documents.
 **Interfaces:** Extend existing `Preferences`, `readRoute` and shared primitives; keep API DTOs in `packages/api-client`. Use one shared confirmation/navigation controller for dirty editors, not per-page browser dialogs. Route metadata maps existing module keys to UI capability/status; it does not grant permissions.
 
 - [ ] Refine TEN-02..04, ORG/CTX/CFG/LNG enabling stories from the tenancy specification before broad UI/domain changes. Implement scope mapping/migration/authorization first with upgrade and sibling-scope isolation tests.

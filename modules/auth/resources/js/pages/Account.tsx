@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Principal } from "@edupilot/api-client";
-import { api } from "@resources/app/session";
-import { useLocale } from "@resources/app/preferences";
-import { t } from "@resources/app/copy";
-import { PageHeading, StatePanel } from "@resources/components/primitives";
-import { Button, Card, Skeleton } from "@resources/components/Surface";
-import { accountLabel } from "../account";
+import { api } from "@edupilot/core/web/app/session";
+import { useLocale } from "@edupilot/core/web/app/preferences";
+import { t } from "@edupilot/core/web/app/copy";
+import { PageHeading, StatePanel } from "@edupilot/core/web/components/primitives";
+import { Button, Card, Skeleton } from "@edupilot/core/web/components/Surface";
+import { accountLabel } from "#account";
 
 export function Account({
   principal,

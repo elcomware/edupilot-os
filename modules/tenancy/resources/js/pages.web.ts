@@ -1,1 +1,2 @@
-export { WorkspacePage as Workspace } from "../../../../resources/js/features/collections/WorkspacePage";
+export { WorkspacePage as Workspace } from "@edupilot/core/web/features/collections/WorkspacePage";
+export { default as directoryIcon } from "@edupilot/core/brand/icons/school.svg";

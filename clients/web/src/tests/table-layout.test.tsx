@@ -2,12 +2,12 @@
 import { afterEach, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { WorkspaceTable } from "../../../../resources/js/components/WorkspaceTable";
+import { WorkspaceTable } from "@edupilot/core/web/components/WorkspaceTable";
 import {
   parsePreferences,
   preferenceKey,
   usePreferences,
-} from "../../../../resources/js/app/preferences";
+} from "@edupilot/core/web/app/preferences";
 const staff = { school: "north", id: "staff", permissions: [] };
 afterEach(() => {
   cleanup();

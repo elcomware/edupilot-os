@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ArrowRight, KeyRound, Languages } from "lucide-react";
-import { api, useAuth } from "@resources/app/session";
-import { t, type CopyKey } from "@resources/app/copy";
-import { errorKey } from "@resources/app/errors";
-import { useLocale, usePreferences } from "@resources/app/preferences";
-import { WelcomeLayout } from "@resources/layouts/WelcomeLayout";
+import { api, useAuth } from "@edupilot/core/web/app/session";
+import { t, type CopyKey } from "@edupilot/core/web/app/copy";
+import { errorKey } from "@edupilot/core/web/app/errors";
+import { useLocale, usePreferences } from "@edupilot/core/web/app/preferences";
+import { WelcomeLayout } from "@edupilot/core/web/layouts/WelcomeLayout";
 export function Login() {
   const l = useLocale(),
     update = usePreferences((s) => s.update),

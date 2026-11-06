@@ -2,7 +2,7 @@
 
 ## Installed foundation
 
-The installed tree contains Core, Auth and Tenancy. The school directory offers Auth and Tenancy. Auth owns users, school roles, permissions and sessions. Core supplies shared contracts, infrastructure and root UI resources. Native setup is the default.
+The installed tree contains Core, Auth and Tenancy. The school directory offers Auth and Tenancy. Auth owns users, school roles, permissions and sessions. Core supplies shared contracts, infrastructure and UI resources under `modules/core/resources`. Native setup is the default.
 
 Add business modules as their workflows are implemented. Keep users, roles and permissions inside Auth. Register services through Goravel IoC, define migrations with Goravel Blueprint, and register web and native pages at build time. Verify module isolation, access controls, both databases and each client journey.
 

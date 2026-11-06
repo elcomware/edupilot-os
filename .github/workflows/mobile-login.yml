@@ -7,7 +7,6 @@ on:
       - '.github/workflows/mobile-login.yml'
       - 'clients/mobile/**'
       - 'modules/auth/**'
-      - 'resources/**'
       - 'modules/core/**'
       - 'modules/tenancy/**'
       - 'packages/api-client/**'

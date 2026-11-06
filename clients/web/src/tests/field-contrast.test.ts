@@ -1,27 +1,29 @@
 // @vitest-environment jsdom
 import { expect, it } from "vitest";
+import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 
-// Read the canonical stylesheet, rather than copying its colors into fixtures.
+const resolve = createRequire(import.meta.url).resolve;
 const style = document.createElement("style");
-style.textContent = readFileSync(resolve(import.meta.dirname, "../../../../resources/css/tokens.css"), "utf8");
+style.textContent = ["@edupilot/core/brand/palette.css", "@edupilot/core/css/tokens.css"]
+  .map((name) => readFileSync(resolve(name), "utf8")).join("\n");
 document.head.append(style);
 const rules = Array.from(style.sheet!.cssRules).filter(
   (rule): rule is CSSStyleRule => rule.type === CSSRule.STYLE_RULE,
 );
 style.remove();
 
-function token(theme: "light" | "dark", name: string) {
-  const base = rules.find((rule) => rule.selectorText === ":root");
-  const dark = rules.find(
-    (rule) => rule.selectorText === ':root[data-theme="dark"]',
-  );
-  if (!base || !dark) throw new Error("Missing canonical theme declarations");
-  return (
-    (theme === "dark" && dark.style.getPropertyValue(name)) ||
-    base.style.getPropertyValue(name)
-  ).trim();
+function token(theme: "light" | "dark", name: string): string {
+  const selectors = theme === "dark" ? [':root[data-theme="dark"]', ":root"] : [":root"];
+  for (const selector of selectors) {
+    for (const rule of rules.filter((item) => item.selectorText === selector).reverse()) {
+      const value = rule.style.getPropertyValue(name).trim();
+      if (!value) continue;
+      const ref = /^var\((--[a-z-]+)\)$/.exec(value);
+      return ref ? token(theme, ref[1]) : value;
+    }
+  }
+  throw new Error("Missing theme token " + name);
 }
 
 function luminance(hex: string) {

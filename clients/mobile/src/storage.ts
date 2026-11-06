@@ -1,5 +1,5 @@
 import * as SecureStore from "expo-secure-store";
-import type { TokenStore } from "../../../resources/native/session";
+import type { TokenStore } from "@edupilot/core/native/session";
 
 const key = "edupilot.session.v1";
 const options: SecureStore.SecureStoreOptions = {

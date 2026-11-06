@@ -17,15 +17,7 @@
     "types": [
       "vite/client",
       "node"
-    ],
-    "paths": {
-      "@resources/*": [
-        "../../resources/js/*"
-      ],
-      "@native/*": [
-        "../../resources/native/*"
-      ]
-    }
+    ]
   },
   "include": [
     "src",

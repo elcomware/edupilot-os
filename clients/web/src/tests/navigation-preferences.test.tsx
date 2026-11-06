@@ -3,9 +3,9 @@ import { beforeAll, beforeEach, afterEach, describe, it, expect, vi } from "vite
 import { render, screen, within, cleanup } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ModuleDescriptor } from "@edupilot/api-client";
-import { usePreferences, preferenceKey } from "../../../../resources/js/app/preferences";
-import { PreferencesPage } from "../../../../resources/js/features/preferences/PreferencesPage";
-import { TenantAdminLayout } from "../../../../resources/js/layouts/TenantAdminLayout";
+import { usePreferences, preferenceKey } from "@edupilot/core/web/app/preferences";
+import { PreferencesPage } from "@edupilot/core/web/features/preferences/PreferencesPage";
+import { TenantAdminLayout } from "@edupilot/core/web/layouts/TenantAdminLayout";
 
 const person = { school: "north", id: "staff", permissions: ["modules.read"] };
 const modules: ModuleDescriptor[] = [
@@ -107,7 +107,7 @@ describe("scoped workspace reset", () => {
     dialog = screen.getByRole("dialog", { name: "Réinitialiser cet espace ?" });
     await user.click(within(dialog).getByRole("button", { name: "Réinitialiser les préférences" }));
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(usePreferences.getState().value).toMatchObject({ locale: "en", appearance: "system", accent: "pine", density: "comfortable", width: "standard", pins: [] });
+    expect(usePreferences.getState().value).toMatchObject({ locale: "en", appearance: "system", accent: "garnet", density: "comfortable", width: "standard", pins: [] });
     expect(localStorage.getItem(preferenceKey(person))).toBeNull();
     expect([otherUser, otherSchool].map(p => localStorage.getItem(preferenceKey(p)))).toEqual(savedOther);
     expect(localStorage.getItem("unrelated-session-marker")).toBe("untouched");

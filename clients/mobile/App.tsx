@@ -11,7 +11,6 @@ import {
   Platform,
   ScrollView,
   StatusBar,
-  Text,
   View,
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
@@ -23,13 +22,13 @@ import {
   type ModuleDescriptor,
 } from "@edupilot/api-client";
 import { apiRoot } from "./src/endpoint";
-import { SessionModel } from "../../resources/native/session";
+import { SessionModel } from "@edupilot/core/native/session";
 import { tokenStore } from "./src/storage";
-import { copy, type Locale, type Translator } from "../../resources/native/strings";
-import { Action, Notice, Spinner, s } from "../../resources/native/ui";
-import { LoginPage, workspacePages } from "../../resources/js/pages.native";
-import { Catalog } from "../../resources/native/screens/Catalog";
-import { blank, type Draft } from "../../resources/native/screens/Register";
+import { copy, type Locale, type Translator } from "@edupilot/core/native/strings";
+import { Action, Brand, Notice, Spinner, s } from "@edupilot/core/native/ui";
+import { directoryIcons, LoginPage, workspacePages } from "./src/pages";
+import { Catalog } from "@edupilot/core/native/screens/Catalog";
+import { blank, type Draft } from "@edupilot/core/native/screens/Register";
 
 const root = apiRoot(process.env.EXPO_PUBLIC_API_ORIGIN, __DEV__);
 const timeoutFetch: typeof fetch = (input, init) => {
@@ -88,6 +87,7 @@ function Member({
         />
       ) : (
         <Catalog
+          icons={directoryIcons}
           api={api}
           principal={principal}
           open={setModule}
@@ -174,7 +174,7 @@ export default function App() {
       <SafeAreaView style={s.full}>
         <View style={s.header}>
           <View style={s.headerInner}>
-            <Text style={s.logo}>{t("brand")}</Text>
+            <Brand label={t("brand")} />
             <Action
               label={t("language")}
               variant="dark"

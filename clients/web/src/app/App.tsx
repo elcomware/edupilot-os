@@ -1,19 +1,19 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Session } from "@edupilot/api-client";
-import { api, useAuth } from "../../../../resources/js/app/session";
+import { api, useAuth } from "@edupilot/core/web/app/session";
 import {
   useLocale,
   usePreferences,
-} from "../../../../resources/js/app/preferences";
-import { useRoute } from "../../../../resources/js/app/router";
-import { t } from "../../../../resources/js/app/copy";
-import { errorKey } from "../../../../resources/js/app/errors";
-import { LoginPage, workspacePages } from "../../../../resources/js/pages.web";
-import { Directory } from "../../../../resources/js/features/directory/Directory";
-import { PreferencesPage } from "../../../../resources/js/features/preferences/PreferencesPage";
-import { TenantAdminLayout } from "../../../../resources/js/layouts/TenantAdminLayout";
-import { StatePanel } from "../../../../resources/js/components/primitives";
+} from "@edupilot/core/web/app/preferences";
+import { useRoute } from "@edupilot/core/web/app/router";
+import { t } from "@edupilot/core/web/app/copy";
+import { errorKey } from "@edupilot/core/web/app/errors";
+import { directoryIcons, LoginPage, workspacePages } from "./pages";
+import { Directory } from "@edupilot/core/web/features/directory/Directory";
+import { PreferencesPage } from "@edupilot/core/web/features/preferences/PreferencesPage";
+import { TenantAdminLayout } from "@edupilot/core/web/layouts/TenantAdminLayout";
+import { StatePanel } from "@edupilot/core/web/components/primitives";
 function PreferencesEffect() {
   const prefs = usePreferences((s) => s.value);
   useEffect(() => {
@@ -111,7 +111,7 @@ function SignedIn({ session }: { session: Session }) {
     ) : (
       <StatePanel type="error" title={t(l, "unavailable")} />
     );
-  else content = <Directory modules={modules.data.items} />;
+  else content = <Directory modules={modules.data.items} icons={directoryIcons} />;
   return (
     <TenantAdminLayout
       principal={principal}

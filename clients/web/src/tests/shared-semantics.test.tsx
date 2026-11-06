@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, expect, it } from "vitest";
 import { cleanup, render, screen, within } from "@testing-library/react";
-import { Brand, Dialog } from "../../../../resources/js/components/primitives";
+import { Brand, Dialog } from "@edupilot/core/web/components/primitives";
 
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal = function () { this.open = true; };

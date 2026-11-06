@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { View } from "react-native";
-import type { SessionModel, SessionState } from "@native/session";
-import type { Translator } from "@native/strings";
-import { Action, Field, Heading, Notice, s } from "@native/ui";
+import type { SessionModel, SessionState } from "@edupilot/core/native/session";
+import type { Translator } from "@edupilot/core/native/strings";
+import { Action, Field, Heading, Notice, s } from "@edupilot/core/native/ui";
 
 export function Login({
   model,

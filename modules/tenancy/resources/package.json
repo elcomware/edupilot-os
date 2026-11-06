@@ -1,0 +1,13 @@
+{
+  "name": "@edupilot/tenancy",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./web": "./js/pages.web.ts",
+    "./native": "./js/pages.native.ts"
+  },
+  "dependencies": {
+    "@edupilot/core": "0.1.0"
+  }
+}

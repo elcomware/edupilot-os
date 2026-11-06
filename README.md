@@ -29,6 +29,6 @@ Docker Compose is optional: `make docker-up` and `make docker-seed` start and pr
 | School topology, pool ownership and school work lists | [Tenancy](modules/tenancy/) |
 | Reusable Go contracts, events, scope, presentation and database primitives | [Core](modules/core/) |
 | Installed services and migrations | [Bootstrap](bootstrap/) |
-| Welcome and admin layouts, controls, native UI and page registration | [Shared resources](resources/README.md) |
+| Welcome and admin layouts, controls, native UI and page registration | [Shared resources](modules/core/resources/README.md) |
 
 The API enforces school scope on every protected request. My account lists the current school role and effective permissions. The Schools workspace manages titled entries with version checks. The [release board](docs/release/status.md) tracks full hierarchy administration and other planned workflows.

@@ -1,0 +1,82 @@
+:root {
+  --ink: var(--ep-ink);
+  --muted: var(--ep-muted);
+  --paper: var(--ep-canvas);
+  --surface: var(--ep-surface);
+  --line: var(--ep-line);
+  --field-line: var(--ep-stroke);
+  --rail: var(--ep-rail);
+  --rail-ink: var(--ep-rail-ink);
+  --rail-muted: var(--ep-rail-muted);
+  --rail-current: var(--ep-rail-current);
+  --action: var(--ep-brand);
+  --accent: var(--ep-accent);
+  --on-accent: var(--ep-on-brand);
+  --tint: var(--ep-soft);
+  --accent-line: var(--ep-stroke);
+  --danger: var(--ep-danger);
+  --danger-bg: var(--ep-danger-soft);
+  --body:
+    ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --display: Georgia, "Times New Roman", serif;
+  --mono: ui-monospace, SFMono-Regular, Consolas, monospace;
+  --radius: 8px;
+  --tap: 44px;
+  --row: 17px;
+  --content: 76rem;
+  --focus: var(--ep-accent);
+  --shadow: 0 20px 80px rgb(36 20 29 / 17%);
+  --bar-thumb: var(--ep-scrollbar-active);
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+:root[data-density="compact"] {
+  --row: 10px;
+}
+:root[data-width="wide"] {
+  --content: 100rem;
+}
+:root[data-accent="pine"] {
+  --accent: #226049;
+  --action: var(--accent);
+  --tint: #e2efe5;
+  --accent-line: #80a88b;
+  --on-accent: #fff;
+}
+:root[data-accent="indigo"] {
+  --accent: #44558a;
+  --action: var(--accent);
+  --tint: #e9ecf9;
+  --accent-line: #8190c0;
+  --on-accent: #fff;
+}
+:root[data-accent="clay"] {
+  --accent: #904722;
+  --action: var(--accent);
+  --tint: #f8ebe4;
+  --accent-line: #be896e;
+  --on-accent: #fff;
+}
+:root[data-theme="dark"][data-accent="pine"] {
+  --accent: #9ad5ac;
+  --action: var(--accent);
+  --tint: #293d31;
+  --accent-line: #5f866b;
+  --on-accent: #11291a;
+}
+:root[data-theme="dark"][data-accent="indigo"] {
+  --accent: #b7c6ff;
+  --action: var(--accent);
+  --tint: #30384e;
+  --accent-line: #747ea9;
+  --on-accent: #1b2441;
+}
+:root[data-theme="dark"][data-accent="clay"] {
+  --accent: #f1b794;
+  --action: var(--accent);
+  --tint: #43342d;
+  --accent-line: #9c7763;
+  --on-accent: #332215;
+}

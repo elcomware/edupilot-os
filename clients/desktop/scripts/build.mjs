@@ -1,12 +1,13 @@
 // Input: the existing web build. Output: a native binary with those bytes embedded.
 // Invoke after npm run build --workspace @edupilot/web (from repository root).
 import { cp, mkdir, readFile, rm } from "node:fs/promises";
-import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
+import { createRequire } from "node:module";
 import { dirname, resolve, join } from "node:path";
 
-const desktop = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const webDist = resolve(desktop, "../web/dist");
+const locate = createRequire(import.meta.url).resolve;
+const webDist = join(dirname(locate("@edupilot/web/package.json")), "dist");
+const desktop = dirname(import.meta.dirname);
 const dest = resolve(desktop, "frontend/dist");
 const args = process.argv.slice(2);
 if (args.length > 1 || (args.length && args[0] !== "--assets-only"))
@@ -22,19 +23,21 @@ try {
 }
 await rm(dest, { recursive: true, force: true });
 await cp(webDist, dest, { recursive: true });
+await cp(locate("@edupilot/core/brand/png/edupilot-app-icon-256.png"), join(dest, "desktop-icon.png"));
 if (!args.includes("--assets-only")) {
-  const bin = resolve(
-    desktop,
-    "bin",
-    process.platform === "win32" ? "edupilot.exe" : "edupilot",
-  );
+  const target = process.env.GOOS ?? (process.platform === "win32" ? "windows" : process.platform);
+  const windows = target === "windows";
+  if (windows) {
+    // The resource compiler runs on the build host, including when cross-compiling.
+    const { GOOS, GOARCH, ...hostEnv } = process.env;
+    const arch = GOARCH || execFileSync("go", ["env", "GOARCH"], { encoding: "utf8" }).trim();
+    execFileSync("go", ["tool", "rsrc", "-arch", arch, "-ico",
+      locate("@edupilot/core/brand/platform/edupilot-app-icon.ico"),
+      "-o", "icon_windows_" + arch + ".syso"], { cwd: desktop, env: hostEnv, stdio: "inherit" });
+  }
+  const bin = join(desktop, "bin", windows ? "edupilot.exe" : "edupilot");
   await mkdir(dirname(bin), { recursive: true });
   const flags = ["build", "-trimpath", "-tags", "production"];
-  if (process.platform === "win32") flags.push("-ldflags=-H windowsgui");
-  const p = spawnSync("go", [...flags, "-o", bin, "."], {
-    cwd: desktop,
-    stdio: "inherit",
-  });
-  if (p.error) throw p.error;
-  if (p.status !== 0) process.exit(p.status ?? 1);
+  if (windows) flags.push("-ldflags=-H windowsgui");
+  execFileSync("go", [...flags, "-o", bin, "."], { cwd: desktop, stdio: "inherit" });
 }

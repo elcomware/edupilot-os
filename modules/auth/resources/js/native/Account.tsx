@@ -1,10 +1,10 @@
 import { useCallback } from "react";
 import { Text, View } from "react-native";
 import type { ApiClient, Locale } from "@edupilot/api-client";
-import { Action, Heading, Notice, Spinner, s } from "@native/ui";
-import type { Translator } from "@native/strings";
-import { useResource } from "@native/resource";
-import { accountLabel } from "../account";
+import { Action, Heading, Notice, Spinner, s } from "@edupilot/core/native/ui";
+import type { Translator } from "@edupilot/core/native/strings";
+import { useResource } from "@edupilot/core/native/resource";
+import { accountLabel } from "#account";
 export function Account({
   api,
   locale,

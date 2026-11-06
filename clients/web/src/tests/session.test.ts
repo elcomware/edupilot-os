@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiError, createApiClient } from "@edupilot/api-client";
-import { api, signOut, useAuth, queries } from "../../../../resources/js/app/session";
-import { parsePreferences } from "../../../../resources/js/app/preferences";
+import { api, signOut, useAuth, queries } from "@edupilot/core/web/app/session";
+import { parsePreferences } from "@edupilot/core/web/app/preferences";
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();

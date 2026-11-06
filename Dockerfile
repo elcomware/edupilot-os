@@ -17,7 +17,7 @@ COPY package*.json ./
 COPY clients/web ./clients/web
 COPY modules/auth/resources ./modules/auth/resources
 COPY modules/tenancy/resources ./modules/tenancy/resources
-COPY resources ./resources
+COPY modules/core/resources ./modules/core/resources
 COPY clients/mobile/package.json ./clients/mobile/package.json
 COPY packages/api-client ./packages/api-client
 RUN --mount=type=cache,target=/root/.npm \

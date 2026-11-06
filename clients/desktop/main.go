@@ -29,8 +29,13 @@ func main() {
 	}
 	api, closeIdle := gateway.New(origin)
 	defer closeIdle()
+	icon, err := fs.ReadFile(root, "desktop-icon.png")
+	if err != nil {
+		log.Fatal(err)
+	}
 	app := application.New(application.Options{
 		Name:        productName,
+		Icon:        icon,
 		Description: "EduPilot OS school workspace",
 		// Do not allow a development-server environment variable to swap the
 		// application supplying credentials. Serve only the embedded bundle.

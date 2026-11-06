@@ -1,0 +1,33 @@
+{
+  "name": "@edupilot/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./web/app/*": "./js/app/*.ts",
+    "./web/components/*": "./js/components/*.tsx",
+    "./web/layouts/*": "./js/layouts/*.tsx",
+    "./web/features/collections/model": "./js/features/collections/model.ts",
+    "./web/features/*": "./js/features/*.tsx",
+    "./native/screens/*": "./native/screens/*.tsx",
+    "./native/ui": "./native/ui.tsx",
+    "./native/*": "./native/*.ts",
+    "./css/*": "./css/*",
+    "./brand/*": "./brand/*"
+  },
+  "dependencies": {
+    "@edupilot/api-client": "0.1.0",
+    "@tanstack/react-query": "5.90.7",
+    "lucide-react": "0.552.0",
+    "zustand": "5.0.8"
+  },
+  "peerDependencies": {
+    "react": "19.3.0",
+    "react-native": "0.88.1"
+  },
+  "peerDependenciesMeta": {
+    "react-native": {
+      "optional": true
+    }
+  }
+}

@@ -4,9 +4,9 @@ import {
   usePreferences,
   preferenceKey,
   parsePreferences,
-} from "../../../../resources/js/app/preferences";
-import { readRoute } from "../../../../resources/js/app/router";
-import { collectionAccess, normalizeText } from "../../../../resources/js/features/collections/model";
+} from "@edupilot/core/web/app/preferences";
+import { readRoute } from "@edupilot/core/web/app/router";
+import { collectionAccess, normalizeText } from "@edupilot/core/web/features/collections/model";
 const person = (school: string, id = "staff") => ({
   school,
   id,

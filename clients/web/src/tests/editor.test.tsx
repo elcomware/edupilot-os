@@ -4,8 +4,8 @@ import { render, screen, cleanup } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ApiError } from "@edupilot/api-client";
-import { api } from "../../../../resources/js/app/session";
-import { RecordDialog } from "../../../../resources/js/features/collections/RecordDialog";
+import { api } from "@edupilot/core/web/app/session";
+import { RecordDialog } from "@edupilot/core/web/features/collections/RecordDialog";
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal = function () {
     this.setAttribute("open", "");

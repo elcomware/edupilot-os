@@ -70,6 +70,7 @@ jobs:
         run: python3 -m unittest discover -s scripts/tests -v
       - name: Web and mobile tests and builds
         run: |
+          npm run test:resources
           make test-web test-mobile
           npm run build:web
           npm run export --workspace @edupilot/mobile
@@ -93,12 +94,11 @@ jobs:
           trap cleanup_window_fixture EXIT
           bash scripts/check-desktop-window.sh /opt/edupilot-ci-window/edupilot
       - name: Build the Windows desktop executable
-        working-directory: clients/desktop
         env:
           GOOS: windows
           GOARCH: amd64
           CGO_ENABLED: '0'
-        run: go build -trimpath -tags production -ldflags="-H windowsgui" -o "$RUNNER_TEMP/edupilot.exe" .
+        run: node clients/desktop/scripts/build.mjs
       - name: Install browser runner
         working-directory: tests/e2e
         run: |

@@ -39,7 +39,7 @@ test("personal pins reorder, survive reload and reset only the current workspace
   await signOut(page);
 
   await loginForm(page, primary);
-  await expect(page.getByLabel("Accent", { exact: true })).toHaveValue("pine");
+  await expect(page.getByLabel("Accent", { exact: true })).toHaveValue("garnet");
   await expect(page.getByRole("list", { name: "Pinned navigation", exact: true })).toHaveCount(0);
   await page.getByRole("link", { name: "Back to directory", exact: true }).click();
   await expect(page.getByRole("button", {name:"Pin Schools",exact:true})).toBeVisible();

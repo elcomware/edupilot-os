@@ -16,9 +16,8 @@ on:
       - 'routes/**'
       - 'cmd/seed-admin/**'
       - 'modules/auth/**'
-      - 'modules/core/database/**'
+      - 'modules/core/**'
       - 'modules/tenancy/**'
-      - 'resources/**'
       - 'scripts/setup.py'
       - 'tests/desktop/**'
   workflow_dispatch:

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { apiRoot } from "../src/endpoint.ts";
+import { apiRoot } from "#endpoint";
 
 test("uses a deployment origin and supplies the shared API version", () => {
   assert.equal(
