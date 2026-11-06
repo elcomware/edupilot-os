@@ -229,3 +229,15 @@ Inventory the actual login roles used by legacy APIs, workers, jobs and document
     PGSERVICE=maintenance-primary python3 scripts/verify-postgres-writer-fence.py legacy_api legacy_worker
 
 The probe only reads PostgreSQL catalogs and prints a count on success. It rejects a standby, absent or login-enabled roles, surviving sessions, prepared transactions and grants of a listed role to any member. Repeat for each authoritative primary after quiescence and before resuming an interrupted upgrade. Keep the credentials fenced until the authorized runtime is ready. Independently exclude other writable identities, privileged changes, replication and external document-store access throughout maintenance. This check alone cannot authorize copy, resume or activation.
+
+## Check a dedicated local ext4 document volume
+
+Use this check for a legacy local document store on a dedicated Linux ext4 filesystem. Confirm the source document path, filesystem UUID and block device against the deployment inventory *before* entering maintenance. Use the original writer namespace and source volume. Checking a read-only backup only establishes the state of that backup.
+
+Stop and drain the writers. Under the site's maintenance procedure, remount the whole filesystem read-only and retain that state through backup, copy and verification. Check the actual configured document directory and the independently inventoried device, for example:
+
+    python3 scripts/verify-local-document-fence.py --root /srv/edupilot-volume/documents --device /dev/disk/by-uuid/APPROVED-UUID
+
+The probe opens the directory and matches its kernel mount ID and device number. It requires both the mount and the ext4 superblock to be read-only, and rejects symlinked roots, subdirectory mounts, system-root mounts and nested mounts under the document directory. It reports one verified directory without printing the path, volume identifier or file contents. Use the existing document inventory command separately to verify the bytes and references.
+
+Recheck each writer namespace and each configured source before resuming maintenance. Restrict privileged remounts, raw block access, alternate source paths and access from other hosts throughout the operation. This point-in-time result covers local filesystem writes only. SQLite ownership, remote object storage, other filesystems and upgrade authorization have separate gates.

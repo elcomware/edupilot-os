@@ -123,6 +123,7 @@ Delivered preflight increments are recorded individually. Completion of Task 4 s
 - [x] Capture logical PostgreSQL archives of two quiescent synthetic starter pools, restore each archive into its own fresh database, and qualify the restored rows and local document bytes against pre-backup inputs. Exercise an empty dedicated target and a single changed restored row through the compiled command.
 - [x] Add a point-in-time systemd check for operator-inventoried writer services and a disposable two-service CI restart drill. Unmanaged writers, other hosts and credentials remain separate gates.
 - [x] Add read-only verification for inventoried PostgreSQL writer logins on one primary and a disposable cluster regression for new logins, surviving sessions, grants and prepared transactions.
+- [x] Add a local Linux ext4 document-volume probe that checks the independently inventoried device and rejects a read-only bind view of a writable filesystem. Keep fleet, provider and coordinator gates separate.
 
 
 **Create:** `platform/tenantupgrade/{inventory,manifest,service,verify}.go`, `service_test.go`; `cmd/tenant-upgrade/{main,main_test}.go`; `database/edumigrations/legacy_upgrade_test.go`; `docs/operations/tenant-foundation-upgrade.md`. **Modify:** `database/edumigrations/readiness.go`, `cmd/migrate/main.go`.

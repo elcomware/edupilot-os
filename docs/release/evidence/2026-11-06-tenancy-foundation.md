@@ -39,3 +39,7 @@ Final local UI qualification included 34 web tests, ten mobile tests, both Expo 
 ### PostgreSQL writer credential rehearsal
 
 A disposable PostgreSQL 17.11 cluster with two synthetic writer identities rejected missing roles, a login-enabled writer, a surviving session after NOLOGIN, a grant to another role and an unresolved prepared transaction. A fresh login attempt failed while the existing session still blocked acceptance. Both clean checks passed after resolving the blockers. The local run used loopback TCP with ephemeral SCRAM credentials because the environment restricts Unix sockets. CI runs the drill on a fresh cluster using a private Unix socket. The native launcher and fence unit suite passed 17 tests locally. These checks cover one inventoried PostgreSQL primary at a time.
+
+### Dedicated ext4 document volume
+
+Local mount-table tests covered an escaped directory name, a mismatched device or mount ID, a read-only bind view with a writable superblock, nested mounts and unsupported filesystems. The CLI rejected a non-block device and emitted no success report. The privileged drill in Native verification creates a disposable ext4 loop image, shows a write through the original mount while the bind view is read-only, then attempts create, truncate and unlink through both paths after remounting the filesystem read-only. It also injects a writable nested mount. The hosted step supplies the kernel-level result for this commit.

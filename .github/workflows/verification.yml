@@ -71,6 +71,8 @@ jobs:
         run: npm audit --audit-level=moderate
       - name: Rehearse native systemd writer restart exclusion
         run: bash scripts/tests/systemd-writer-drill.sh
+      - name: Rehearse local ext4 document writer exclusion
+        run: bash scripts/tests/local-document-fence-drill.sh
       - name: Native launcher specifications
         run: python3 -m unittest discover -s scripts/tests -v
       - name: Web and mobile tests and builds
