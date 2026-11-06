@@ -6,7 +6,7 @@ Run local checks from the repository root. `make test-native test-go test-web te
 
 | Scope | Latest evidence and boundaries |
 |---|---|
-| Shared and dedicated SQL | Disposable SQLite and PostgreSQL fixtures exercise the original starter, additive group schemas, correct physical ownership, replay and read-only placement inspection. [Foundation evidence](release/evidence/2026-11-06-tenancy-foundation.md) |
+| Shared and dedicated SQL | Disposable SQLite and PostgreSQL fixtures exercise the original starter, additive group schemas, correct physical ownership, replay, read-only placement inspection and canonical frozen-source content inventory. [Foundation evidence](release/evidence/2026-11-06-tenancy-foundation.md) |
 | Browser journeys | Six native-stack journeys exercise API school isolation, enrollment retry/withdrawal, private document access, student register actions, preferences and pinned navigation. The desktop and 320px French layout captures contain synthetic fixtures. [Hosted run and captures](https://github.com/elcomware/edupilot-os/actions/runs/42148038227) |
 | Dependencies | The security checkpoint scanned reachable Go source and the compiled API, and audited the root and E2E Node dependency trees. CI checks the current checkout again. [Scan results](release/evidence/2026-11-06-dependencies.md) |
 | Historical starter baseline | The initial native run and its original limitations are preserved for comparison. [Baseline results](release/evidence/2026-11-06-baseline.json) |

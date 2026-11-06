@@ -1,6 +1,6 @@
 # Prepare the group tenancy upgrade
 
-The current release checkpoint can validate a proposed mapping file offline and inspect legacy SQL placement using read-only connections. Use the native command from the repository root:
+The current release checkpoint can inventory a frozen SQL source before mapping, validate a proposed mapping file offline and inspect legacy SQL placement using read-only connections. Use the native command from the repository root:
 
 ```sh
 go run ./cmd/tenant-upgrade -mode=validate-manifest -manifest=/private/upgrade.json
@@ -36,6 +36,50 @@ Each starter school receives its own tenant at upgrade. Creating additional scho
 
 A successful validation covers the submitted file. Database inspection, private-object reconciliation, a verified backup, maintenance fencing, copy with per-pool receipts and verification against the frozen source are separate requirements. Operators should keep the current runtime in school scope. The [release board](../release/status.md) records which upgrade phases have passed.
 
+## Inventory a frozen SQL source before mapping
+
+Stop all API, worker, seed and migrator processes and freeze every configured SQL pool before running this command. Keep the freeze in place until the inventory and independently retained backup evidence have been approved. The command obtains a repeatable, read-only snapshot on each pool; separate pools do not form one atomic cross-database snapshot.
+
+Create a mode `0600` selection file containing the complete, sorted list of legitimate historical school scopes. It contains no target UUIDs or final mapping:
+
+```json
+{
+  "version": 1,
+  "schools": ["north", "south"]
+}
+```
+
+If a verified local-document inventory already exists, its complete aggregate can be bound without exposing object keys:
+
+```json
+{
+  "version": 1,
+  "schools": ["north", "south"],
+  "documents": {
+    "version": 1,
+    "schools": 2,
+    "documents": 37,
+    "contentBytes": 184302,
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  }
+}
+```
+
+Then run:
+
+```sh
+chmod 600 /private/source-selection.json
+go run ./cmd/tenant-upgrade -mode=inventory-source -selection=/private/source-selection.json > /private/source-inventory.json
+```
+
+The selection is limited to 4 MiB and 4,096 unique, strictly sorted legacy school slugs. Exact JSON fields are required and duplicate fields are rejected. The command accepts no target identities, arbitrary SQL, DSNs or source paths. It uses the same validated native SQLite/PostgreSQL configuration as the server, with native installation as the default; Docker is not required.
+
+Every original physical pool is bound by its configured name and original singleton marker content. The report inventories 55 control tables and 47 tables on each dedicated pool: native migration history, local migration receipts, routing metadata, identity, jobs, Students, enrollment, outbox/audit and all 41 registered workspace tables. Rows are ordered by their declared primary keys. Canonical values preserve NULL versus empty, Unicode and binary bytes, normalize integers and UTC timestamps, and produce per-schema, per-table, per-pool and overall SHA-256 digests. The report contains counts and digests only, not row values, primary keys, student IDs, credentials, object keys, connection strings or file/database paths. It does not repeat the selected school list, but configured pool names can encode historical school names and remain sensitive operational metadata, so keep the report private.
+
+Exit 0 requires exact schema compatibility, complete reads, an exact match between selected schools and the placement inventory, no unknown school scope, and no placement issue. Exit 1 emits either a redacted configuration diagnostic or a JSON report with `complete=false`, issue codes and no overall digest. An absent SQLite database is not created. Never use an incomplete report as `sourceSha256`. The successful report's top-level `sha256` is the SQL source fingerprint to approve and place in the final mapping manifest.
+
+Optional document evidence binds a previously verified aggregate to this report; this checkpoint does not yet reconcile SQL/object references or re-read live object bytes. That reconciliation, backup/restore proof, maintenance fencing, copy/resume and post-copy verification remain required before activation.
+
 
 ## Inspect legacy SQL placement
 
@@ -45,7 +89,7 @@ From the native deployment directory, with the same environment and `.env` used 
 go run ./cmd/tenant-upgrade -mode=inspect-placement > /private/placement-inspection.json
 ```
 
-The mode must be explicit. A blank/default mode refuses to run. `inspect-placement` takes no manifest; `validate-manifest -manifest=PATH` remains an offline file validator. Native APP_KEY/configuration validation and process-environment-over-`.env` precedence are preserved. This command does not boot HTTP, run migrations, dispatch events, provision routes or create placement pins. It reads DB_CONNECTION/DB_DATABASE and the native PostgreSQL settings plus EDUPILOT_DEDICATED_DATABASES, using the application's validated connection names and legacy owner strings. PostgreSQL uses the same native public search_path; no arbitrary DSN/SQL input is accepted.
+The mode must be explicit. A blank/default mode refuses to run. `inspect-placement` takes no manifest; `validate-manifest -manifest=PATH` remains an offline file validator; `inventory-source -selection=PRIVATE_JSON` is the separately frozen content inventory above. Native APP_KEY/configuration validation and process-environment-over-`.env` precedence are preserved. This command does not boot HTTP, run migrations, dispatch events, provision routes or create placement pins. It reads DB_CONNECTION/DB_DATABASE and the native PostgreSQL settings plus EDUPILOT_DEDICATED_DATABASES, using the application's validated connection names and legacy owner strings. PostgreSQL uses the same native public search_path; no arbitrary DSN/SQL input is accepted.
 
 SQLite sources must already exist as regular files and are opened with `mode=ro` and `query_only=1`; an absent source is never created. SQLite uses deferred read transactions, and PostgreSQL uses read-only repeatable-read transactions plus a read-only connection default. PostgreSQL credentials are used only to connect; reports/diagnostics omit passwords, DSNs, hosts, database/file paths, physical marker IDs, user IDs, emails, password/token hashes, payloads and record bodies. School scope IDs and configured connection names remain sensitive operational metadata: keep the report private.
 

@@ -165,7 +165,7 @@ func TestLegacyPlacementInspectionMarkerAndPinCorruption(t *testing.T) {
 	}
 }
 func TestLegacyPlacementInspectionActualCommand(t *testing.T) {
-	starterFixture(t, "mixed")
+	fixture := starterFixture(t, "mixed")
 	t.Setenv("APP_KEY", "12345678901234567890123456789012")
 	ctx, cancel := context.WithTimeout(t.Context(), 60*time.Second)
 	defer cancel()
@@ -195,6 +195,41 @@ func TestLegacyPlacementInspectionActualCommand(t *testing.T) {
 	}
 	if !report.Complete || len(report.Issues) != 0 || !reflect.DeepEqual(report.Schools, inspectFixture(t).Schools) {
 		t.Fatal("native command did not inspect configured legacy routes")
+	}
+	schools := []string{fixture.Schools[0].School, fixture.Schools[1].School}
+	if schools[1] < schools[0] {
+		schools[0], schools[1] = schools[1], schools[0]
+	}
+	selectionPath := filepath.Join(environmentDir, "source-selection.json")
+	selection, err := json.Marshal(map[string]any{"version": 1, "schools": schools})
+	if err != nil || os.WriteFile(selectionPath, selection, 0600) != nil {
+		t.Fatal("could not prepare private source selection")
+	}
+	inventoryCommand := exec.CommandContext(ctx, binary, "-mode=inventory-source", "-selection="+selectionPath)
+	inventoryCommand.Dir = environmentDir
+	inventoryCommand.Env = os.Environ()
+	inventoryOutput, err := inventoryCommand.Output()
+	if err != nil {
+		if e, ok := err.(*exec.ExitError); ok {
+			t.Fatalf("native source inventory failed: %s", e.Stderr)
+		}
+		t.Fatal(err)
+	}
+	var inventory tenantupgrade.SourceInventory
+	if err := json.Unmarshal(inventoryOutput, &inventory); err != nil || !inventory.Complete || len(inventory.Issues) != 0 || len(inventory.SHA256) != 64 || len(inventory.Pools) != 2 || len(inventory.Pools[0].Tables)+len(inventory.Pools[1].Tables) != 102 {
+		t.Fatalf("invalid native source inventory: %#v %v", inventory, err)
+	}
+	for _, school := range schools {
+		if bytes.Contains(inventoryOutput, []byte(`"`+school+`"`)) {
+			t.Fatal("native source inventory disclosed a selected school identifier")
+		}
+	}
+	repeatCommand := exec.CommandContext(ctx, binary, "-mode=inventory-source", "-selection="+selectionPath)
+	repeatCommand.Dir = environmentDir
+	repeatCommand.Env = os.Environ()
+	repeated, err := repeatCommand.Output()
+	if err != nil || !bytes.Equal(inventoryOutput, repeated) {
+		t.Fatal("native source inventory was not deterministic")
 	}
 	// Removing the process override uses the native .env value; the prior
 	// successful run proves process DB_DATABASE outranks that same .env value.

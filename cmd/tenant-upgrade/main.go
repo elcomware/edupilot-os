@@ -1,4 +1,4 @@
-// Command tenant-upgrade validates mapping manifests and inspects legacy SQL placement.
+// Command tenant-upgrade validates mapping manifests and inventories frozen legacy SQL.
 package main
 
 import (
@@ -17,14 +17,15 @@ type result struct {
 	ManifestSHA256 string `json:"manifestSha256"`
 }
 
-const usage = "Usage: tenant-upgrade -mode=validate-manifest -manifest=PATH | -mode=inspect-placement"
+const usage = "Usage: tenant-upgrade -mode=validate-manifest -manifest=PATH | -mode=inspect-placement | -mode=inventory-source -selection=PRIVATE_JSON"
 
 func run(args []string, output, diagnostics io.Writer) int {
 	flags := flag.NewFlagSet("tenant-upgrade", flag.ContinueOnError)
 	// The flag parser includes unrecognized input in its own messages.
 	flags.SetOutput(io.Discard)
-	mode := flags.String("mode", "", "operation: validate-manifest or inspect-placement")
+	mode := flags.String("mode", "", "operation: validate-manifest, inspect-placement or inventory-source")
 	path := flags.String("manifest", "", "path to the private JSON mapping manifest")
+	selection := flags.String("selection", "", "path to the private version 1 source selection")
 	if err := flags.Parse(args); err != nil {
 		fmt.Fprintln(diagnostics, usage)
 		if err == flag.ErrHelp {
@@ -32,10 +33,13 @@ func run(args []string, output, diagnostics io.Writer) int {
 		}
 		return 2
 	}
-	if *mode == "inspect-placement" && *path == "" && flags.NArg() == 0 {
+	if *mode == "inspect-placement" && *path == "" && *selection == "" && flags.NArg() == 0 {
 		return inspectPlacement(output, diagnostics)
 	}
-	if *mode != "validate-manifest" || *path == "" || flags.NArg() != 0 {
+	if *mode == "inventory-source" && *path == "" && *selection != "" && flags.NArg() == 0 {
+		return inventorySource(*selection, output, diagnostics)
+	}
+	if *mode != "validate-manifest" || *path == "" || *selection != "" || flags.NArg() != 0 {
 		fmt.Fprintln(diagnostics, usage)
 		return 2
 	}

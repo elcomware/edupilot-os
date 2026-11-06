@@ -69,8 +69,42 @@ func TestInvalidFlagsKeepOperatorInputOutOfDiagnostics(t *testing.T) {
 			t.Fatal("unexpected exit status", got)
 		}
 		if output.Len() != 0 || strings.Contains(diagnostics.String(), "private-connection-string") ||
-			!strings.Contains(diagnostics.String(), "validate-manifest") || !strings.Contains(diagnostics.String(), "inspect-placement") {
+			!strings.Contains(diagnostics.String(), "validate-manifest") || !strings.Contains(diagnostics.String(), "inspect-placement") || !strings.Contains(diagnostics.String(), "inventory-source") {
 			t.Fatal("usage must list supported operations without echoing operator input")
 		}
+	}
+}
+
+func TestSourceInventoryRequiresPrivateSelectionAndNeverCreatesMissingDatabase(t *testing.T) {
+	dir := t.TempDir()
+	selection := filepath.Join(dir, "source.json")
+	if err := os.WriteFile(selection, []byte(`{"version":1,"schools":["east"]}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	missing := filepath.Join(dir, "must-not-exist.sqlite")
+	t.Setenv("APP_KEY", "12345678901234567890123456789012")
+	t.Setenv("DB_CONNECTION", "sqlite")
+	t.Setenv("DB_DATABASE", missing)
+	t.Setenv("EDUPILOT_DEDICATED_DATABASES", "[]")
+	var out, diag bytes.Buffer
+	if status := run([]string{"-mode=inventory-source", "-selection", selection}, &out, &diag); status != 1 {
+		t.Fatalf("missing frozen source succeeded: %d %s", status, diag.String())
+	}
+	if !strings.Contains(out.String(), `"classification":"frozen-source-sql"`) || !strings.Contains(out.String(), `"code":"pool_unavailable"`) {
+		t.Fatalf("missing safe failure report: %s", out.String())
+	}
+	if strings.Contains(out.String()+diag.String(), missing) || strings.Contains(out.String()+diag.String(), "east") {
+		t.Fatal("source inventory leaked a path or school identifier")
+	}
+	if _, err := os.Stat(missing); !os.IsNotExist(err) {
+		t.Fatal("source inventory created a missing database")
+	}
+	if err := os.Chmod(selection, 0644); err != nil {
+		t.Fatal(err)
+	}
+	out.Reset()
+	diag.Reset()
+	if status := run([]string{"-mode=inventory-source", "-selection", selection}, &out, &diag); status != 1 || out.Len() != 0 || strings.Contains(diag.String(), selection) {
+		t.Fatal("public source selection was accepted or disclosed")
 	}
 }
