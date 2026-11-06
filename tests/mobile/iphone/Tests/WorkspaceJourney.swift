@@ -53,7 +53,12 @@ final class WorkspaceJourney: XCTestCase {
         let field = app.descendants(matching: .any).matching(identifier: id).firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 15), "Missing field " + id)
         field.tap()
-        app.typeText(text)
+        field.typeText(text)
+        XCTAssertEqual(field.value as? String, text, "Incorrect entry before submit")
+        field.typeText("\n")
+        let dismissed = NSPredicate(format: "exists == false")
+        let hidden = XCTNSPredicateExpectation(predicate: dismissed, object: app.keyboards.firstMatch)
+        XCTAssertEqual(XCTWaiter.wait(for: [hidden], timeout: 10), .completed, "Keyboard still covers the form")
     }
 
     func testSchoolWorkList() throws {
@@ -70,9 +75,15 @@ final class WorkspaceJourney: XCTestCase {
         } else {
             try tapText("Schools")
         }
-        try fill("entry-title", "Campus review\n")
-        try tapText("Add entry")
-        if (try? showing(["Campus review", "Open"], timeout: 5)) == nil { app.swipeUp() }
+        try fill("entry-title", "Campus review")
+        let add = app.buttons["Add entry"]
+        XCTAssertTrue(add.waitForExistence(timeout: 10) && add.isHittable, "Add entry button unavailable")
+        add.tap()
+        XCTAssertTrue(app.staticTexts["Entry saved."].waitForExistence(timeout: 25), "Server save acknowledgement missing")
+        for _ in 0..<4 {
+            if (try? showing(["Campus review", "Open"], timeout: 2)) != nil { break }
+            app.swipeUp()
+        }
         try save(showing(["Campus review", "Open"]), "workspace")
         if (try? showing(["Sign out"], timeout: 2)) == nil { app.swipeDown() }
         try tapText("Sign out")

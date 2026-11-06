@@ -19,3 +19,7 @@ Installer checks on disposable SQLite and PostgreSQL pools cover clean installat
 replay and rejection of an unrelated table or a view named `migrations` before the
 control ledger is created. SQLite also rejects a user table named `sqlitex_records`.
 The live HTTP check verifies school isolation and confirms that sign-out revokes access.
+
+### iPhone workspace verification
+
+The foundation's [iPhone simulator run](https://github.com/elcomware/edupilot-os/actions/runs/42246292166/job/127989261329) reached the Tenancy editor but timed out waiting to see the saved title and status. The revised XCTest checks the entered title, waits for keyboard dismissal, activates the accessible submit button, and checks the save acknowledgement before scrolling to the persisted row. The fixture still requires exactly one expected database row and zero sessions after sign-out. The local disposable SQLite/PostgreSQL suite passed all 39 Go tests and subtests, and all 10 mobile unit tests passed. Simulator acceptance requires a successful hosted run.
