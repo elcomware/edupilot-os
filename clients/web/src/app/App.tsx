@@ -52,7 +52,10 @@ function SignedIn({ session }: { session: Session }) {
     enabled: allowed,
   });
   let content;
-  if (route.page === "settings") content = <PreferencesPage />;
+  if (route.page === "settings") content = <PreferencesPage
+    modules={allowed ? modules.data?.items ?? [] : []}
+    catalogStatus={!allowed || modules.isError ? "unavailable" : modules.isPending ? "loading" : "ready"}
+  />;
   else if (route.page === "unknown")
     content = (
       <StatePanel

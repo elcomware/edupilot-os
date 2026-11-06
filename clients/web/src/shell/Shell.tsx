@@ -13,7 +13,7 @@ import {
 import type { ModuleDescriptor, Principal } from "@edupilot/api-client";
 import { signOut } from "../app/session";
 import { t } from "../app/copy";
-import { useLocale, usePreferences } from "../app/preferences";
+import { orderedPinnedModules, useLocale, usePreferences } from "../app/preferences";
 import { moduleHref, useRoute } from "../app/router";
 import { Brand } from "../components/primitives";
 export function Shell({
@@ -30,7 +30,7 @@ export function Shell({
     route = useRoute();
   const [open, setOpen] = useState(false),
     main = useRef<HTMLElement>(null);
-  const pinned = modules.filter((m) => pins.includes(m.key)),
+  const pinned = orderedPinnedModules(modules, pins),
     current =
       route.page === "module" ? modules.find((m) => m.key === route.key) : null;
   const pageName =

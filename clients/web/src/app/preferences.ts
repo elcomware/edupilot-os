@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Locale, Principal } from "@edupilot/api-client";
+import type { Locale, ModuleDescriptor, Principal } from "@edupilot/api-client";
 export interface Preferences {
   locale: Locale;
   appearance: "system" | "light" | "dark";
@@ -51,6 +51,23 @@ export function parsePreferences(
   }
   return prefs;
 }
+/** Saved pin order is cosmetic; descriptors always come from the authorized catalog. */
+export function orderedPinnedModules(modules: ModuleDescriptor[], pins: string[]) {
+  const catalog = new Map(modules.map(module => [module.key, module]));
+  return [...new Set(pins)].flatMap(key => {
+    const module = catalog.get(key);
+    return module ? [module] : [];
+  });
+}
+export function movePinnedModule(pins: string[], modules: ModuleDescriptor[], key: string, direction: -1 | 1) {
+  const visible = orderedPinnedModules(modules, pins);
+  const index = visible.findIndex(module => module.key === key);
+  const neighbor = visible[index + direction];
+  if (index < 0 || !neighbor) return pins;
+  const next = [...pins], from = pins.indexOf(key), to = pins.indexOf(neighbor.key);
+  [next[from], next[to]] = [next[to], next[from]];
+  return next;
+}
 interface Settings {
   scope: string | null;
   value: Preferences;
@@ -58,6 +75,7 @@ interface Settings {
   activate: (p: Principal | null) => void;
   update: (changes: Partial<Preferences>) => void;
   pin: (key: string) => void;
+  reset: () => boolean;
 }
 export const usePreferences = create<Settings>((set, get) => ({
   scope: null,
@@ -88,6 +106,17 @@ export const usePreferences = create<Settings>((set, get) => ({
         stored = false;
       }
     set({ value: next, stored });
+  },
+  reset() {
+    const { scope } = get();
+    try {
+      if (scope) localStorage.removeItem(scope);
+    } catch {
+      set({ stored: false });
+      return false;
+    }
+    set({ value: defaults(), stored: true });
+    return true;
   },
   pin(key) {
     const {

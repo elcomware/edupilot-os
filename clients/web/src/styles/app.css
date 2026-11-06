@@ -605,6 +605,40 @@ label > select {
   font-size: 0.87rem;
   margin-top: 0.2rem;
 }
+.preference-section {
+  margin-top: 1.25rem;
+}
+.preference-section-heading,
+.preference-empty {
+  padding-block: 1.1rem;
+}
+.pinned-order {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pinned-order > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-block: var(--row);
+  border-top: 1px solid var(--line);
+}
+.pinned-order > li > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.pinned-order .row-actions {
+  flex-shrink: 0;
+}
+.pinned-order .btn {
+  min-width: var(--tap);
+  padding: 0.4rem;
+}
+.preference-empty .backlink {
+  margin-block: 0.65rem 0;
+}
 .save-message {
   color: var(--accent);
   min-height: 2rem;
