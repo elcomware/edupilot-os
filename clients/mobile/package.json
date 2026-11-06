@@ -9,7 +9,7 @@
     "ios": "expo run:ios",
     "export": "expo export --platform android --platform ios",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test tests/*.test.ts"
+    "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@edupilot/api-client": "0.1.0",

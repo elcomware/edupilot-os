@@ -1,6 +1,6 @@
 # EduPilot OS starter
 
-The repository starts from Goravel v1.18.0 and keeps its facades, configuration, bootstrap, Artisan and migration conventions. The school OS uses strict Go module boundaries, a versioned HTTP API, a shared React web/desktop shell, and a React Native mobile client. SQLite and PostgreSQL share domain contracts. School-owned queries always include the authenticated school, including on dedicated databases.
+The repository starts from Goravel v1.18.0 and keeps its facades, configuration, bootstrap, Artisan and migration conventions. EduPilot OS uses strict Go module boundaries, a versioned HTTP API, a shared React web/desktop shell, and a React Native mobile client. SQLite and PostgreSQL share domain contracts. School-owned queries always include the authenticated school, including on dedicated databases.
 
 ## Checkpoints
 

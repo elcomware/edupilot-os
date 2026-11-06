@@ -4,14 +4,22 @@ A school operating system starter built on Goravel 1.18. The repository contains
 
 ## Start a school workspace
 
-From a fresh clone, install Docker with Compose v2, Make and Python 3. Then run:
+Install Go 1.25 or newer, Python 3, Make, and Node matching `package.json` engines (Node 22.13+, 24.3+, or 26+; Node 24 is a good default). Native supervision requires a POSIX Python build with `waitid`/`WNOWAIT` support (commonly Linux or WSL; availability varies on macOS). From a fresh clone run:
 
 ```sh
+make install
 make up
+```
+
+`make up` checks prerequisites, creates a private local configuration, migrates SQLite, builds the API and outbox worker, and supervises both alongside Vite in the foreground. Open [the school workspace](http://127.0.0.1:5173). In a second terminal, provision an administrator:
+
+```sh
 make seed-api
 ```
 
-Open [the school workspace](http://127.0.0.1:8080) and sign in with the school ID, email and password entered at the prompt. This starts the SQLite configuration and runs migrations before serving requests. For PostgreSQL, use `make up DB=postgres` followed by `make seed-api DB=postgres`.
+Sign in with the school ID, email and password entered at the prompt. Press Ctrl-C in the `make up` terminal to stop its services. `make check-native` checks prerequisites without changing data or starting services. Use `make migrate` to apply migrations separately.
+
+Docker Compose is optional: `make docker-up` and `make docker-seed` start and provision the container stack at [127.0.0.1:8080](http://127.0.0.1:8080). Add `DB=postgres` to these commands for the PostgreSQL overlay, and use `make docker-down DB=postgres` to stop that mode. See [local deployment](docs/local-deployment.md) for configuration and operational details.
 
 ## What you can do
 

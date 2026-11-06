@@ -17,6 +17,9 @@ export default defineConfig({
   use: {
     baseURL,
     browserName: 'chromium',
+    launchOptions: process.env.E2E_CHROMIUM_EXECUTABLE
+      ? { executablePath: process.env.E2E_CHROMIUM_EXECUTABLE }
+      : undefined,
     // Request traces and screenshots can contain login credentials and bearer tokens.
     trace: 'off',
     video: 'off',

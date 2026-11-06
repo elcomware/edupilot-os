@@ -1,0 +1,96 @@
+name: Native verification
+
+on:
+  push:
+    branches: [main, 'release/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-verification-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        database: [sqlite, postgres]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Provision disposable native PostgreSQL
+        if: matrix.database == 'postgres'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql
+          sudo systemctl start postgresql
+          test_password=$(openssl rand -hex 24)
+          echo "::add-mask::$test_password"
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE ROLE edupilot_test LOGIN PASSWORD '$test_password' CREATEDB;"
+          sudo -u postgres createdb -O edupilot_test edupilot_test
+          echo "EDUPILOT_TEST_POSTGRES_DSN=postgres://edupilot_test:$test_password@127.0.0.1:5432/edupilot_test?sslmode=disable" >> "$GITHUB_ENV"
+      - name: Unit, feature, integration and architecture tests
+        run: go test -count=1 -p 4 ./...
+      - name: Static analysis and production build
+        run: |
+          go vet -p 4 ./...
+          go build -p 4 ./...
+
+  clients-and-native-stack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: clients/desktop/go.mod
+      - name: Install client workspaces
+        run: npm ci --ignore-scripts
+      - name: Native launcher specifications
+        run: python3 -m unittest discover -s scripts/tests -v
+      - name: Web and mobile tests and builds
+        run: |
+          make test-web test-mobile
+          npm run build:web
+          npm run export --workspace @edupilot/mobile
+      - name: Desktop gateway tests
+        working-directory: clients/desktop
+        run: go test -count=1 ./internal/gateway
+      - name: Install browser runner
+        working-directory: tests/e2e
+        run: |
+          npm ci --workspaces=false --ignore-scripts
+          npm exec --workspaces=false -- playwright install --with-deps chromium
+      - name: Exercise disposable schools on the native stack
+        shell: bash
+        env:
+          E2E_BASE_URL: http://127.0.0.1:5173
+          EDUPILOT_E2E_MODE: native
+        run: |
+          set -euo pipefail
+          python3 scripts/setup.py
+          python3 scripts/dev.py > "$RUNNER_TEMP/edupilot-native.log" 2>&1 &
+          native_pid=$!
+          cleanup() {
+            kill -TERM "$native_pid" 2>/dev/null || true
+            wait "$native_pid" || true
+          }
+          trap cleanup EXIT
+          bash scripts/ci-e2e.sh
+      - name: Show startup diagnostics on failure
+        if: failure()
+        run: tail -100 "$RUNNER_TEMP/edupilot-native.log" 2>/dev/null || true

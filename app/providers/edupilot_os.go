@@ -9,9 +9,9 @@ import (
 )
 
 type runtimeKey struct{}
-type SchoolOS struct{}
+type EduPilotOS struct{}
 
-func (*SchoolOS) Register(app foundation.Application) {
+func (*EduPilotOS) Register(app foundation.Application) {
 	app.Singleton(runtimeKey{}, func(app foundation.Application) (any, error) {
 		pools, err := database.OpenConfigured()
 		if err != nil {
@@ -20,7 +20,7 @@ func (*SchoolOS) Register(app foundation.Application) {
 		return schoolapi.New(pools, app.MakeConfig().GetString("edupilot.enabled_modules"))
 	})
 }
-func (*SchoolOS) Boot(foundation.Application) {}
+func (*EduPilotOS) Boot(foundation.Application) {}
 
 // Lazy resolution lets Artisan create keys or migrate a new database before the first API request.
 func Handler(app foundation.Application) http.Handler {

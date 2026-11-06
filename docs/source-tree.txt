@@ -43,7 +43,7 @@ app/facades/validation.go
 app/facades/view.go
 app/http/controllers/user_controller.go
 app/jobs/expire_sessions.go
-app/providers/school_os.go
+app/providers/edupilot_os.go
 app/schoolapi/modules.go
 app/schoolapi/router.go
 artisan

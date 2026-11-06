@@ -1,28 +1,37 @@
-# Verification handoff
+# EduPilot OS verification
 
-The owner requested that tests be authored and left for a subsequent test pass. No unit, feature, database integration, browser or native test suite was executed during this implementation. CI runs only on manual dispatch.
+The starter phase deliberately deferred tests. The production phase now runs available checks and records unavailable checks separately. This is **not a production-readiness declaration**: the full product backlog, expanded tenancy implementation and release gates remain open.
 
-## Build evidence
+## Executed baseline — 6 November 2026
 
-| Target | Work completed during implementation |
-| --- | --- |
-| Goravel API, migrator, seed and worker | Go production packages compiled, and go vet completed for the root module, including its test source. |
-| React web | TypeScript checking and the Vite production bundle completed. |
-| Expo mobile | TypeScript checking completed. Expo exported JavaScript bundles for Android and iOS. |
-| Wails desktop | The shared web assets were embedded and the Windows amd64 desktop executable cross-compiled. Native execution and installer signing are deferred. |
+| Scope | Command / exercise | Observed result |
+|---|---|---|
+| Native supervisor | `python3 -m unittest discover -s scripts/tests -v` | 13 tests passed; independent review approved after process-ownership regression fix |
+| Go domain, feature, architecture and SQLite integration | `go test -p 4 -json ./...` | Exit 0: 33 passing test/subtest events; four service-dependent test skips |
+| Web shared client/components/preferences | `npm run test:web` | 14 tests passed |
+| Mobile contracts and recovery | `npm run typecheck --workspace @edupilot/mobile`; `npm run test --workspace @edupilot/mobile` | TypeScript passed; 9 tests passed. Runner uses `node --import tsx --test` to avoid CLI IPC requirements |
+| Desktop gateway | In `clients/desktop`: `go test -json ./internal/gateway` | 14 tests passed |
+| Native stack | Disposable SQLite/file roots and keys; `python3 scripts/dev.py` | Migrations, binary builds, API, outbox worker and loopback Vite started successfully; supervisor stopped on termination |
+| Real API end to end | Native `scripts/ci-e2e.sh` | Three cases passed: school isolation, enrollment retry/withdrawal and private document round trip |
+| Browser end to end | Same suite, system Chromium | Two cases blocked before assertions: this executor denies Chromium's Unix socket creation (`EPERM`). They remain required in CI/on a supported host |
+| Expo Android/iOS bundles | `npm run export --workspace @edupilot/mobile` | Both JavaScript bundles exported; this does not verify signed binaries or physical devices |
 
-## First test pass
+[Machine-readable baseline evidence](release/evidence/2026-11-06-baseline.json) identifies the baseline and limitations. Native-launcher review is complete. Dependency hardening is tracked separately in the release status.
 
-Start in a disposable deployment. Each command below is an explicit test action for the next session.
+## Explicit unavailable checks
 
-| Scope | Command or target | Evidence to review |
-| --- | --- | --- |
-| Backend | `make test-go` | Domain invariants, school isolation, HTTP mappings, optimistic concurrency, transactional outbox, native migrations, package import boundaries, and every module work list |
-| PostgreSQL | Set `EDUPILOT_TEST_POSTGRES_DSN` to a disposable database and run `make test-go` | PostgreSQL adapters, migration replay, placement isolation and rollback. Tests create disposable schemas |
-| Web | `make test-web` | Shared client, preference scope, conflict recovery, editor and specialized feature behavior |
-| Mobile | `make test-mobile` | Endpoint configuration, session transitions and TypeScript contracts |
-| Wails gateway | From `clients/desktop`: `go test ./internal/gateway` | Origin restrictions, redirect rejection, byte limits and document response mapping |
-| End to end | `make e2e-install`, provision two temporary schools, then `make e2e` | Sign-in, student lifecycle and reload, preference isolation, enrollment retries, binary file round trips and cross-school denial |
-| Full stack on both drivers | Dispatch the **Manual verification** workflow | Compose startup on SQLite and PostgreSQL plus the preceding server/web/browser checks |
+| Check | Why unavailable here | How to run it |
+|---|---|---|
+| `TestHybridRoutingAndTransactionalDelivery/postgres` | No PostgreSQL executable or disposable DSN | Provision a native disposable PostgreSQL database and set `EDUPILOT_TEST_POSTGRES_DSN` |
+| `TestRepositoryTransactions/postgres` | Same missing service | Same DSN, `make test-go` |
+| `TestEnrollmentAcrossModuleBoundaries/postgres` | Same missing service | Same DSN, `make test-go` |
+| `TestS3PrivateBucketRoundTrip` | No dedicated test bucket/credentials | Configure the isolated bucket variables described by the test; never use a real document bucket |
+| Chromium UI journeys | Sandbox denies required Unix sockets | Run Native verification CI or `make e2e` on a browser-capable host |
+| Optional Docker stack | Docker executable unavailable | Explicit `make docker-up [DB=postgres]`; optional manual workflow |
+| Native windows/devices/signing | No supported GUI/device/signing setup | Follow Wails/Expo release matrix and record actual device/installer evidence |
 
-Reference the [Playwright configuration](../tests/e2e/README.md) for disposable account variables. Inspect native window launch, device behavior, keyboard navigation, print, and visual layout during a separate hands-on pass. This handoff records build results only; there is no test pass rate or coverage measurement yet.
+## Continuous verification
+
+The **Native verification** workflow runs on pushes to main/release branches, pull requests and manual dispatch. It installs PostgreSQL natively for its integration job, runs Go checks, client tests/builds, native launcher tests and the native browser stack. The existing **Manual verification** workflow retains an explicitly optional Docker matrix. Workflow definitions are not evidence of a successful remote run; link actual run results before closing a release gate.
+
+Use `make test-native test-go test-web test-mobile test-desktop` for local suites. Browser setup and disposable accounts are documented in [tests/e2e/README.md](../tests/e2e/README.md). Test imports, migrations, moves and recovery only on disposable data. Every new multi-tenant/group workflow adds sibling-school and cross-tenant cases; the starter's school isolation test alone does not verify the new hierarchy.

@@ -1,0 +1,99 @@
+{
+  "date": "2026-11-06",
+  "baseline_commit": "812bbc68ccd6c0434bc46b43c45c2267562a9062",
+  "working_changes": "Native startup/branding, mobile test runner, E2E executable configuration",
+  "production_ready": false,
+  "evidence": [
+    {
+      "scope": "backend",
+      "result": "passed with explicit service skips",
+      "test_events": {
+        "pass": 33,
+        "skip": 4
+      },
+      "skipped": [
+        {
+          "package": "github.com/elcomware/edupilot-os/modules/documents/adapters/outbound/blob",
+          "test": "TestS3PrivateBucketRoundTrip"
+        },
+        {
+          "package": "github.com/elcomware/edupilot-os/database/edumigrations",
+          "test": "TestHybridRoutingAndTransactionalDelivery/postgres"
+        },
+        {
+          "package": "github.com/elcomware/edupilot-os/modules/students/tests/integration",
+          "test": "TestRepositoryTransactions/postgres"
+        },
+        {
+          "package": "github.com/elcomware/edupilot-os/tests/integration",
+          "test": "TestEnrollmentAcrossModuleBoundaries/postgres"
+        }
+      ]
+    },
+    {
+      "scope": "desktop gateway",
+      "result": "passed",
+      "test_events": {
+        "pass": 14
+      },
+      "skipped": []
+    },
+    {
+      "scope": "web components/API client",
+      "result": "passed",
+      "tests": 14
+    },
+    {
+      "scope": "mobile types/session/endpoint",
+      "result": "passed",
+      "tests": 9,
+      "note": "Node --import tsx avoids unavailable CLI IPC socket"
+    },
+    {
+      "scope": "native real stack API E2E",
+      "result": "passed",
+      "tests": 3,
+      "covers": [
+        "student cross-school isolation",
+        "enrollment idempotency",
+        "private document round trip"
+      ]
+    },
+    {
+      "scope": "browser E2E",
+      "result": "blocked before assertions",
+      "tests": 2,
+      "reason": "Chromium process singleton Unix socket() fails EPERM in execution environment",
+      "unblock": "Run Native verification CI or a host permitting Chromium sockets"
+    },
+    {
+      "scope": "PostgreSQL integration",
+      "result": "not run",
+      "reason": "PostgreSQL server/client binaries and disposable DSN unavailable",
+      "unblock": "Native CI provisions PostgreSQL; EDUPILOT_TEST_POSTGRES_DSN selects it"
+    },
+    {
+      "scope": "S3 integration",
+      "result": "not run",
+      "reason": "Dedicated test bucket and credentials unavailable",
+      "unblock": "Provide isolated S3-compatible test bucket/credentials"
+    },
+    {
+      "scope": "Expo Android/iOS JS export",
+      "result": "passed",
+      "note": "No signed binary or device execution"
+    },
+    {
+      "scope": "actual desktop/mobile devices",
+      "result": "not run",
+      "reason": "No native GUI/device/signing environment for these packages"
+    },
+    {
+      "scope": "native supervisor",
+      "result": "passed",
+      "tests": 13,
+      "review": "Initial PGID reuse defect fixed with waitid/WNOWAIT ownership pin; scoped independent re-review approved",
+      "command": "python3 -m unittest discover -s scripts/tests -v"
+    }
+  ]
+}

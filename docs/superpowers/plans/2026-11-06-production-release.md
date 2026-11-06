@@ -198,9 +198,9 @@ All domain stories below include unit rules, SQLite/PostgreSQL repository tests,
 **Files:** `docs/product/production-scope.md`, this plan, `docs/product/frontend-matrix.md`, `docs/release/status.md`.
 **Interfaces:** Produces stable story IDs and acceptance criteria consumed by all implementation increments.
 
-- [ ] Check all 42 catalog modules map to a story and full UI row; no backend-only completion definition.
-- [ ] Record starter baseline and existing authorization, native default and naming rulings.
-- [ ] Commit and push plan before product implementation. Expected: remote commit/tree contains these documents.
+- [x] Check all 42 catalog modules map to a story and full UI row; no backend-only completion definition.
+- [x] Record starter baseline and existing authorization, native default and naming rulings.
+- [x] Commit and push plan before product implementation. Expected: remote commit/tree contains these documents.
 
 ## Task 2: Native operation and baseline qualification (S01)
 

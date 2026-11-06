@@ -7,15 +7,15 @@ Plan: [Production release backlog](../superpowers/plans/2026-11-06-production-re
 - Starter: `ae7a791cdbbdc1bf76be7f1a166e9a226c3da177`.
 - Original 20 starter checkpoints pushed. Build checks passed; original instruction deferred tests.
 - New authorization: write/run tests, plan and implement the full product including full professional UI, native-first operation and optional Docker, then push implementation checkpoints.
-- Product naming ruling: **EduPilot OS** in copy, **edupilot-os** in technical identifiers. Existing `SchoolOS` provider will be renamed; tenant and school are distinct entities; existing conflation is a migration task.
+- Product naming ruling: **EduPilot OS** in copy, **edupilot-os** in technical identifiers. The provider is now `EduPilotOS`; tenant and school are distinct entities; existing conflation is a migration task.
 - Release state: **not production ready**. Full domain backlog and external qualification gates remain open.
 
 ## Board
 
 | Increment | State | Evidence / next action |
 |---|---|---|
-| Plan / Task 1 | In progress | Scope, full UI matrix, ordered epics/stories and release gates being published |
-| S01 Native/test baseline | Ready | Run authored suites; native-first launcher/docs and naming correction |
+| Plan / Task 1 | Verified/pushed | Remote commits `2c72280`, `2e03da6`; all 42 modules mapped to full UI stories; independent scope reviews incorporated |
+| S01 Native/test baseline | In progress | Native launcher/branding reviewed; 13 Python, 33 Go test/subtest events, 14 web, 9 mobile, 14 gateway and 3 API E2E passed; CI/browser/PostgreSQL gates pending |
 | S02 Group tenancy + full frontend foundation | Planned | Scope/legacy migration, authorized context UI, inherited customization, multilingual records and browser qualification |
 | S03–S17 Domain delivery | Planned | Story-by-story backend + full UI + tests; see dependencies in plan |
 | S18 Operations + tenant mobility | Planned | Fenced shared/isolated/cross-engine moves, native packaging, backup/restore, upgrade and observability |
@@ -35,4 +35,6 @@ Plan: [Production release backlog](../superpowers/plans/2026-11-06-production-re
 
 ## Evidence
 
-New verification has not yet run. Results will be appended with commands and actual pass/fail/skip outcomes. No baseline test or release claim is inferred from previous successful compilation.
+See [verification](../verification.md) and [baseline evidence](evidence/2026-11-06-baseline.json). Chromium cannot launch here (Unix socket EPERM), PostgreSQL and S3 services are unavailable. Native CI is configured to run browser/PostgreSQL checks; no remote pass is claimed before observing its results.
+
+Dependency audits are an active release task: the first Go scan reported 36 reachable advisories, including the installed Go 1.26.3 standard library. Patched toolchain/module and frontend tool updates are being verified in a separate checkpoint. No release candidate is tagged.

@@ -36,7 +36,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '24'}
       - name: Start real application and migrate
-        run: make up
+        run: make docker-up
       - name: Run Go specifications
         shell: bash
         run: |
@@ -52,10 +52,10 @@ jobs:
           npm ci --workspaces=false
           npm exec --workspaces=false -- playwright install --with-deps chromium
       - name: Exercise two real schools
-        run: bash scripts/ci-e2e.sh
+        run: EDUPILOT_E2E_MODE=docker bash scripts/ci-e2e.sh
       - name: Show service state on failure
         if: failure()
-        run: make ps
+        run: make docker-ps
       - name: Stop local services
         if: always()
-        run: make down
+        run: make docker-down

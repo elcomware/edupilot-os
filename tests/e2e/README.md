@@ -13,3 +13,11 @@ The suite checks sign-in, registration, edit, reload, archival, stored version a
 The package is intentionally outside the app's npm workspaces. To select a spec, run `cd tests/e2e && npm run test --workspaces=false -- specs/isolation.spec.ts`. GitHub Actions only runs the verification workflow when manually dispatched.
 
 The connected-module specifications check Enrollment retry behavior and binary Documents round trips through the web proxy. They create files in the disposable school's storage. Run them only with test schools.
+
+The native stack uses `http://127.0.0.1:5173` (`E2E_BASE_URL`). Run
+`EDUPILOT_E2E_MODE=native bash scripts/ci-e2e.sh` against a **disposable**
+native stack to provision temporary schools and run the suite. The optional
+container job sets `EDUPILOT_E2E_MODE=docker` and uses port 8080.
+If Chromium is already installed, set `E2E_CHROMIUM_EXECUTABLE` to its absolute
+executable path; otherwise install the Playwright-managed browser. This
+changes only the browser executable, not assertions or application behavior.
