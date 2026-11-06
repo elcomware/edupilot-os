@@ -114,12 +114,14 @@ export const s = StyleSheet.create({
 });
 export function Action({
   label,
+  testID,
   onPress,
   variant = "secondary",
   disabled = false,
   busy = false,
 }: {
   label: string;
+  testID?: string;
   onPress: () => void;
   variant?: "solid" | "secondary" | "dark";
   disabled?: boolean;
@@ -128,6 +130,7 @@ export function Action({
   const fg = variant === "secondary" ? color.ink : "#ffffff";
   return (
     <Pressable
+      testID={testID}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: disabled || busy, busy }}

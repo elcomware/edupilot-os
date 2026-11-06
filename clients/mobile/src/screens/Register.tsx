@@ -116,6 +116,7 @@ export function Register({
           {student ? (
             <>
               <Field
+                testID="given-name"
                 label={t("given")}
                 value={draft.given}
                 onChangeText={(given) => setDraft({ ...draft, given })}
@@ -123,6 +124,7 @@ export function Register({
                 editable={!saving}
               />
               <Field
+                testID="family-name"
                 label={t("family")}
                 value={draft.family}
                 onChangeText={(family) => setDraft({ ...draft, family })}

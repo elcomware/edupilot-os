@@ -37,6 +37,7 @@ export function Login({
       />
       <View style={s.panel}>
         <Field
+          testID="school-id"
           label={t("school")}
           value={school}
           onChangeText={setSchool}
@@ -45,6 +46,7 @@ export function Login({
           editable={!pending}
         />
         <Field
+          testID="email"
           label={t("email")}
           value={email}
           onChangeText={setEmail}
@@ -55,6 +57,7 @@ export function Login({
           editable={!pending}
         />
         <Field
+          testID="password"
           label={t("password")}
           value={password}
           onChangeText={setPassword}
@@ -77,6 +80,7 @@ export function Login({
           <Notice error>{t(state.reason)}</Notice>
         )}
         <Action
+          testID="sign-in"
           label={t("signIn")}
           variant="solid"
           onPress={submit}
