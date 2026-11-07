@@ -196,19 +196,27 @@ func (c *Catalog) CheckReady(ctx context.Context) error {
 	if err := ValidatePoolIdentities(identities); err != nil {
 		return err
 	}
-	rows, err := c.Control.DB.QueryContext(ctx, "SELECT tenant_id, pool_id FROM edu_tenant_placement")
+	rows, err := c.Control.DB.QueryContext(ctx, `SELECT p.tenant_id, p.pool_id, r.pool_id
+		FROM edu_tenant_placement p LEFT JOIN edu_tenant_reservations r ON r.tenant_id=p.tenant_id`)
 	if err != nil {
 		return fmt.Errorf("read durable tenant placement: %w", err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var tenant, pinned string
-		if err := rows.Scan(&tenant, &pinned); err != nil {
+		var reserved sql.NullString
+		if err := rows.Scan(&tenant, &pinned, &reserved); err != nil {
 			return err
 		}
 		t := c.nodes[0]
 		if dedicated, ok := c.routes[tenant]; ok {
 			t = dedicated
+		}
+		if reserved.Valid {
+			if pinned != "" || !c.HasDedicatedRoute(tenant) || reserved.String != identities[t.owner] {
+				return fmt.Errorf("%w: invalid pending reservation for %q", ErrPlacement, tenant)
+			}
+			pinned = reserved.String
 		}
 		if !ValidTenant(tenant) || pinned != identities[t.owner] {
 			return fmt.Errorf("%w: school %q requires an explicit database cutover", ErrPlacement, tenant)
@@ -260,7 +268,13 @@ func (c *Catalog) tenantPool(ctx context.Context, id string, allowFirstUse bool)
 	}
 	read := func() (string, error) {
 		var pinned string
-		err := c.Control.DB.QueryRowContext(ctx, c.Control.Bind("SELECT pool_id FROM edu_tenant_placement WHERE tenant_id = ?"), id).Scan(&pinned)
+		var reserved bool
+		err := c.Control.DB.QueryRowContext(ctx, c.Control.Bind(`SELECT p.pool_id,
+			EXISTS (SELECT 1 FROM edu_tenant_reservations r WHERE r.tenant_id=p.tenant_id)
+			FROM edu_tenant_placement p WHERE p.tenant_id=?`), id).Scan(&pinned, &reserved)
+		if err == nil && reserved {
+			return "", fmt.Errorf("%w: school %q has a pending reservation", ErrPlacement, id)
+		}
 		return pinned, err
 	}
 	pinned, err := read()

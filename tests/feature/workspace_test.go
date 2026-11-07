@@ -49,7 +49,7 @@ func TestSchoolWorkListsUseTheSameVersionedAPIForEveryModule(t *testing.T) {
 	if _, err := raw.Exec("INSERT INTO edu_pool_marker VALUES(1,'shared','test-pool')"); err != nil {
 		t.Fatal(err)
 	}
-	for _, create := range []func(migration.Schema) error{migrations.Accounts, migration.Outbox, tenancy.Workspace} {
+	for _, create := range []func(migration.Schema) error{migrations.Accounts, migration.Outbox, tenancy.Workspace, tenancy.Reservations} {
 		if err := create(tables); err != nil {
 			t.Fatal(err)
 		}

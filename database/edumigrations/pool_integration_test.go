@@ -67,6 +67,11 @@ func apply(t *testing.T, conn database.Connection, pool database.Pool) {
 	if err := tenancy.Placement(db, conn.Tenant == ""); err != nil {
 		t.Fatal(err)
 	}
+	if conn.Tenant == "" {
+		if err := tenancy.Reservations(db); err != nil {
+			t.Fatal(err)
+		}
+	}
 	if _, err := pool.DB.Exec(pool.Bind("INSERT INTO edu_pool_marker VALUES(1,?,?)"), conn.Owner(), rand.Text()); err != nil {
 		t.Fatal(err)
 	}

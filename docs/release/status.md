@@ -186,3 +186,41 @@ row in either other pool, a wrong marker and an existing pin. A separate
 installed native SQLite CLI drill returned the expected JSON for the fresh
 destination, left the pin table empty, and returned failure with no report
 after a different school's synthetic row was added.
+
+### Reserve a dedicated tenant
+
+After native migration, run
+`go run ./cmd/reserve-dedicated-tenant -tenant "$tenant" -pool-id "$dedicated_pool_id" -operation "$operation_uuid"`.
+Generate a fresh random UUID for the operation and retain it with the returned
+report. An exact retry returns the original creation time after rechecking the
+configured destination and all foundation data. Conflicting operations fail.
+
+The additive control migration stores a reservation journal. Reservation claims
+the tenant's unique placement with an empty pool ID, claims its empty Auth realm,
+revalidates the pools, and commits all three records together. Physical pool
+markers require nonempty IDs, so first-use routing cannot claim or resolve the
+pending tenant. Administrator seeding also loses its unique-realm claim and
+refuses to bootstrap a user. The current resolver additionally rejects any
+journaled reservation whose pin has been changed to a physical ID. Readiness
+accepts valid reservations while checking their configured dedicated route.
+Older binaries fail readiness while a reservation is pending.
+
+This checkpoint deliberately leaves the tenant pending. Retain the operation
+UUID and retry the same command after a transient failure. Do not clear its
+journal, pin or Auth realm manually. Resumable target initialization, activation,
+initial administrator enrollment and controlled cancellation are subsequent
+dependencies. Whole-tenant moves and the full web, desktop and mobile
+administration scope remain open.
+
+Local verification passed `go test -count=1 -p 2 ./...`, `go vet -p 2 ./...`
+and `go build -p 2 ./...`. The disposable SQLite fixture covers competing
+reservations, reservation races against first-use routing and administrator
+seeding, rejection of existing ownership/data, transaction rollback, exact retry,
+routing denial, unrelated tenant access and installer replay. PostgreSQL cases
+require the hosted disposable database and are pending CI evidence.
+
+A separate installed SQLite CLI drill built the preceding release's migrator
+at `5f85f05`, installed fresh synthetic pools, upgraded with the additive
+migration and reserved a new tenant. It verified exact JSON retry, conflicting
+operation rejection, migration replay, older-binary fail-closed behavior and
+zero users, tenant gates or provisioning events.
