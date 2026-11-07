@@ -48,6 +48,9 @@ func verifyDedicatedActivation(t *testing.T, db *database.Catalog) {
 			t.Fatal(q, got, want, err)
 		}
 	}
+	if _, err := provisioning.EnrollDedicatedAdmin(ctx, db, tenant, pool, operation, "admin@example.test", "synthetic-password-long"); err == nil {
+		t.Fatal("enrolled before storage activation")
+	}
 	verifyActivationRealmFence(t, db, tenant, pool, operation)
 	check("wrong", false)
 	if _, err := provisioning.ActivateDedicatedTenant(ctx, db, tenant, "wrong", operation); err == nil {
@@ -112,6 +115,9 @@ func verifyDedicatedActivation(t *testing.T, db *database.Catalog) {
 	count(target, "SELECT count(*) FROM tenant_gates WHERE state='active'", 1)
 	count(target, "SELECT count(*) FROM edu_outbox", 2)
 	count(db.Control, "SELECT count(*) FROM edu_tenant_activations", 0)
+	if _, err := provisioning.EnrollDedicatedAdmin(ctx, db, tenant, pool, operation, "admin@example.test", "synthetic-password-long"); err == nil {
+		t.Fatal("enrolled before activation publication")
+	}
 	if _, err := db.ForTenantContext(ctx, candidateID); err == nil {
 		t.Fatal("pending activation routed")
 	}

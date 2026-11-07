@@ -25,6 +25,7 @@ func (s *Service) CheckEmptyRealm(ctx context.Context, tx *sql.Tx, school string
  UNION ALL SELECT school_id FROM auth_role_permissions
  UNION ALL SELECT school_id FROM auth_memberships
  UNION ALL SELECT school_id FROM auth_sessions
+ UNION ALL SELECT school_id FROM auth_admin_enrollments
  ) AS enrollment WHERE school_id=?)`), school, school).Scan(&empty)
 	if err != nil {
 		return err

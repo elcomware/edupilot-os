@@ -167,6 +167,19 @@ func activateTarget(ctx context.Context, pool database.Pool, receipt DedicatedAc
 		return DedicatedActivation{}, err
 	}
 	defer tx.Rollback()
+	receipt, err = reconcileActivationTarget(ctx, tx, pool, receipt, completed)
+	if err != nil {
+		return DedicatedActivation{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return DedicatedActivation{}, err
+	}
+	return receipt, nil
+}
+
+// The caller retains the target fence through its control commit.
+func reconcileActivationTarget(ctx context.Context, tx *sql.Tx, pool database.Pool, receipt DedicatedActivation, completed bool) (DedicatedActivation, error) {
+	var err error
 	// Freeze the installed foundation inventory, including worker audit receipts.
 	// SQLite's first write acquires the database writer lock. PostgreSQL table
 	// locks precede every snapshot read and exclude inserts by every owner.
@@ -253,9 +266,6 @@ func activateTarget(ctx context.Context, pool database.Pool, receipt DedicatedAc
 		if records != 3+receipts {
 			return DedicatedActivation{}, errOccupied
 		}
-	}
-	if err := tx.Commit(); err != nil {
-		return DedicatedActivation{}, err
 	}
 	return receipt, nil
 }

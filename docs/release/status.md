@@ -377,3 +377,66 @@ The initial PostgreSQL run exposed a fixture cancellation race. The blocked
 writer now uses an explicit transaction and server-confirmed lock timeout,
 and completes rollback before the realm fence is released. Independent review
 approved the protocol and fixture correction.
+
+### Enroll the initial dedicated administrator
+
+After native migrations and completed dedicated storage activation, retain the
+same tenant UUID, expected physical pool ID and original operation UUID. Load
+`EDUPILOT_SEED_EMAIL` and `EDUPILOT_SEED_PASSWORD` into the operator's environment
+through the installation's secret handling, then run the local command.
+
+```sh
+go run ./cmd/enroll-dedicated-admin -tenant "$tenant" \
+  -pool-id "$dedicated_pool_id" -operation "$operation_uuid"
+```
+
+The command rechecks the published pin, completed activation receipt, configured
+route, physical owner, active epoch-1 gate and both original target events.
+Auth verifies its reserved realm, seeds the existing roles and permissions, and
+creates one administrator. The user, grants, immutable enrollment receipt and
+`auth.admin.enrolled.v1` event commit together in the control database. The JSON
+contains the tenant, pool, original operation, user ID, event ID and completion
+time. Credentials come from the environment and remain absent from command
+output, receipts and events. Database and flag failures use redacted diagnostics.
+
+Repeat **enroll-dedicated-admin** with the same identifiers and credentials after
+an uncertain response. An exact retry verifies the original user, current
+password and a private, versioned commitment to the initial Auth state, then
+returns the same receipt. Email, password, membership, role or grant changes,
+additional members, deleted principals and orphan enrollment history cause
+refusal and require investigation. Normal login and logout remain compatible
+with this retry. Auth stores the commitment separately from the public receipt
+and keeps the current bcrypt hash as the account's sole password verifier.
+
+The placement and Auth fences stay held through verification and the control
+commit. The dedicated target stays locked through that commit as well.
+PostgreSQL takes table locks around Auth and the installed foundation
+inventory so existing principal and grant updates are excluded alongside new
+root inserts. These locks can delay other tenants' writers during credential
+checks and target-lock waits. SQLite uses its database writer locks. The control pool may hold this tenant's enrollment
+event and matching worker audit receipt. Other foundation data for this tenant
+in control or another configured pool causes refusal.
+
+Activation completion retry still requires an empty Auth realm. Once enrollment
+has committed, use the enrollment command for its recovery and hierarchy
+inspection for current storage state. This increment covers privileged native
+initial enrollment. Scoped administrator interfaces, account lifecycle work,
+tenant-school legacy mapping migration, cancellation, tenant moves and every
+remaining production and client backlog requirement remain open.
+
+Local verification passed the full `go test -count=1 -p 2 ./...` suite,
+`go vet -p 2 ./...`, `go build -p 2 ./...` and feature race checks. The shared
+both-engine fixture exercised preactivation/publication denial, corrupt
+receipt/history/gate/placement, orphan Auth and audit history, failure after
+Auth creation, competing credentials, exact retry, changed credentials/grants,
+principal deletion, other-tenant isolation and real HTTP login, protected
+access, cross-tenant denial and logout. SQLite passed locally. PostgreSQL was
+skipped locally because the disposable CREATE DATABASE fixture was unavailable
+and still requires hosted verification.
+
+A compiled native SQLite CLI drill upgraded an activated installation from
+`68f504f` with exactly one additive control migration. It verified enrollment,
+identical retry, rollback after Auth creation, secret-redacted SQL and flag
+failures, matching audit receipt retry, refusal after unrelated control data,
+activation retry refusal after enrollment and migration replay. The original
+target schema and historical activation events were preserved.
