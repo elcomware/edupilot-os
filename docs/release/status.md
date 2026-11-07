@@ -647,8 +647,12 @@ disk-backed scratch restored available memory. Verification uses disk-backed
 cache/temp, `GOMEMLIMIT=256MiB`, `GOGC=50`, `GOMAXPROCS=2` and sequential commands.
 Full Go tests, feature race checks, vet and aggregate builds passed locally. Resource architecture/palette checks and
 all 14 native-launcher tests passed. Local PostgreSQL was skipped because a
-disposable CREATE DATABASE server was unavailable, so the PostgreSQL gate
-interleaving and hosted client compatibility remain required acceptance gates.
+disposable CREATE DATABASE server was unavailable. The [hosted scoped-access verification](https://github.com/elcomware/edupilot-os/actions/runs/42370532038)
+passed on `c89c740`, including SQLite, PostgreSQL and its dedicated gate-lock
+interleaving, standard backend builds, client unit tests/builds, Linux window
+smoke, Windows compilation and native-stack browser end-to-end/accessibility
+checks. Independent final review approved the increment with no actionable
+findings.
 
 This increment supplies tenant-wide directory reading and native grant control.
 Scoped sub-tenant authorization, context UI/switching, tenant-administrator
