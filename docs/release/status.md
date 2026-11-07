@@ -536,7 +536,12 @@ closed gates, stale-version rejection, placement isolation and read-only
 Auth/outbox behavior.
 
 Local PostgreSQL checks skipped because a disposable server with CREATE DATABASE
-was unavailable. Hosted PostgreSQL, normal backend builds and client verification
-remain pending for this increment. Scoped grants and sessions, lifecycle and
-reparenting, additional hierarchy kinds, administration screens, tenant moves,
+was unavailable. The [hosted directory verification](https://github.com/elcomware/edupilot-os/actions/runs/42361429870)
+passed on `f063dcc`, covering SQLite, PostgreSQL, standard backend builds, client
+unit tests/builds, Linux window smoke, Windows compilation and native-stack
+browser end-to-end/accessibility checks. Independent review approved the
+increment with no actionable findings.
+
+Scoped grants and sessions, lifecycle and reparenting, additional hierarchy
+kinds, administration screens, tenant moves,
 remaining domain workflows and physical-device/release acceptance remain open.
