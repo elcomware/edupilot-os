@@ -60,17 +60,8 @@ func PrepareDedicatedTenant(ctx context.Context, catalog *database.Catalog, tena
 	if err := auth.New(&control).CheckEmptyRealm(ctx, lock, tenant.String()); err != nil {
 		return scope.Chain{}, err
 	}
-	for _, pool := range catalog.All() {
-		if pool.DB == target.DB {
-			continue
-		}
-		var source reader = pool.DB
-		if pool.DB == control.DB {
-			source = lock
-		}
-		if err := requireEmpty(ctx, source, pool, tenant.String()); err != nil {
-			return scope.Chain{}, err
-		}
+	if err := requireOtherPoolsEmpty(ctx, catalog, target, lock, tenant.String()); err != nil {
+		return scope.Chain{}, err
 	}
 	tx, err := target.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
 	if err != nil {

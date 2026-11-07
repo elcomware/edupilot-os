@@ -31,6 +31,7 @@ func Migrations() []schema.Migration {
 		}
 		if control {
 			list = append(list, edumigrations.OnPool(node, "06_reservations", tenancy.Reservations))
+			list = append(list, edumigrations.OnPool(node, "07_activations", tenancy.Activations))
 		}
 	}
 	return append(list, &migrations.M20210101000001CreateJobsTable{})

@@ -1,6 +1,7 @@
 package feature
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -148,4 +149,9 @@ func verifyDedicatedPreparation(t *testing.T, db *database.Catalog) {
 		t.Fatal(err)
 	}
 	check(operation, false)
+	payload, err := json.Marshal(scope.Chain{Tenant: tenant, HierarchyVersion: 1, Active: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+	exec("UPDATE edu_outbox SET payload=? WHERE event_id=?", string(payload), operation)
 }

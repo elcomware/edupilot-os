@@ -185,6 +185,7 @@ func exerciseFoundation(t *testing.T) {
 	verifyDedicatedCandidate(t, db)
 	verifyDedicatedReservation(t, db)
 	verifyDedicatedPreparation(t, db)
+	verifyDedicatedActivation(t, db)
 	// A recognized receipt table still has to belong to the configured tenant.
 	if _, err := west.DB.Exec("UPDATE edu_pool_marker SET owner='tenant:other'"); err != nil {
 		t.Fatal(err)

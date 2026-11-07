@@ -34,3 +34,23 @@ func (s *Service) CheckEmptyRealm(ctx context.Context, tx *sql.Tx, school string
 	}
 	return nil
 }
+
+// LockEmptyRealm excludes enrollment root inserts through their realm foreign
+// keys until the caller commits. Use READ COMMITTED so the emptiness query sees
+// writers that committed while this row lock was being acquired.
+func (s *Service) LockEmptyRealm(ctx context.Context, tx *sql.Tx, school string) error {
+	if tx == nil || !database.ValidTenant(school) {
+		return ErrInvalidInput
+	}
+	if s.pool.Driver == "postgres" {
+		var locked string
+		if err := tx.QueryRowContext(ctx, s.pool.Bind("SELECT school_id FROM auth_realms WHERE school_id=? FOR UPDATE"), school).Scan(&locked); err != nil {
+			return err
+		}
+	} else {
+		if _, err := tx.ExecContext(ctx, s.pool.Bind("UPDATE auth_realms SET school_id=school_id WHERE school_id=?"), school); err != nil {
+			return err
+		}
+	}
+	return s.CheckEmptyRealm(ctx, tx, school)
+}

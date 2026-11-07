@@ -318,3 +318,53 @@ This is control-side snapshot reconciliation for the installed Auth foundation.
 Activation still requires explicit writer exclusion, revalidation through
 cutover and recoverable placement publication. Initial administrator enrollment,
 tenant moves, administration UI and the full release backlog remain open.
+
+### Activate prepared dedicated storage
+
+After applying native migrations, retain the tenant, physical pool and operation
+UUID from reservation and preparation. Run the local operator command.
+
+```sh
+go run ./cmd/activate-dedicated-tenant -tenant "$tenant" \
+  -pool-id "$dedicated_pool_id" -operation "$operation_uuid"
+go run ./cmd/inspect-hierarchy -tenant "$tenant"
+```
+
+Activation requires the exact prepared gate at epoch 1 and hierarchy version 1,
+its original event payload, the matching pending reservation and an empty Auth
+realm. It reconciles the installed foundation inventory across configured pools.
+The destination may contain only the prepared gate/event and their matching
+optional worker audit receipt. Conflicting data stays available for investigation.
+
+| Starting state | Successful transition or recovery |
+| --- | --- |
+| Reservation with an empty destination | Run preparation first. Activation requires its durable gate and event. |
+| Prepared destination and pending reservation | Commit the active gate and one stable-ID activation event in the destination, then atomically store the control receipt, publish the physical placement pin and remove the reservation. |
+| Active destination and pending reservation after interrupted publication | Repeat activation with the same three identifiers. Verify both original events, exact gate and all foundation/Auth data, then finish control publication. Routing stays denied until publication succeeds. |
+| Published placement and completed receipt | Repeat activation with the same identifiers to return the immutable completion receipt. Normal hierarchy edits may have advanced the current hierarchy version. |
+| Conflicting operation, pool, gate, receipt, event or enrollment data | Fail closed. Preserve the records and investigate the conflict before retrying. |
+
+The placement row and Auth realm stay locked through target commit and control
+publication. PostgreSQL uses READ COMMITTED with explicit row locks so enrollment
+committed before the realm lock is visible to reconciliation. Its target table
+locks fence the installed foundation and pool marker through target commit.
+SQLite acquires its writer lock before reading these records. A target outbox
+failure rolls back the gate transition. A later control failure leaves a pending
+reservation that can be recovered with the same activation command. Continue
+using activation for recovery once its target commit may have occurred.
+
+The JSON receipt contains the original operation, event ID, physical pool,
+placement epoch, initial hierarchy version and completion time. Use hierarchy
+inspection for current hierarchy state. Completion retry still requires the
+reserved Auth realm to be empty. Initial administrator enrollment requires a
+subsequent dedicated protocol, and the existing bootstrap command continues to
+reject that realm. Cancellation, tenant moves, administrative UI and the full
+product and release backlog remain open.
+
+Local verification covers concurrent activation, enrollment writers on the realm
+fence, unexpected target/Auth records, event rollback, interrupted publication,
+worker delivery, corrupted events/receipts, exact retry after a hierarchy edit,
+pending routing denial and dedicated routing after publication. The complete Go
+test suite, vet, build, feature race checks and a compiled disposable SQLite CLI
+drill passed locally. PostgreSQL fixture execution requires the hosted disposable
+database job and remains pending for this checkpoint.
