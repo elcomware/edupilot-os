@@ -89,3 +89,50 @@ retrying. A successful edit consumes its expected version, so a replay conflicts
 Auth grants, sessions and user-facing hierarchy administration require their
 separate workflows. Scoped grants, lifecycle/reparenting, additional hierarchy
 kinds and verified tenant relocation are pending release dependencies.
+
+## Enumerate the existing hierarchy
+
+A trusted local operator can list organizations, schools and campuses in an
+initialized, pinned tenant. Native setup remains the default, with Docker an
+optional deployment path.
+
+```sh
+go run ./cmd/list-hierarchy -tenant "$tenant" -kind organizations -limit 50
+go run ./cmd/list-hierarchy -tenant "$tenant" -kind schools \
+  -organization "$organization" -limit 50
+go run ./cmd/list-hierarchy -tenant "$tenant" -kind campuses \
+  -school "$school" -limit 50
+```
+
+For `organizations`, `-organization` selects direct children of that parent.
+For `schools`, it selects schools owned by that organization. For `campuses`,
+`-school` selects campuses owned by that school. Omit the owner flag to list
+all records of the chosen kind within the tenant. A filter's parent must resolve
+within the same tenant. Each kind accepts only its applicable owner flag.
+
+The JSON response includes `entries`, `hierarchyVersion` and, when another page
+exists, `nextCursor`. Each entry includes its canonical UUID, name, applicable
+code and campus timezone, its own `active` flag and a verified `path`. The path
+identifies the tenant, owning organization and school, selected campus and
+root-first organization ancestors. `path.active` accounts for every ancestor.
+Inactive nodes can appear in results. A closed tenant gate refuses enumeration.
+
+Records are ordered by canonical UUID. `-limit` accepts 1 through 100 and defaults
+to 50. Pass the returned cursor unchanged with the same tenant, kind and owner
+filter for the following page. The page size may change between requests.
+
+```sh
+go run ./cmd/list-hierarchy -tenant "$tenant" -kind campuses \
+  -school "$school" -limit 50 -cursor "$next_cursor"
+```
+
+Each page reads one consistent tenant-pool snapshot. The cursor binds the query,
+hierarchy version, placement epoch and physical pool identity. A changed version
+or placement rejects continuation. Restart from the first page after inspecting
+the change. Optional `-version` requires a specific hierarchy version, including
+on the first page. Malformed cursors, conflicting filters, missing pins and
+incorrect physical ownership fail before a result is emitted.
+
+Listing is read-only and grants no authorization. The command is for trusted
+native operators. Subject grants, scoped sessions, administration APIs and the
+web, desktop and mobile hierarchy workflows remain separate release work.

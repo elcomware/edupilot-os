@@ -195,6 +195,10 @@ func exerciseFoundation(t *testing.T) {
 	t.Run("hierarchy_dedicated", func(t *testing.T) {
 		verifySchoolCampusWriters(t, db, requireValue(scope.Parse[scope.Tenant](hierarchyTenantID)))
 	})
+	t.Run("directory_shared", func(t *testing.T) { verifyHierarchyReader(t, db, requireValue(scope.NewID[scope.Tenant]())) })
+	t.Run("directory_dedicated", func(t *testing.T) {
+		verifyHierarchyReader(t, db, requireValue(scope.Parse[scope.Tenant](hierarchyTenantID)))
+	})
 	// A recognized receipt table still has to belong to the configured tenant.
 	if _, err := west.DB.Exec("UPDATE edu_pool_marker SET owner='tenant:other'"); err != nil {
 		t.Fatal(err)

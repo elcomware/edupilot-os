@@ -496,3 +496,47 @@ actionable findings.
 Scoped grants and sessions, lifecycle and reparenting, locations/teams/curricula,
 administration screens, verified tenant moves and the remaining frontend and
 production-release criteria stay open.
+
+### Enumerate an existing hierarchy
+
+Trusted native operators can run `cmd/list-hierarchy` for organizations, schools
+and campuses in a pinned tenant. The Goravel-registered reader offers bounded
+keyset pages with canonical UUID ordering, immediate-owner filters, names,
+codes, campus timezones and verified root-first ancestry. Each entry reports
+its own activity and effective path activity. Closed gates refuse enumeration.
+
+Each page uses a consistent read transaction and rechecks physical ownership.
+Continuation binds tenant, kind, owner, hierarchy version, placement epoch and
+physical pool identity. An intervening versioned edit or placement change
+requires a fresh listing. Parent filters resolve in the selected tenant.
+The native command checks installation readiness and emits JSON after a
+successful read. Listing grants no authorization.
+
+The disposable foundation fixture defines shared and dedicated checks for both
+database adapters. Local SQLite passed 101-record pagination, canonical
+ordering, complete pages without duplicates, direct-owner and sibling
+isolation, same-named records, inactive ancestors and nodes, empty results,
+bounds, malformed/foreign/stale cursors, stale placement epochs and physical
+identities, missing pins, wrong gates and pool owners, legacy school realms and
+read-only side effects.
+A concurrent writer commits between pages and invalidates the continuation.
+
+Full Go tests, feature race detection and vet passed locally. Resource architecture
+and palette checks and all 14 native-launcher tests also passed. Aggregate builds
+using the memory-backed temporary directory encountered killed linker processes.
+The build passed with `GOMEMLIMIT=256MiB GOGC=50 go build -p 1 ./...` after setting
+`GOTMPDIR` to disk-backed scratch storage. This environment choice leaves the
+normal hosted build settings available for verification.
+
+The compiled native SQLite drill installed fresh shared/dedicated pools,
+provisioned both tenants, created nested organizations, schools and campuses,
+and listed every kind through the real command. It verified continuation,
+canonical ordering, direct-owner filters, inactive ancestry, invalid commands,
+closed gates, stale-version rejection, placement isolation and read-only
+Auth/outbox behavior.
+
+Local PostgreSQL checks skipped because a disposable server with CREATE DATABASE
+was unavailable. Hosted PostgreSQL, normal backend builds and client verification
+remain pending for this increment. Scoped grants and sessions, lifecycle and
+reparenting, additional hierarchy kinds, administration screens, tenant moves,
+remaining domain workflows and physical-device/release acceptance remain open.

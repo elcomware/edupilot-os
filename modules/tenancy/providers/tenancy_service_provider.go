@@ -42,8 +42,25 @@ func CampusWriter(app foundation.Application) (services.CampusWriter, error) {
 	return value.(services.CampusWriter), nil
 }
 
+type hierarchyReaderBinding struct{}
+
+func HierarchyReader(app foundation.Application) (services.HierarchyReader, error) {
+	value, err := app.Make(hierarchyReaderBinding{})
+	if err != nil {
+		return services.HierarchyReader{}, err
+	}
+	return value.(services.HierarchyReader), nil
+}
+
 func (*TenancyServiceProvider) Boot(foundation.Application) {}
 func (*TenancyServiceProvider) Register(app foundation.Application) {
+	app.Singleton(hierarchyReaderBinding{}, func(app foundation.Application) (any, error) {
+		pools, err := app.Make(database.CatalogBinding)
+		if err != nil {
+			return nil, err
+		}
+		return services.HierarchyReader{Pools: pools.(*database.Catalog)}, nil
+	})
 	app.Singleton(organizationWriterBinding{}, func(app foundation.Application) (any, error) {
 		pools, err := app.Make(database.CatalogBinding)
 		if err != nil {
