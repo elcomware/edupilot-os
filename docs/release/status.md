@@ -440,3 +440,14 @@ identical retry, rollback after Auth creation, secret-redacted SQL and flag
 failures, matching audit receipt retry, refusal after unrelated control data,
 activation retry refusal after enrollment and migration replay. The original
 target schema and historical activation events were preserved.
+
+Independent review identified a PostgreSQL lock-order conflict with audit
+delivery. Both the control enrollment fence and shared target reconciliation
+now acquire the audit table before the outbox, matching the worker's delivery
+transaction. The regression pauses the real dispatcher after its audit insert,
+waits for enrollment's audit-table lock request, checks that enrollment has yet
+to acquire the outbox fence, and then releases delivery. It covers initial
+control enrollment alongside another tenant's event and exact enrollment retry
+alongside dedicated target delivery. Each worker must publish in one attempt.
+Local full Go tests, vet, build and feature race checks passed. This PostgreSQL
+interleaving requires hosted execution because the local fixture is unavailable.

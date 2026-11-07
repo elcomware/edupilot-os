@@ -183,8 +183,9 @@ func reconcileActivationTarget(ctx context.Context, tx *sql.Tx, pool database.Po
 	// Freeze the installed foundation inventory, including worker audit receipts.
 	// SQLite's first write acquires the database writer lock. PostgreSQL table
 	// locks precede every snapshot read and exclude inserts by every owner.
+	// Audit precedes outbox to match the dispatcher delivery transaction.
 	if pool.Driver == "postgres" {
-		_, err = tx.ExecContext(ctx, "LOCK TABLE edu_pool_marker,tenant_gates,tenancy_organizations,tenancy_schools,tenancy_campuses,ws_tenancy,edu_outbox,edu_audit_inbox IN SHARE ROW EXCLUSIVE MODE")
+		_, err = tx.ExecContext(ctx, "LOCK TABLE edu_pool_marker,tenant_gates,tenancy_organizations,tenancy_schools,tenancy_campuses,ws_tenancy,edu_audit_inbox,edu_outbox IN SHARE ROW EXCLUSIVE MODE")
 	} else {
 		_, err = tx.ExecContext(ctx, pool.Bind("UPDATE tenant_gates SET state=state WHERE tenant_id=?"), receipt.Tenant.String())
 	}

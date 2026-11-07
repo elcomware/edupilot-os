@@ -52,8 +52,9 @@ func EnrollDedicatedAdmin(ctx context.Context, catalog *database.Catalog, tenant
 	}
 	// Freeze control-side foundation data too. Only this enrollment's event and
 	// optional matching worker receipt may live here for the dedicated tenant.
+	// Lock audit before outbox, matching the dispatcher delivery transaction.
 	if control.Driver == "postgres" {
-		if _, err := tx.ExecContext(ctx, "LOCK TABLE tenant_gates,tenancy_organizations,tenancy_schools,tenancy_campuses,ws_tenancy,edu_outbox,edu_audit_inbox IN SHARE ROW EXCLUSIVE MODE"); err != nil {
+		if _, err := tx.ExecContext(ctx, "LOCK TABLE tenant_gates,tenancy_organizations,tenancy_schools,tenancy_campuses,ws_tenancy,edu_audit_inbox,edu_outbox IN SHARE ROW EXCLUSIVE MODE"); err != nil {
 			return auth.AdminEnrollment{}, err
 		}
 	}

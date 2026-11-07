@@ -148,6 +148,7 @@ func verifyDedicatedEnrollment(t *testing.T, db *database.Catalog) {
 		receipt auth.AdminEnrollment
 		err     error
 	}
+	finishControlDelivery := pauseEnrollmentWorker(t, control, "enrollment-worker-neighbor")
 	results := make(chan result, 2)
 	for _, email := range []string{"admin@example.test", "competing@example.test"} {
 		go func() {
@@ -155,6 +156,7 @@ func verifyDedicatedEnrollment(t *testing.T, db *database.Catalog) {
 			results <- result{email, r, e}
 		}()
 	}
+	finishControlDelivery()
 	first, second := <-results, <-results
 	if (first.err == nil) == (second.err == nil) {
 		t.Fatalf("want one enrollment winner: %v, %v", first.err, second.err)
@@ -166,6 +168,16 @@ func verifyDedicatedEnrollment(t *testing.T, db *database.Catalog) {
 	email, receipt := winner.email, winner.receipt
 	count("auth_users", "1")
 	count("auth_admin_enrollments", "1")
+	finishTargetDelivery := pauseEnrollmentWorker(t, target, candidateID)
+	targetRetry := make(chan error, 1)
+	go func() {
+		_, err := provisioning.EnrollDedicatedAdmin(ctx, db, tenant, pool, operation, email, password)
+		targetRetry <- err
+	}()
+	finishTargetDelivery()
+	if err := <-targetRetry; err != nil {
+		t.Fatal("enrollment retry after concurrent target delivery", err)
+	}
 	retry := check(strings.ToUpper(email), password, true)
 	before, _ := json.Marshal(receipt)
 	after, _ := json.Marshal(retry)
