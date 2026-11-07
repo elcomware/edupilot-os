@@ -582,7 +582,12 @@ and inactive-ancestor commands, checked unchanged receipts and placement
 isolation, and verified empty Auth users/sessions/roles in the synthetic fixture.
 
 Local PostgreSQL tests skipped because a disposable server with CREATE DATABASE
-was unavailable. Hosted PostgreSQL and standard-build verification and independent
-review are pending for this checkpoint. Scoped grants/sessions, lifecycle and
-reparenting, additional hierarchy kinds, administration APIs/screens, tenant
+was unavailable. The [hosted metadata verification](https://github.com/elcomware/edupilot-os/actions/runs/42364857843)
+passed on `3326b2b`, including SQLite, PostgreSQL, standard backend builds,
+client unit tests/builds, Linux window smoke, Windows compilation and native-stack
+browser end-to-end/accessibility checks. Independent review approved the
+increment with no actionable findings.
+
+Scoped grants/sessions, lifecycle and reparenting, additional hierarchy kinds,
+administration APIs/screens, tenant
 moves, domain workflows and production/device acceptance remain open.
