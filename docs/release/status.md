@@ -255,7 +255,10 @@ an injected outbox failure that rolls back the gate, corrupted gate/event
 rejection, continued routing denial and healthy catalog readiness. A compiled
 native CLI drill verified reservation followed by preparation and exact retry,
 one provisioning gate/event and an empty control placement pin.
-Hosted PostgreSQL and client/end-to-end evidence is pending.
+The [hosted preparation verification](https://github.com/elcomware/edupilot-os/actions/runs/42329921777)
+passed the same fixture on PostgreSQL and SQLite, plus client unit tests/builds,
+desktop gateway tests, native Linux window smoke, Windows compilation and
+browser end-to-end and automated accessibility checks on the native stack.
 
 Independent review confirmed the transaction boundary and corrected the report's
 initial active flag. Activation must still reconcile target ownership and data,
