@@ -216,11 +216,20 @@ Local verification passed `go test -count=1 -p 2 ./...`, `go vet -p 2 ./...`
 and `go build -p 2 ./...`. The disposable SQLite fixture covers competing
 reservations, reservation races against first-use routing and administrator
 seeding, rejection of existing ownership/data, transaction rollback, exact retry,
-routing denial, unrelated tenant access and installer replay. PostgreSQL cases
-require the hosted disposable database and are pending CI evidence.
+routing denial, unrelated tenant access and installer replay. The same fixture
+passed with Go race detection enabled.
 
 A separate installed SQLite CLI drill built the preceding release's migrator
 at `5f85f05`, installed fresh synthetic pools, upgraded with the additive
 migration and reserved a new tenant. It verified exact JSON retry, conflicting
 operation rejection, migration replay, older-binary fail-closed behavior and
 zero users, tenant gates or provisioning events.
+
+
+The [reservation checkpoint verification](https://github.com/elcomware/edupilot-os/actions/runs/42325605074)
+passed on disposable PostgreSQL and SQLite. The workflow also passed client
+unit tests/builds, desktop gateway tests, native Linux window smoke, Windows
+compilation, browser journeys on the native stack and automated accessibility
+checks. Independent code review found no remaining important issue after the
+corrupt-pin resolver regression and the first-use/bootstrap race cases were added.
+Device qualification and the pending initialization/activation workflow remain open.
