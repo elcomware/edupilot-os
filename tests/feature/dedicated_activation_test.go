@@ -3,6 +3,7 @@ package feature
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -98,11 +99,14 @@ func verifyDedicatedActivation(t *testing.T, db *database.Catalog) {
 			activationResults <- err
 		}()
 	}
-	for range 2 {
-		if err := <-activationResults; err == nil {
-			t.Fatal("activation published through failing receipt insert")
-		}
+	firstActivation, secondActivation := <-activationResults, <-activationResults
+	if firstActivation == nil || secondActivation == nil {
+		t.Fatalf("activation published through failing receipt insert: %v, %v", firstActivation, secondActivation)
 	}
+	if !strings.Contains(firstActivation.Error(), "injected activation failure") && !strings.Contains(secondActivation.Error(), "injected activation failure") {
+		t.Fatalf("neither activation reached the injected publication failure: %v, %v", firstActivation, secondActivation)
+	}
+	t.Logf("activation publication failures: %v, %v", firstActivation, secondActivation)
 	count(target, "SELECT count(*) FROM tenant_gates WHERE state='active'", 1)
 	count(target, "SELECT count(*) FROM edu_outbox", 2)
 	count(db.Control, "SELECT count(*) FROM edu_tenant_activations", 0)
