@@ -455,3 +455,38 @@ passed SQLite, PostgreSQL including both paused-delivery interleavings, and clie
 tests/builds, Linux window smoke, Windows compilation and browser
 end-to-end/accessibility checks. Independent re-review approved the lock-order
 correction and regression coverage.
+
+### Create schools and campuses
+
+Trusted local operators can use `cmd/add-school` and `cmd/add-campus` on an
+initialized shared or dedicated tenant. The [native command guide](../local-deployment.md#add-schools-and-campuses)
+documents IDs, parent selection, canonical codes, names, campus timezone and
+expected epoch/version flags. Each service resolves the pinned pool, locks the
+active physical tenant gate, validates every ancestor and atomically commits
+the row, version increment and typed creation event. School codes are unique
+per organization and campus codes per school.
+
+The local disposable SQLite foundation passed shared and dedicated creation,
+missing/wrong placement, physical gate mismatch, invalid or inactive ancestry,
+cross-tenant references, duplicate identities/codes and permitted code reuse.
+It verified exact event paths, directory lookup, stale retries, injected outbox
+rollback and same-version contention within and across hierarchy kinds.
+Full Go tests, feature race detection, vet and a memory-bounded build passed
+with `GOMEMLIMIT=256MiB GOGC=50 go build -p 1 ./...`. Earlier aggregate builds
+had linker processes terminated. Resource architecture and palette checks
+passed, together with all 14 native-launcher Python tests.
+
+A compiled native SQLite drill migrated fresh shared/dedicated pools, provisioned
+the tenants, created nested organizations, a school and a campus through their
+actual commands and inspected both paths. Each hierarchy ended at version 5.
+Shared storage held its five expected events and dedicated storage held its six
+expected events including preparation and activation. The drill verified one
+school event and one campus event with exact chain payloads, rejected invalid,
+stale and duplicate commands, and checked placement isolation and empty Auth
+user/session/role/grant tables.
+
+Local PostgreSQL verification skipped because a disposable server with CREATE
+DATABASE was unavailable. Hosted PostgreSQL and native-stack/browser verification
+are pending for this checkpoint. Scoped grants and sessions, lifecycle and
+reparenting, locations/teams/curricula, administration screens, verified tenant
+moves and the remaining frontend and production-release criteria stay open.

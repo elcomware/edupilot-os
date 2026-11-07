@@ -21,6 +21,7 @@ import (
 	"github.com/elcomware/edupilot/database/edumigrations"
 	"github.com/elcomware/edupilot/modules/auth/app/services"
 	"github.com/elcomware/edupilot/modules/core/database"
+	"github.com/elcomware/edupilot/modules/core/scope"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
 )
@@ -33,12 +34,13 @@ func TestNativeFoundation(t *testing.T) {
 	}
 	for _, engine := range []string{"sqlite", "postgres"} {
 		t.Run(engine, func(t *testing.T) {
-			var ctrl, ded, candidate database.Connection
+			var ctrl, ded, candidate, hierarchy database.Connection
 			if engine == "sqlite" {
 				root := t.TempDir()
 				ctrl = database.Connection{Driver: engine, Database: filepath.Join(root, "control.sqlite")}
 				ded = database.Connection{Driver: engine, Database: filepath.Join(root, "west.sqlite"), Tenant: "west"}
 				candidate = database.Connection{Driver: engine, Database: filepath.Join(root, "candidate.sqlite")}
+				hierarchy = database.Connection{Driver: engine, Database: filepath.Join(root, "hierarchy.sqlite")}
 			} else {
 				dsn := os.Getenv("EDUPILOT_TEST_POSTGRES_DSN")
 				if dsn == "" || os.Getenv("EDUPILOT_TEST_POSTGRES_CREATE_DATABASES") != "1" {
@@ -73,9 +75,11 @@ func TestNativeFoundation(t *testing.T) {
 				ded = makeDB()
 				ded.Tenant = "west"
 				candidate = makeDB()
+				hierarchy = makeDB()
 			}
 			candidate.Tenant = candidateID
-			placement, _ := json.Marshal([]database.Connection{ded, candidate})
+			hierarchy.Tenant = hierarchyTenantID
+			placement, _ := json.Marshal([]database.Connection{ded, candidate, hierarchy})
 			bin, err := os.Executable()
 			if err != nil {
 				t.Fatal(err)
@@ -187,6 +191,10 @@ func exerciseFoundation(t *testing.T) {
 	verifyDedicatedPreparation(t, db)
 	verifyDedicatedActivation(t, db)
 	verifyDedicatedEnrollment(t, db)
+	t.Run("hierarchy_shared", func(t *testing.T) { verifySchoolCampusWriters(t, db, requireValue(scope.NewID[scope.Tenant]())) })
+	t.Run("hierarchy_dedicated", func(t *testing.T) {
+		verifySchoolCampusWriters(t, db, requireValue(scope.Parse[scope.Tenant](hierarchyTenantID)))
+	})
 	// A recognized receipt table still has to belong to the configured tenant.
 	if _, err := west.DB.Exec("UPDATE edu_pool_marker SET owner='tenant:other'"); err != nil {
 		t.Fatal(err)

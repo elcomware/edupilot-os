@@ -22,6 +22,26 @@ func OrganizationWriter(app foundation.Application) (services.OrganizationWriter
 	return value.(services.OrganizationWriter), nil
 }
 
+type schoolWriterBinding struct{}
+
+func SchoolWriter(app foundation.Application) (services.SchoolWriter, error) {
+	value, err := app.Make(schoolWriterBinding{})
+	if err != nil {
+		return services.SchoolWriter{}, err
+	}
+	return value.(services.SchoolWriter), nil
+}
+
+type campusWriterBinding struct{}
+
+func CampusWriter(app foundation.Application) (services.CampusWriter, error) {
+	value, err := app.Make(campusWriterBinding{})
+	if err != nil {
+		return services.CampusWriter{}, err
+	}
+	return value.(services.CampusWriter), nil
+}
+
 func (*TenancyServiceProvider) Boot(foundation.Application) {}
 func (*TenancyServiceProvider) Register(app foundation.Application) {
 	app.Singleton(organizationWriterBinding{}, func(app foundation.Application) (any, error) {
@@ -30,6 +50,20 @@ func (*TenancyServiceProvider) Register(app foundation.Application) {
 			return nil, err
 		}
 		return services.OrganizationWriter{Pools: pools.(*database.Catalog)}, nil
+	})
+	app.Singleton(schoolWriterBinding{}, func(app foundation.Application) (any, error) {
+		pools, err := app.Make(database.CatalogBinding)
+		if err != nil {
+			return nil, err
+		}
+		return services.SchoolWriter{Pools: pools.(*database.Catalog)}, nil
+	})
+	app.Singleton(campusWriterBinding{}, func(app foundation.Application) (any, error) {
+		pools, err := app.Make(database.CatalogBinding)
+		if err != nil {
+			return nil, err
+		}
+		return services.CampusWriter{Pools: pools.(*database.Catalog)}, nil
 	})
 	app.Singleton(contracts.DirectoryBinding, func(app foundation.Application) (any, error) {
 		pools, err := app.Make(database.CatalogBinding)

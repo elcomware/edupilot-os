@@ -47,3 +47,45 @@ For a dedicated PostgreSQL database, provision the database and its login before
 
 
 See [verification](verification.md) for database and client checks.
+
+## Add schools and campuses
+
+Use a trusted local operator account on an initialized, pinned tenant. Retain
+fresh UUIDs for the school and campus, the expected placement epoch and the
+hierarchy version returned by the latest provisioning or hierarchy command.
+Create the owning organization first with `cmd/add-organization`.
+
+```sh
+go run ./cmd/add-school -tenant "$tenant" -organization "$organization" \
+  -school "$school" -code MAIN -name "Central School" \
+  -epoch "$epoch" -version "$version"
+```
+
+Use the returned `hierarchyVersion` as `school_version` for the campus command.
+
+```sh
+go run ./cmd/add-campus -tenant "$tenant" -school "$school" \
+  -campus "$campus" -code NORTH -name "North Campus" -timezone Europe/Paris \
+  -epoch "$epoch" -version "$school_version"
+go run ./cmd/inspect-hierarchy -tenant "$tenant" -campus "$campus"
+```
+
+School codes are unique within their owning organization. Campus codes are
+unique within their owning school. Codes are trimmed and uppercased, contain
+1–64 ASCII letters, digits, periods, underscores or hyphens, and start with a
+letter or digit. Names are trimmed and accept up to 200 Unicode characters,
+excluding control characters. A campus requires an IANA timezone such as
+`Europe/Paris`, `Africa/Nairobi` or `UTC`.
+
+Each command checks configured placement readiness, validates the complete
+active ancestry and commits one row, one hierarchy-version increment and one
+creation event in the tenant's pinned pool. The JSON response contains the
+committed path and version. A stale epoch/version, closed tenant gate, invalid
+parent, duplicate identity/code or failed event write exits unsuccessfully.
+Input errors use exit status 2. Operational conflicts and failures use status 1.
+
+After an uncertain response, inspect the retained school or campus UUID before
+retrying. A successful edit consumes its expected version, so a replay conflicts.
+Auth grants, sessions and user-facing hierarchy administration require their
+separate workflows. Scoped grants, lifecycle/reparenting, additional hierarchy
+kinds and verified tenant relocation are pending release dependencies.
