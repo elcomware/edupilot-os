@@ -233,3 +233,33 @@ compilation, browser journeys on the native stack and automated accessibility
 checks. Independent code review found no remaining important issue after the
 corrupt-pin resolver regression and the first-use/bootstrap race cases were added.
 Device qualification and the pending initialization/activation workflow remain open.
+
+### Prepare a reserved dedicated database
+
+Run `go run ./cmd/prepare-dedicated-tenant -tenant "$tenant" -pool-id "$dedicated_pool_id" -operation "$operation_uuid"`
+with the identifiers retained from reservation. The command holds the control
+placement lock while committing a provisioning gate and one
+`tenancy.tenant.prepared.v1` event together in the dedicated database. Its report
+has `active=false`. The reservation and empty Auth realm continue to deny
+routing and administrator bootstrap.
+
+After an uncertain response, repeat this preparation command with the same
+operation. It verifies the original gate, epoch, version and exact event payload.
+An interruption before target commit leaves both records absent. An interruption
+after target commit can be recovered by reading those durable records.
+Use preparation for retries once the target has been initialized.
+
+Local Go unit/feature checks, vet, build and race detection passed. The disposable
+SQLite fixture covers concurrent preparation, exact retries, a wrong operation,
+an injected outbox failure that rolls back the gate, corrupted gate/event
+rejection, continued routing denial and healthy catalog readiness. A compiled
+native CLI drill verified reservation followed by preparation and exact retry,
+one provisioning gate/event and an empty control placement pin.
+Hosted PostgreSQL and client/end-to-end evidence is pending.
+
+Independent review confirmed the transaction boundary and corrected the report's
+initial active flag. Activation must still reconcile target ownership and data,
+publish the active placement safely and support interrupted recovery. Preparation
+retry checks its own gate and event. Full target reconciliation, activation,
+administrator enrollment, cancellation, tenant moves and all remaining UI and
+release backlog criteria remain open.
