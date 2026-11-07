@@ -281,8 +281,10 @@ or another owner, an unexpected organization, an extra event, an extra audit
 receipt and a receipt whose tenant was corrupted. It also dispatched the real
 prepared event through the worker and verified successful retry afterward.
 A compiled native CLI drill rejected another owner's target row while preserving
-that evidence and the pending reservation. Hosted PostgreSQL and client
-end-to-end checks are pending.
+that evidence and the pending reservation. The [hosted reconciliation checks](https://github.com/elcomware/edupilot-os/actions/runs/42334231569)
+passed on PostgreSQL and SQLite, together with client tests/builds, native Linux
+window smoke, Windows compilation and browser end-to-end/accessibility checks.
+Independent review found no important issue in the transaction boundary.
 
 This reconciliation covers the current installed foundation table inventory.
 The release still requires transfer-manifest coverage for future module tables,
