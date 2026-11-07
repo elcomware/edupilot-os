@@ -19,7 +19,7 @@ var errOccupied = errors.New("tenant identifier already in use")
 
 // A pre-existing school register or event history can outlive a lost placement
 // pin. Check every configured pool before accepting a new identifier.
-const occupied = `SELECT EXISTS (SELECT 1 FROM (
+const foundationOwners = `(
 	SELECT tenant_id AS id FROM tenant_gates
 	UNION ALL SELECT tenant_id FROM tenancy_organizations
 	UNION ALL SELECT tenant_id FROM tenancy_schools
@@ -27,7 +27,9 @@ const occupied = `SELECT EXISTS (SELECT 1 FROM (
 	UNION ALL SELECT school_id FROM ws_tenancy
 	UNION ALL SELECT tenant_id FROM edu_outbox
 	UNION ALL SELECT tenant_id FROM edu_audit_inbox
-) AS used WHERE used.id=?)`
+) AS used`
+
+const occupied = "SELECT EXISTS (SELECT 1 FROM " + foundationOwners + " WHERE used.id=?)"
 
 type reader interface {
 	QueryRowContext(context.Context, string, ...any) *sql.Row

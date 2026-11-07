@@ -167,3 +167,14 @@ rejected a dedicated UUID. It verified the two expected events in shared storage
 and an empty dedicated hierarchy. This command provisions storage only.
 Dedicated initialization across databases, tenant profile and slug, user grants,
 administrative screens and tenant moves remain open.
+
+### Check a dedicated provisioning candidate
+
+Run `go run ./cmd/check-dedicated-tenant -tenant "$tenant" -pool-id "$dedicated_pool_id"`
+on an installed system before preparing a new dedicated placement. A successful
+result identifies the tenant and the observed physical pool. The command checks
+the configured route, migration receipts, pool markers, existing pins and school
+realms. It checks all configured pools for this tenant's foundation records and
+requires the dedicated destination to be empty of every owner's foundation data.
+It performs no writes. Reservation, revalidation under a write fence, resumable
+initialization and activation are separate release gates.
