@@ -6,6 +6,7 @@ import (
 
 	"github.com/elcomware/edupilot/app/provisioning"
 	"github.com/elcomware/edupilot/modules/core/database"
+	"github.com/elcomware/edupilot/modules/core/outbox"
 	"github.com/elcomware/edupilot/modules/core/scope"
 )
 
@@ -49,6 +50,39 @@ func verifyDedicatedPreparation(t *testing.T, db *database.Catalog) {
 		t.Fatal("both preparations failed", first, second)
 	}
 	check(operation, true)
+	check(operation, true)
+	exec := func(query string, args ...any) {
+		t.Helper()
+		if _, err := target.DB.Exec(target.Bind(query), args...); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, owner := range []string{candidateID, "unexpected-owner"} {
+		exec("INSERT INTO ws_tenancy (school_id,id,title,status,version) VALUES (?,'unexpected','fixture','open',1)", owner)
+		check(operation, false)
+		exec("DELETE FROM ws_tenancy WHERE school_id=? AND id='unexpected'", owner)
+		check(operation, true)
+	}
+	exec("INSERT INTO tenancy_organizations (tenant_id,id,name,active) VALUES (?,'unexpected','fixture',true)", candidateID)
+	check(operation, false)
+	exec("DELETE FROM tenancy_organizations WHERE tenant_id=? AND id='unexpected'", candidateID)
+
+	exec("INSERT INTO edu_outbox (event_id,tenant_id,event_type,aggregate_id,payload,created_at,available_at) VALUES ('unexpected',?,'fixture',?,'{}',0,0)", candidateID, candidateID)
+	check(operation, false)
+	exec("DELETE FROM edu_outbox WHERE event_id='unexpected'")
+	processed, err := (outbox.Dispatcher{}).Step(ctx, target)
+	if err != nil || !processed {
+		t.Fatal("prepared event dispatch", processed, err)
+	}
+	check(operation, true)
+	exec("UPDATE edu_audit_inbox SET tenant_id='unexpected-owner' WHERE event_id=?", operation)
+	check(operation, false)
+	exec("UPDATE edu_audit_inbox SET tenant_id=? WHERE event_id=?", candidateID, operation)
+	check(operation, true)
+
+	exec("INSERT INTO edu_audit_inbox (event_id,tenant_id,event_type,aggregate_id,received_at) VALUES ('unexpected',?,'fixture',?,0)", candidateID, candidateID)
+	check(operation, false)
+	exec("DELETE FROM edu_audit_inbox WHERE event_id='unexpected'")
 	check(operation, true)
 	var gates, events int
 	if err := target.DB.QueryRow(target.Bind("SELECT count(*) FROM tenant_gates WHERE tenant_id=? AND state='provisioning' AND placement_epoch=1 AND hierarchy_version=1"), candidateID).Scan(&gates); err != nil || gates != 1 {

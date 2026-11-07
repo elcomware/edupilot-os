@@ -266,3 +266,26 @@ publish the active placement safely and support interrupted recovery. Preparatio
 retry checks its own gate and event. Full target reconciliation, activation,
 administrator enrollment, cancellation, tenant moves and all remaining UI and
 release backlog criteria remain open.
+
+### Reconcile the prepared target
+
+Preparation now reconciles all owners' records in the installed foundation
+tables inside its target transaction. After validating the exact gate and event,
+it permits only those two records and the worker's optional matching audit
+receipt. Unexpected workspace, hierarchy, event or audit records cause failure.
+A legitimate event delivery remains compatible with preparation retry.
+
+Local unit/feature checks, vet, build and Go race detection passed. The synthetic
+SQLite fixture rejected workspace rows belonging to either the proposed tenant
+or another owner, an unexpected organization, an extra event, an extra audit
+receipt and a receipt whose tenant was corrupted. It also dispatched the real
+prepared event through the worker and verified successful retry afterward.
+A compiled native CLI drill rejected another owner's target row while preserving
+that evidence and the pending reservation. Hosted PostgreSQL and client
+end-to-end checks are pending.
+
+This reconciliation covers the current installed foundation table inventory.
+The release still requires transfer-manifest coverage for future module tables,
+control-side enrollment reconciliation and recoverable activation with checks
+held through cutover. Tenant moves, administration UI and the wider release
+backlog remain open.

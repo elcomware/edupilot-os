@@ -105,8 +105,31 @@ func PrepareDedicatedTenant(ctx context.Context, catalog *database.Catalog, tena
 			return scope.Chain{}, database.ErrPlacement
 		}
 	}
+	if err := reconcilePreparedFoundation(ctx, tx, target, tenant.String(), operation); err != nil {
+		return scope.Chain{}, err
+	}
 	if err := tx.Commit(); err != nil {
 		return scope.Chain{}, err
 	}
 	return chain, nil
+}
+
+// The gate and event have already been verified in this target transaction.
+// The sole optional third record is the worker's matching audit receipt.
+// Count every owner's installed foundation records so an unexpected tenant or
+// business row cannot hide behind an otherwise valid preparation event.
+func reconcilePreparedFoundation(ctx context.Context, tx *sql.Tx, pool database.Pool, tenant, operation string) error {
+	var records, receipts int64
+	if err := tx.QueryRowContext(ctx, "SELECT count(*) FROM "+foundationOwners).Scan(&records); err != nil {
+		return err
+	}
+	if err := tx.QueryRowContext(ctx, pool.Bind(`SELECT count(*) FROM edu_audit_inbox
+		WHERE event_id=? AND tenant_id=? AND aggregate_id=? AND event_type='tenancy.tenant.prepared.v1'`),
+		operation, tenant, tenant).Scan(&receipts); err != nil {
+		return err
+	}
+	if records != 2+receipts {
+		return errOccupied
+	}
+	return nil
 }
