@@ -6,7 +6,9 @@ info:
     use exactly one Authorization header containing Bearer followed by the opaque session token. X-School-ID
     is optional and must match the authenticated school. All listed permission names on an operation are
     required. Role or membership changes are reflected on later requests. The deployed module catalog
-    determines which specialized routes are available.
+    determines which specialized routes are available. Explicit tenant hierarchy grants authorize the
+    contexts and hierarchy endpoints independently of school role permissions. The tenant query selects
+    the hierarchy target while X-School-ID continues to identify the credential realm.
 servers:
 - url: /api/v1
   description: Same-origin API
@@ -46,6 +48,90 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Ready'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /auth/contexts:
+    get:
+      tags: [Sessions]
+      operationId: listTenantContexts
+      summary: List explicit active tenant hierarchy-read grants for the signed-in subject
+      description: Live keyset pages ordered by tenant UUID. Each page revalidates the session, membership and grants. An unavailable or closed returned choice fails the entire page. Responses use Cache-Control no-store.
+      parameters:
+      - $ref: '#/components/parameters/Scope'
+      - name: limit
+        in: query
+        schema: {type: integer, minimum: 1, maximum: 100, default: 25}
+      - name: cursor
+        in: query
+        schema: {type: string, maxLength: 1024}
+      responses:
+        '200':
+          description: Current explicit choices, with tenant, subject, permission, grantId, grantVersion, expiresAt and optional nextCursor.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entries]
+                properties:
+                  entries:
+                    type: array
+                    items: {$ref: '#/components/schemas/TenantAuthorization'}
+                  nextCursor: {type: string}
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          description: Invalid, duplicate, unknown or ambiguous query/header input.
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /tenancy/hierarchy:
+    get:
+      tags: [Modules]
+      operationId: listTenantHierarchy
+      summary: Read a tenant hierarchy using an explicit tenant-wide hierarchy-read grant
+      description: Reauthorizes every request and continuation. Tenant selection is request-local. Existing X-School-ID denotes the credential realm. An authorized in-flight read may finish within the ten-second request deadline after revocation. Responses use Cache-Control no-store.
+      x-permissions: [tenancy.hierarchy.read]
+      parameters:
+      - $ref: '#/components/parameters/Scope'
+      - name: tenant
+        in: query
+        required: true
+        schema: {type: string, format: uuid}
+      - name: kind
+        in: query
+        required: true
+        schema: {type: string, enum: [organizations, schools, campuses]}
+      - name: organization
+        in: query
+        description: Immediate parent for organizations or owning organization for schools.
+        schema: {type: string, format: uuid}
+      - name: school
+        in: query
+        description: Immediate owning school for campuses.
+        schema: {type: string, format: uuid}
+      - name: limit
+        in: query
+        schema: {type: integer, minimum: 1, maximum: 100, default: 25}
+      - name: cursor
+        in: query
+        schema: {type: string, maxLength: 2048}
+      responses:
+        '200':
+          description: Directory entries with verified ancestry, hierarchyVersion, placementEpoch and optional nextCursor.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/HierarchyPage'}
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Authorized target has no matching hierarchy owner.
+        '409':
+          description: Directory continuation is stale. Start a fresh listing.
+        '422':
+          description: Invalid, duplicate, unknown or ambiguous query/header input or cursor.
         '503':
           $ref: '#/components/responses/Unavailable'
   /auth/me:
@@ -447,6 +533,43 @@ components:
             type: integer
             const: 60
   schemas:
+    TenantAuthorization:
+      type: object
+      required: [subject, tenant, permission, grantId, grantVersion, expiresAt]
+      properties:
+        subject:
+          type: object
+          required: [realm, id]
+          properties:
+            realm: {type: string}
+            id: {type: string}
+        tenant: {type: string, format: uuid}
+        permission: {type: string, const: tenancy.hierarchy.read}
+        grantId: {type: string, format: uuid}
+        grantVersion: {type: integer, minimum: 1}
+        expiresAt: {type: integer, description: UTC epoch seconds}
+    HierarchyPage:
+      type: object
+      required: [entries, hierarchyVersion, placementEpoch]
+      properties:
+        hierarchyVersion: {type: integer, minimum: 1}
+        placementEpoch: {type: integer, minimum: 1}
+        nextCursor: {type: string}
+        entries:
+          type: array
+          items:
+            type: object
+            required: [id, name, active, path]
+            properties:
+              id: {type: string, format: uuid}
+              name: {type: string}
+              code: {type: string}
+              timezone: {type: string}
+              active: {type: boolean}
+              path:
+                type: object
+                description: Tenant UUID, selected organization/school/campus UUIDs, root-first ancestors, hierarchyVersion and effective active state.
+
     SchoolID:
       type: string
       pattern: ^[a-z0-9][a-z0-9_-]{0,62}$

@@ -95,7 +95,7 @@ func CreateSharedTenant(ctx context.Context, catalog *database.Catalog, tenant s
 		return scope.Chain{}, err
 	}
 	var realm bool
-	if err := tx.QueryRowContext(ctx, p.Bind("SELECT EXISTS (SELECT 1 FROM auth_realms WHERE school_id=?)"), id).Scan(&realm); err != nil {
+	if err := tx.QueryRowContext(ctx, p.Bind("SELECT EXISTS (SELECT 1 FROM auth_realms WHERE school_id=? UNION ALL SELECT 1 FROM auth_tenant_grants WHERE tenant_id=? OR realm_id=?)"), id, id, id).Scan(&realm); err != nil {
 		return scope.Chain{}, err
 	}
 	if realm {

@@ -10,6 +10,7 @@ import (
 	"io"
 	"math"
 
+	"github.com/elcomware/edupilot/modules/core/access"
 	"github.com/elcomware/edupilot/modules/core/database"
 	"github.com/elcomware/edupilot/modules/core/scope"
 	"github.com/elcomware/edupilot/modules/tenancy/app/models"
@@ -46,6 +47,7 @@ type HierarchyEntry struct {
 type HierarchyPage struct {
 	Entries          []HierarchyEntry `json:"entries"`
 	HierarchyVersion uint64           `json:"hierarchyVersion"`
+	PlacementEpoch   uint64           `json:"placementEpoch"`
 	NextCursor       string           `json:"nextCursor,omitempty"`
 }
 
@@ -120,6 +122,13 @@ func (q HierarchyQuery) continuation() (directoryCursor, error) {
 	return saved, nil
 }
 
+func (r HierarchyReader) ListAuthorized(ctx context.Context, verified access.TenantAuthorization, q HierarchyQuery) (HierarchyPage, error) {
+	if verified.Tenant != q.Tenant || verified.Permission != access.HierarchyRead || verified.Subject.Realm == "" || verified.Subject.ID == "" || verified.GrantID == "" || verified.Version == 0 {
+		return HierarchyPage{}, access.ErrForbidden
+	}
+	return r.List(ctx, q)
+}
+
 func (r HierarchyReader) List(ctx context.Context, q HierarchyQuery) (HierarchyPage, error) {
 	cursor, err := q.continuation()
 	if err != nil {
@@ -142,15 +151,19 @@ func (r HierarchyReader) List(ctx context.Context, q HierarchyQuery) (HierarchyP
 	// a closed tenant gate always refuses enumeration, including empty pages.
 	gate, err := directoryPath(ctx, tx, p, scope.Selection{Tenant: q.Tenant})
 	if err != nil {
-		return HierarchyPage{}, err
+		return HierarchyPage{}, errors.Join(database.ErrPlacement, err)
 	}
 	if !gate.Snapshot().Active {
-		return HierarchyPage{}, models.ErrScope
+		return HierarchyPage{}, errors.Join(database.ErrPlacement, models.ErrScope)
 	}
 	var epoch uint64
 	var poolID string
-	if err := tx.QueryRowContext(ctx, p.Bind("SELECT placement_epoch,pool_id FROM tenant_gates WHERE tenant_id=?"), q.Tenant.String()).Scan(&epoch, &poolID); err != nil {
-		return HierarchyPage{}, err
+	owner := "shared"
+	if p.DB != r.Pools.Control.DB {
+		owner = "tenant:" + q.Tenant.String()
+	}
+	if err := tx.QueryRowContext(ctx, p.Bind("SELECT g.placement_epoch,g.pool_id FROM tenant_gates g JOIN edu_pool_marker m ON m.singleton=1 AND m.pool_id=g.pool_id WHERE g.tenant_id=? AND m.owner=?"), q.Tenant.String(), owner).Scan(&epoch, &poolID); err != nil {
+		return HierarchyPage{}, errors.Join(database.ErrPlacement, err)
 	}
 	if q.Cursor != "" && (cursor.Epoch != epoch || cursor.Pool != poolID) {
 		return HierarchyPage{}, models.ErrConflict
@@ -170,7 +183,7 @@ func (r HierarchyReader) List(ctx context.Context, q HierarchyQuery) (HierarchyP
 	if err != nil {
 		return HierarchyPage{}, err
 	}
-	page := HierarchyPage{Entries: make([]HierarchyEntry, 0, q.Limit), HierarchyVersion: cursor.Version}
+	page := HierarchyPage{Entries: make([]HierarchyEntry, 0, q.Limit), HierarchyVersion: cursor.Version, PlacementEpoch: epoch}
 	if len(ids) > q.Limit {
 		ids = ids[:q.Limit]
 		cursor.After = ids[len(ids)-1]

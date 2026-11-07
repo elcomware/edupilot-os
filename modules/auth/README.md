@@ -9,6 +9,8 @@ Auth owns users, credentials, roles, permissions, school memberships and revocab
 | `database/migrations/schema.go` | Goravel Blueprint definitions for school realms, users, roles, permissions, role grants, memberships and sessions on the control pool. |
 | `database/seeders/` | Explicit school-administrator provisioning through Artisan. Default school grants are inserted once with the first administrator. |
 | `app/services/user.go` | Reads the current session, school membership and grants in one query. Revocation and grant changes apply on the next request. |
+| `app/services/tenant_access.go` | Reads sessions, live memberships and explicit tenant hierarchy-read grants in one control snapshot for each scoped request. |
+| `app/services/tenant_grants.go` | Owns expiring tenant assignments and terminal revocation, with control-transaction outbox events. Native creation is coordinated through placement and target gate fences. |
 | `resources/js/` | Sign-in and My account pages for web/desktop and native mobile. |
 
 A membership references one role in its own school. Each role has a set of grants through `auth_role_permissions`. The default roles are administrator, registrar and viewer. A new sign-in requires credentials.

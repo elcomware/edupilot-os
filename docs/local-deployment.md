@@ -185,3 +185,72 @@ resolving a conflict.
 Reparenting, lifecycle transitions, scoped grants and sessions, administration
 APIs and web/desktop/mobile editors require separate workflows. Tenant placement
 moves require their own fencing, copy and verification acceptance.
+
+## Grant tenant hierarchy reading
+
+An authenticated realm-local account needs an explicit `tenancy.hierarchy.read`
+grant before reading a tenant directory. Obtain its user ID from enrollment or
+`/api/v1/auth/me`. Choose the target tenant, its physical pool ID and current
+placement epoch deliberately. Expiry is required in UTC epoch seconds.
+
+```sh
+go run ./cmd/grant-tenant-hierarchy -realm "$realm" -user "$user" \
+  -tenant "$tenant" -grant "$grant_uuid" -expires-at "$expiry_seconds" \
+  -pool-id "$physical_pool_id" -epoch "$epoch"
+go run ./cmd/revoke-tenant-grant -grant "$grant_uuid" -version 1
+```
+
+Creation requires an existing membership and initialized, pinned active tenant.
+It retains one assignment per realm/user/tenant/permission. Keep the grant UUID
+and receipt for recovery. An exact creation retry validates the current
+membership, physical placement and active unexpired assignment. A changed
+assignment or expiration conflicts. Revocation advances version 1 to version 2.
+Its exact version-1 retry returns the durable revoked receipt. Both transitions
+record credential-free outbox events under the target tenant in the control
+transaction. Revocation checks only the installed control database and remains
+available during a dedicated target outage.
+
+Revoked and expired assignments are terminal in this increment. Renewal and
+regrant require a future explicit versioned command. Membership deletion cascades
+its grants and sessions. Existing administrator roles, equal email addresses and
+UUID-shaped credential realms confer no tenant-directory permission. Subjects
+remain the pair of credential realm and user ID.
+
+After signing in through the existing session API, request
+`GET /api/v1/auth/contexts?limit=25` to enumerate live explicit assignments.
+Follow `nextCursor` with the same authenticated subject. Pages are ordered by
+tenant UUID, contain at most 100 choices and revalidate current session,
+membership and unexpired grants. A choice added behind an existing cursor needs
+a fresh listing. Any returned choice whose placement, storage or active gate
+cannot be verified fails the entire page with HTTP 503.
+
+Read a selected directory through
+`GET /api/v1/tenancy/hierarchy?tenant=TENANT_UUID&kind=schools&limit=25`.
+Kinds are `organizations`, `schools` and `campuses`. The optional `organization`
+filter selects immediate children for organizations and immediate ownership for
+schools. Campuses accept `school`. Responses include entries, hierarchy version,
+placement epoch and an optional continuation cursor. The existing directory's
+ancestry, physical ownership and stale-continuation checks run within its read
+snapshot. Cross-tenant/missing owner IDs return 404 after authorization.
+
+Use exactly one bearer Authorization header. Optional `X-School-ID` identifies
+the credential realm. The `tenant` query parameter selects this request's
+hierarchy target. Duplicate/unknown parameters, duplicate scope headers and
+`X-Tenant-ID` are rejected with 422. Session failure returns 401, missing,
+expired or revoked grant returns 403, stale continuation returns 409 and
+unavailable authority/storage returns 503. Responses use `Cache-Control: no-store`.
+
+Each request, including every continuation page, reads a fresh control authority
+snapshot. Requests whose snapshot begins after committed revocation are denied.
+A read already authorized may complete within its ten-second request deadline.
+This is the bounded in-flight rule across separate databases. Directory cursors
+carry traversal metadata and never authorize a request. Tenant-wide reading
+includes every school within the chosen tenant. Workspace routing and session
+selection continue to use their existing credential-realm contracts.
+
+Dedicated initial enrollment and its immutable v1 receipt are independent of
+this grant. Issue an explicit grant after enrollment using the returned user ID.
+A subsequent tenant grant marks the realm/tenant as progressed, so historical
+initial-enrollment recovery refuses and requires operator investigation. Existing
+receipt and event history is retained. Sub-tenant scopes, context switching UI,
+tenant-administrator enrollment, lifecycle administration and moves remain open.

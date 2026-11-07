@@ -3,9 +3,11 @@ package feature
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/elcomware/edupilot/modules/core/access"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/elcomware/edupilot/app/facades"
 	"github.com/elcomware/edupilot/app/provisioning"
@@ -288,6 +290,11 @@ func verifyDedicatedEnrollment(t *testing.T, db *database.Catalog) {
 	if _, err := db.PinnedPool(ctx, "west"); err != nil {
 		t.Fatal("unrelated placement", err)
 	}
+	in := auth.TenantGrantInput{ID: uuid.NewString(), Subject: access.Subject{Realm: candidateID, ID: receipt.UserID}, Tenant: tenant, Permission: access.HierarchyRead, ExpiresAt: time.Now().Add(time.Hour).Unix()}
+	if _, err := provisioning.GrantTenantHierarchy(ctx, db, in, pool, 1); err != nil {
+		t.Fatal("explicit post-enrollment grant", err)
+	}
+	check(email, password, false)
 	exec(control, "DELETE FROM auth_users WHERE school_id=?", candidateID)
 	check(email, password, false)
 	count("auth_users", "0")

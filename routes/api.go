@@ -6,6 +6,7 @@ import (
 	"github.com/elcomware/edupilot/app/facades"
 	"github.com/elcomware/edupilot/modules/auth/app/http/middleware"
 	authroutes "github.com/elcomware/edupilot/modules/auth/routes"
+	tenancyroutes "github.com/elcomware/edupilot/modules/tenancy/routes"
 	"github.com/goravel/framework/contracts/http"
 )
 
@@ -22,6 +23,7 @@ func API(handler nethttp.Handler) {
 	serve := dispatch(handler)
 	router := facades.Route()
 	authroutes.API(router, serve)
+	tenancyroutes.API(router, serve)
 	router.Get("/api/v1/health", serve)
 	router.Get("/api/v1/ready", serve)
 	protected := func(ctx http.Context) http.Response {

@@ -18,15 +18,19 @@ func API(router route.Router, dispatch goravelhttp.HandlerFunc) {
 	router.Post(sessionPath, dispatch)
 	router.Delete(sessionPath, dispatch)
 	router.Get(currentUserPath, dispatch)
+	router.Get("/api/v1/auth/contexts", dispatch)
 }
 
 // HTTP mounts Auth ahead of the lazy school API. All HTTP routes use the same
 // controller as the gRPC service, including its process-wide sign-in limiter.
-func HTTP(auth *controllers.AuthController, schoolAPI http.Handler) http.Handler {
+func HTTP(auth *controllers.AuthController, schoolAPI http.Handler, contexts ...http.HandlerFunc) http.Handler {
 	mux := http.NewServeMux()
 	registerWeb(mux, auth)
 	mux.HandleFunc(sessionPath, auth.Session)
 	mux.HandleFunc("GET "+currentUserPath, auth.CurrentUser)
+	if len(contexts) > 0 {
+		mux.HandleFunc("GET /api/v1/auth/contexts", contexts[0])
+	}
 	mux.Handle("/", schoolAPI)
 	return mux
 }

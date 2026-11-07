@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/elcomware/edupilot/modules/auth/app/models"
@@ -24,14 +23,7 @@ type Credentials struct{ School, Email, Password string }
 
 // Bearer accepts exactly one Authorization value on HTTP and gRPC.
 func Bearer(values []string) (string, error) {
-	if len(values) != 1 {
-		return "", access.ErrUnauthenticated
-	}
-	fields := strings.Fields(values[0])
-	if len(fields) != 2 || !strings.EqualFold(fields[0], "Bearer") {
-		return "", access.ErrUnauthenticated
-	}
-	return fields[1], nil
+	return access.Bearer(values)
 }
 func (g *Guard) current(token string) (models.User, error) {
 	s, err := g.Resolve()

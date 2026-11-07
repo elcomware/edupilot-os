@@ -591,3 +591,66 @@ increment with no actionable findings.
 Scoped grants/sessions, lifecycle and reparenting, additional hierarchy kinds,
 administration APIs/screens, tenant
 moves, domain workflows and production/device acceptance remain open.
+
+### Explicit tenant hierarchy-read access
+
+Existing authenticated realm-local subjects can receive an explicit, expiring
+`tenancy.hierarchy.read` grant through `cmd/grant-tenant-hierarchy` and terminal
+revocation through `cmd/revoke-tenant-grant`. The Auth-owned control migration
+retains unique assignments and references the existing composite membership.
+Creation holds placement, membership and active physical gate fences through
+its control commit. Revocation requires only control availability. Exact retries
+return durable results and emit one event per transition. Expired and revoked
+assignments require a future renewal/regrant operation.
+
+The real Goravel/net/http endpoints `/api/v1/auth/contexts` and
+`/api/v1/tenancy/hierarchy` expose granted choices and bounded hierarchy pages.
+Each request and continuation verifies its bearer session, current membership
+and explicit tenant grant in one control snapshot. The directory independently
+reads its active physical gate, ancestry, hierarchy version and placement epoch
+within the selected pool snapshot. Unavailable/closed context choices fail the
+page with 503. Tenant selection is explicit and local to the hierarchy request.
+The credential realm remains `X-School-ID`; duplicate/ambiguous selectors fail.
+
+A tenant-wide grant deliberately covers all schools within that tenant. Existing
+administrator roles, UUID-shaped realms and matching email/user strings confer
+no implicit authority. Composite realm/user identity, legacy session DTOs and
+workspace permission/routing contracts retain their established meanings.
+A ten-second request deadline bounds reads whose authorization snapshot preceded
+revocation. Requests entering after committed revocation fail. Sub-tenant grants,
+strict cross-database revocation fencing, persistent context selection and
+web/desktop/mobile context-switching journeys are subsequent work.
+
+The installed both-engine fixture covers actual HTTP routes, equal IDs/emails in
+separate realms, explicit admin denial, multiple tenant choices, shared and
+dedicated reads, missing/sibling grants, cross-tenant owner IDs, expired grant and
+session boundaries, live membership deletion, logout, directory continuations,
+physical identity and pending-placement denial, duplicate/oversized input,
+concurrent creation/revocation, event rollback and empty-realm ownership fences.
+A paused real HTTP request demonstrates the permitted in-flight read followed
+by post-revocation denial. A PostgreSQL advisory barrier additionally tests that
+the dedicated gate stays locked while control authority awaits its event commit.
+
+The compiled native SQLite drill upgraded a populated prior-main `adf0333`
+installation with two legacy realms, live sessions, workspace rows and a
+dedicated enrollment receipt. It applied exactly one control migration, retained
+the dedicated schema and old receipt, restored sessions, read/wrote isolated
+workspaces and verified logout. It exercised explicit grants, all hierarchy
+kinds over live HTTP, exact command retries/events, revocation rollback,
+secret-redacted flag and connection failures, inaccessible-target revocation and
+migration replay. Initial enrollment retry succeeded before the grant and
+refused afterward, preserving its historical receipt.
+
+Initial verification encountered killed linkers because the existing Go cache
+occupied 3.5 GiB of memory-backed storage. Relocating that reproducible cache to
+disk-backed scratch restored available memory. Verification uses disk-backed
+cache/temp, `GOMEMLIMIT=256MiB`, `GOGC=50`, `GOMAXPROCS=2` and sequential commands.
+Full Go tests, feature race checks, vet and aggregate builds passed locally. Resource architecture/palette checks and
+all 14 native-launcher tests passed. Local PostgreSQL was skipped because a
+disposable CREATE DATABASE server was unavailable, so the PostgreSQL gate
+interleaving and hosted client compatibility remain required acceptance gates.
+
+This increment supplies tenant-wide directory reading and native grant control.
+Scoped sub-tenant authorization, context UI/switching, tenant-administrator
+enrollment, hierarchy administration APIs/screens, lifecycle/reparenting, tenant
+moves and the remaining production/device release criteria remain open.

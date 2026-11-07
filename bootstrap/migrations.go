@@ -33,6 +33,7 @@ func Migrations() []schema.Migration {
 			list = append(list, edumigrations.OnPool(node, "06_reservations", tenancy.Reservations))
 			list = append(list, edumigrations.OnPool(node, "07_activations", tenancy.Activations))
 			list = append(list, edumigrations.OnPool(node, "08_admin_enrollments", auth.AdminEnrollments))
+			list = append(list, edumigrations.OnPool(node, "09_tenant_grants", auth.TenantGrants))
 		}
 	}
 	return append(list, &migrations.M20210101000001CreateJobsTable{})

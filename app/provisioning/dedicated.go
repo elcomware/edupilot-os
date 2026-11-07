@@ -62,6 +62,12 @@ func dedicatedTarget(ctx context.Context, catalog *database.Catalog, tenant scop
 // The caller supplies its control transaction after acquiring the unique pin.
 func checkDedicatedData(ctx context.Context, catalog *database.Catalog, target database.Pool, id string, control reader) error {
 	var used bool
+	if err := control.QueryRowContext(ctx, catalog.Control.Bind("SELECT EXISTS (SELECT 1 FROM auth_tenant_grants WHERE tenant_id=? OR realm_id=?)"), id, id).Scan(&used); err != nil {
+		return err
+	}
+	if used {
+		return errOccupied
+	}
 	for _, pool := range catalog.All() {
 		if pool.DB == target.DB {
 			// A dedicated destination must also be empty of other owners' data.

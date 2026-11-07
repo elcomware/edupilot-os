@@ -118,16 +118,49 @@ func CheckReady(ctx context.Context, catalog *database.Catalog, expected []schem
 	if err := catalog.CheckReady(ctx); err != nil {
 		return err
 	}
+	return checkPoolMigrations(ctx, catalog.Control, catalog.Named(), expected)
+}
+
+// CheckControlReady supports authority revocation while target pools are offline.
+// Every registered control migration and its local receipt must be installed.
+func CheckControlReady(ctx context.Context, control database.Pool, expected []schema.Migration) error {
+	if control.DB == nil || len(expected) == 0 {
+		return errors.New("control database or migrations unavailable")
+	}
+	var owner, physical string
+	if err := control.DB.QueryRowContext(ctx, "SELECT owner,pool_id FROM edu_pool_marker WHERE singleton=1").Scan(&owner, &physical); err != nil {
+		return err
+	}
+	if owner != "shared" || physical == "" {
+		return database.ErrPlacement
+	}
+	selected := make([]schema.Migration, 0, len(expected))
+	pools := make(map[string]database.Pool)
+	for _, m := range expected {
+		if plan, ok := m.(*registered); ok {
+			if plan.node.Tenant != "" {
+				continue
+			}
+			pools[plan.node.Name] = control
+		}
+		selected = append(selected, m)
+	}
+	if len(pools) != 1 {
+		return errors.New("control migration registration unavailable")
+	}
+	return checkPoolMigrations(ctx, control, pools, selected)
+}
+
+func checkPoolMigrations(ctx context.Context, control database.Pool, pools map[string]database.Pool, expected []schema.Migration) error {
 	table, err := historyTable()
 	if err != nil {
 		return err
 	}
-	history, err := signatures(ctx, catalog.Control, `SELECT migration FROM "`+table+`"`)
+	history, err := signatures(ctx, control, `SELECT migration FROM "`+table+`"`)
 	if err != nil {
 		return fmt.Errorf("read Goravel migration ledger: %w", err)
 	}
 
-	pools := catalog.Named()
 	receipts := make(map[string]map[string]int, len(pools))
 	placements := make(map[string]bool, len(pools))
 	for _, m := range expected {

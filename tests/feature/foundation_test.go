@@ -203,6 +203,7 @@ func exerciseFoundation(t *testing.T) {
 	t.Run("metadata_dedicated", func(t *testing.T) {
 		verifyHierarchyEditor(t, db, requireValue(scope.Parse[scope.Tenant](hierarchyTenantID)))
 	})
+	t.Run("scoped_access", func(t *testing.T) { verifyScopedAccess(t, db) })
 	// A recognized receipt table still has to belong to the configured tenant.
 	if _, err := west.DB.Exec("UPDATE edu_pool_marker SET owner='tenant:other'"); err != nil {
 		t.Fatal(err)

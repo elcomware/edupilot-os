@@ -37,7 +37,7 @@ func (s *Service) LockEnrollmentRealm(ctx context.Context, tx *sql.Tx, school st
 		return ErrInvalidInput
 	}
 	if s.pool.Driver == "postgres" {
-		if _, err := tx.ExecContext(ctx, "LOCK TABLE auth_realms,auth_users,auth_roles,auth_permissions,auth_role_permissions,auth_memberships,auth_sessions,auth_admin_enrollments IN SHARE ROW EXCLUSIVE MODE"); err != nil {
+		if _, err := tx.ExecContext(ctx, "LOCK TABLE auth_realms,auth_users,auth_roles,auth_permissions,auth_role_permissions,auth_memberships,auth_sessions,auth_admin_enrollments,auth_tenant_grants IN SHARE ROW EXCLUSIVE MODE"); err != nil {
 			return err
 		}
 		var locked string
@@ -64,6 +64,15 @@ func (s *Service) EnrollInitialAdmin(ctx context.Context, tx *sql.Tx, school, po
 	op, err := uuid.Parse(operation)
 	if tx == nil || !database.ValidTenant(school) || pool == "" || err != nil || op.Version() != 4 || op.Variant() != uuid.RFC4122 || op.String() != operation || !ok || !validNewPassword(password) {
 		return AdminEnrollment{}, ErrInvalidInput
+	}
+	// New tenant grants are a later authority transition, outside the immutable
+	// v1 enrollment receipt, whether this realm is their subject or target.
+	var progressed bool
+	if err := tx.QueryRowContext(ctx, s.pool.Bind("SELECT EXISTS (SELECT 1 FROM auth_tenant_grants WHERE realm_id=? OR tenant_id=?)"), school, school).Scan(&progressed); err != nil {
+		return AdminEnrollment{}, err
+	}
+	if progressed {
+		return AdminEnrollment{}, ErrConflict
 	}
 	expected := AdminEnrollment{Version: 1, Tenant: school, PoolID: pool, OperationID: operation, EventID: uuid.NewSHA1(op, []byte(AdminEnrollmentEvent)).String()}
 	var payload, digest string
