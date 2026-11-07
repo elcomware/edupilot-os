@@ -3,6 +3,7 @@ package feature
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/elcomware/edupilot/modules/core/scope"
 	"github.com/elcomware/edupilot/modules/tenancy/app/models"
 	"github.com/elcomware/edupilot/modules/tenancy/app/services"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 func verifyDedicatedActivation(t *testing.T, db *database.Catalog) {
@@ -270,13 +272,39 @@ func verifyActivationRealmFence(t *testing.T, db *database.Catalog, tenant scope
 	if err := auth.New(&db.Control).LockEmptyRealm(ctx, lock, tenant.String()); err != nil {
 		t.Fatal(err)
 	}
-	writerCtx, writerCancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer writerCancel()
-	_, err = db.Control.DB.ExecContext(writerCtx, db.Control.Bind("INSERT INTO auth_roles (school_id,name) VALUES (?,'blocked-drift')"), tenant.String())
-	if err == nil {
-		t.Fatal("enrollment bypassed held realm fence")
+	// A client cancellation can return before PostgreSQL has stopped an
+	// autocommit statement. Keep this writer in an explicit transaction and
+	// finish its rollback before releasing the realm fence.
+	blockedWriter, err := db.Control.DB.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer blockedWriter.Rollback()
+	insert := db.Control.Bind("INSERT INTO auth_roles (school_id,name) VALUES (?,'blocked-drift')")
+	if db.Control.Driver == "postgres" {
+		if _, err := blockedWriter.ExecContext(ctx, "SET LOCAL lock_timeout = '100ms'"); err != nil {
+			t.Fatal(err)
+		}
+		_, err = blockedWriter.ExecContext(ctx, insert, tenant.String())
+		var pgError *pgconn.PgError
+		if !errors.As(err, &pgError) || pgError.Code != "55P03" {
+			t.Fatalf("expected server-confirmed realm lock timeout, got %v", err)
+		}
+	} else {
+		writerCtx, writerCancel := context.WithTimeout(ctx, 100*time.Millisecond)
+		defer writerCancel()
+		if _, err := blockedWriter.ExecContext(writerCtx, insert, tenant.String()); err == nil {
+			t.Fatal("enrollment bypassed held realm fence")
+		}
+	}
+	if err := blockedWriter.Rollback(); err != nil {
+		t.Fatal("blocked writer rollback", err)
 	}
 	if err := lock.Rollback(); err != nil {
 		t.Fatal(err)
+	}
+	var remaining int
+	if err := db.Control.DB.QueryRowContext(ctx, db.Control.Bind("SELECT count(*) FROM auth_roles WHERE school_id=?"), tenant.String()).Scan(&remaining); err != nil || remaining != 0 {
+		t.Fatalf("realm fence fixture left %d enrollment roles: %v", remaining, err)
 	}
 }
