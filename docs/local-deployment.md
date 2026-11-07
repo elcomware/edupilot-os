@@ -136,3 +136,52 @@ incorrect physical ownership fail before a result is emitted.
 Listing is read-only and grants no authorization. The command is for trusted
 native operators. Subject grants, scoped sessions, administration APIs and the
 web, desktop and mobile hierarchy workflows remain separate release work.
+
+## Edit hierarchy metadata
+
+A trusted native operator can replace the metadata of an existing organization,
+school or campus. Supply the existing tenant and record UUID, the expected
+placement epoch and the latest hierarchy version. Read the current metadata with
+`cmd/list-hierarchy` before editing. Every command requires all metadata fields
+for its selected kind.
+
+```sh
+go run ./cmd/edit-hierarchy -tenant "$tenant" -kind organizations \
+  -id "$organization" -name "Regional office" -epoch "$epoch" -version "$version"
+go run ./cmd/edit-hierarchy -tenant "$tenant" -kind schools \
+  -id "$school" -name "Central School" -code MAIN \
+  -epoch "$epoch" -version "$version"
+go run ./cmd/edit-hierarchy -tenant "$tenant" -kind campuses \
+  -id "$campus" -name "North Campus" -code NORTH -timezone Europe/Paris \
+  -epoch "$epoch" -version "$version"
+```
+
+Use the version returned by each successful change for the next command. Names,
+codes and timezones follow the creation rules above. Each kind accepts its listed
+metadata fields. The service loads the identity, parent and active ancestry from
+the tenant's pinned pool and validates the complete replacement. An inactive node
+or ancestor refuses editing until a separate lifecycle workflow is available.
+Sibling code uniqueness applies during edits.
+
+The command returns JSON after commit. `changed=true` accompanies an `entry`
+containing the saved metadata and its resolved `path`, including the new
+`hierarchyVersion`. The metadata update, one version increment and one typed
+`tenancy.organization.updated.v1`, `tenancy.school.updated.v1` or
+`tenancy.campus.updated.v1` outbox event commit atomically. Event payloads contain
+`before`, `after` and the committed `path`.
+
+An exact match after normalization returns `changed=false` and the current entry.
+It consumes zero versions and emits zero events. Even that receipt requires the
+expected epoch/version, active gate, matching physical pool and active ancestry.
+After an uncertain response, inspect the record and current version before
+retrying. A successful change makes the previous expected version stale and
+invalidates earlier listing cursors. Restart listing from the first page.
+
+Missing or malformed flags exit with status 2. Domain validation, placement
+failures and operational conflicts exit with status 1. Errors emit diagnostics
+on stderr. Retain the intended values and inspect the current state before
+resolving a conflict.
+
+Reparenting, lifecycle transitions, scoped grants and sessions, administration
+APIs and web/desktop/mobile editors require separate workflows. Tenant placement
+moves require their own fencing, copy and verification acceptance.

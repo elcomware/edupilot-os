@@ -545,3 +545,44 @@ increment with no actionable findings.
 Scoped grants and sessions, lifecycle and reparenting, additional hierarchy
 kinds, administration screens, tenant moves,
 remaining domain workflows and physical-device/release acceptance remain open.
+
+### Edit existing hierarchy metadata
+
+Trusted native operators can use `cmd/edit-hierarchy` to replace an
+organization's name, a school's name/code or a campus's name/code/timezone.
+The Goravel-registered editor requires the existing tenant and record UUID,
+complete kind-specific metadata, expected placement epoch and hierarchy version.
+It loads the persisted identity and ownership chain, validates the replacement
+through the existing models and requires an active selected node and ancestors.
+
+The pinned pool's active gate and physical marker serialize metadata edits with
+hierarchy creates. A change commits one metadata update, one hierarchy-version
+increment and one typed kind-specific update event containing canonical before
+and after values plus the resolved path. Its receipt returns `changed=true` and
+the saved entry. A canonical match returns `changed=false` after validating all
+preconditions and consumes zero versions/events. Earlier listing cursors become
+stale after a change.
+
+The disposable SQLite fixture passed shared and dedicated coverage for all
+three kinds, root and nested organizations, normalized metadata, IANA zones,
+ownership-scoped code uniqueness, missing/foreign records, inactive ancestry,
+missing/wrong pins and physical markers, closed gates, stale epoch/version,
+unchanged receipts, event failure rollback/retry, and concurrent edit/edit and
+edit/create attempts at the same version. Persisted entries, event payloads,
+versions and existing directory lookups were checked together.
+
+Full Go tests, feature race detection, vet and aggregate builds passed locally
+using disk-backed `GOTMPDIR`, `GOMEMLIMIT=256MiB` and `GOGC=50`, with sequential
+verification and `go build -p 1 ./...`. Resource architecture/palette checks and
+all 14 native-launcher tests passed. A compiled native SQLite drill installed
+fresh shared/dedicated pools, provisioned both tenants, created nested hierarchy
+records, edited each kind, read the saved results through list/inspect and
+verified exact event payloads. It also rejected malformed, stale, duplicate-code
+and inactive-ancestor commands, checked unchanged receipts and placement
+isolation, and verified empty Auth users/sessions/roles in the synthetic fixture.
+
+Local PostgreSQL tests skipped because a disposable server with CREATE DATABASE
+was unavailable. Hosted PostgreSQL and standard-build verification and independent
+review are pending for this checkpoint. Scoped grants/sessions, lifecycle and
+reparenting, additional hierarchy kinds, administration APIs/screens, tenant
+moves, domain workflows and production/device acceptance remain open.

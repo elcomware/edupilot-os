@@ -52,8 +52,25 @@ func HierarchyReader(app foundation.Application) (services.HierarchyReader, erro
 	return value.(services.HierarchyReader), nil
 }
 
+type hierarchyEditorBinding struct{}
+
+func HierarchyEditor(app foundation.Application) (services.HierarchyEditor, error) {
+	value, err := app.Make(hierarchyEditorBinding{})
+	if err != nil {
+		return services.HierarchyEditor{}, err
+	}
+	return value.(services.HierarchyEditor), nil
+}
+
 func (*TenancyServiceProvider) Boot(foundation.Application) {}
 func (*TenancyServiceProvider) Register(app foundation.Application) {
+	app.Singleton(hierarchyEditorBinding{}, func(app foundation.Application) (any, error) {
+		pools, err := app.Make(database.CatalogBinding)
+		if err != nil {
+			return nil, err
+		}
+		return services.HierarchyEditor{Pools: pools.(*database.Catalog)}, nil
+	})
 	app.Singleton(hierarchyReaderBinding{}, func(app foundation.Application) (any, error) {
 		pools, err := app.Make(database.CatalogBinding)
 		if err != nil {
