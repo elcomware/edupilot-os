@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 
+	auth "github.com/elcomware/edupilot/modules/auth/app/services"
 	"github.com/elcomware/edupilot/modules/core/database"
 	"github.com/elcomware/edupilot/modules/core/outbox"
 	"github.com/elcomware/edupilot/modules/core/scope"
@@ -55,6 +56,9 @@ func PrepareDedicatedTenant(ctx context.Context, catalog *database.Catalog, tena
 	}
 	if n != 1 {
 		return scope.Chain{}, errOccupied
+	}
+	if err := auth.New(&control).CheckEmptyRealm(ctx, lock, tenant.String()); err != nil {
+		return scope.Chain{}, err
 	}
 	for _, pool := range catalog.All() {
 		if pool.DB == target.DB {

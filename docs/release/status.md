@@ -291,3 +291,28 @@ The release still requires transfer-manifest coverage for future module tables,
 control-side enrollment reconciliation and recoverable activation with checks
 held through cutover. Tenant moves, administration UI and the wider release
 backlog remain open.
+
+### Reconcile reserved enrollment before preparation
+
+Preparation now asks Auth to verify the reserved realm in the existing control
+transaction, after acquiring the placement lock and before writing the target.
+The realm must exist and contain zero users, roles, permissions, role grants,
+memberships or sessions. The Auth-owned contract keeps its enrollment table
+inventory inside Auth. Any conflicting records are retained for investigation.
+
+The regression fixture first reproduced preparation accepting an unexpected
+role. SQLite checks now reject unexpected roles, permissions and users both
+before initialization and on retry. They verify preservation of those records,
+an untouched target after failed initial preparation, and acceptance when
+only an unrelated realm contains a role. Foreign keys bind memberships, grants
+and sessions to these enrollment roots.
+
+Local unit/feature tests, vet, build and race detection passed. A compiled native
+CLI drill rejected a populated reserved realm while preserving the role and
+empty placement pin. Independent review found no important issue. Hosted
+PostgreSQL and client verification are pending.
+
+This is control-side snapshot reconciliation for the installed Auth foundation.
+Activation still requires explicit writer exclusion, revalidation through
+cutover and recoverable placement publication. Initial administrator enrollment,
+tenant moves, administration UI and the full release backlog remain open.

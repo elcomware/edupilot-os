@@ -26,6 +26,31 @@ func verifyDedicatedPreparation(t *testing.T, db *database.Catalog) {
 			t.Fatalf("prepare: %+v %v", report, err)
 		}
 	}
+	checkRealmDrift := func() {
+		t.Helper()
+		for _, fixture := range []struct{ table, query string }{
+			{"auth_roles", "INSERT INTO auth_roles (school_id,name) VALUES (?,'unexpected')"},
+			{"auth_permissions", "INSERT INTO auth_permissions (school_id,name) VALUES (?,'unexpected')"},
+			{"auth_users", "INSERT INTO auth_users (school_id,id,email,password_hash) VALUES (?,'unexpected','fixture@example.test','synthetic-invalid-hash')"},
+		} {
+			if _, err := db.Control.DB.Exec(db.Control.Bind(fixture.query), candidateID); err != nil {
+				t.Fatal(err)
+			}
+			check(operation, false)
+			var count int
+			if err := db.Control.DB.QueryRow(db.Control.Bind("SELECT count(*) FROM "+fixture.table+" WHERE school_id=?"), candidateID).Scan(&count); err != nil || count != 1 {
+				t.Fatal("reconciliation changed evidence", count, err)
+			}
+			if _, err := db.Control.DB.Exec(db.Control.Bind("DELETE FROM "+fixture.table+" WHERE school_id=?"), candidateID); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	checkRealmDrift()
+	var before int
+	if err := target.DB.QueryRow(target.Bind("SELECT count(*) FROM tenant_gates WHERE tenant_id=?"), candidateID).Scan(&before); err != nil || before != 0 {
+		t.Fatal("auth drift initialized target", before, err)
+	}
 	check("wrong", false)
 	if _, err := target.DB.Exec("ALTER TABLE edu_outbox RENAME COLUMN payload TO unavailable_payload"); err != nil {
 		t.Fatal(err)
@@ -84,6 +109,21 @@ func verifyDedicatedPreparation(t *testing.T, db *database.Catalog) {
 	check(operation, false)
 	exec("DELETE FROM edu_audit_inbox WHERE event_id='unexpected'")
 	check(operation, true)
+	checkRealmDrift()
+	for _, query := range []string{
+		"INSERT INTO auth_realms (school_id) VALUES ('reconciliation-peer')",
+		"INSERT INTO auth_roles (school_id,name) VALUES ('reconciliation-peer','fixture')",
+	} {
+		if _, err := db.Control.DB.Exec(query); err != nil {
+			t.Fatal(err)
+		}
+	}
+	check(operation, true)
+	for _, table := range []string{"auth_roles", "auth_realms"} {
+		if _, err := db.Control.DB.Exec("DELETE FROM " + table + " WHERE school_id='reconciliation-peer'"); err != nil {
+			t.Fatal(err)
+		}
+	}
 	var gates, events int
 	if err := target.DB.QueryRow(target.Bind("SELECT count(*) FROM tenant_gates WHERE tenant_id=? AND state='provisioning' AND placement_epoch=1 AND hierarchy_version=1"), candidateID).Scan(&gates); err != nil || gates != 1 {
 		t.Fatal(gates, err)
