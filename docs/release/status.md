@@ -178,3 +178,11 @@ realms. It checks all configured pools for this tenant's foundation records and
 requires the dedicated destination to be empty of every owner's foundation data.
 It performs no writes. Reservation, revalidation under a write fence, resumable
 initialization and activation are separate release gates.
+
+The [dedicated preflight verification](https://github.com/elcomware/edupilot-os/actions/runs/42318572352)
+passed on disposable PostgreSQL and SQLite installations with three pools.
+It rejected another school's row in the destination, the proposed tenant's
+row in either other pool, a wrong marker and an existing pin. A separate
+installed native SQLite CLI drill returned the expected JSON for the fresh
+destination, left the pin table empty, and returned failure with no report
+after a different school's synthetic row was added.
