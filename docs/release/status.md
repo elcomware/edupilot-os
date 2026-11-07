@@ -366,5 +366,14 @@ fence, unexpected target/Auth records, event rollback, interrupted publication,
 worker delivery, corrupted events/receipts, exact retry after a hierarchy edit,
 pending routing denial and dedicated routing after publication. The complete Go
 test suite, vet, build, feature race checks and a compiled disposable SQLite CLI
-drill passed locally. PostgreSQL fixture execution requires the hosted disposable
-database job and remains pending for this checkpoint.
+drill passed locally. An upgrade drill built the preceding release at
+`51a6d9f`, retained its prepared reservation through the additive migration,
+activated it, and verified exact retry after a hierarchy edit and migration replay.
+
+The [hosted activation verification](https://github.com/elcomware/edupilot-os/actions/runs/42343978018)
+passed on PostgreSQL and SQLite, plus client tests/builds, Linux native window
+smoke, Windows compilation and browser end-to-end/accessibility checks.
+The initial PostgreSQL run exposed a fixture cancellation race. The blocked
+writer now uses an explicit transaction and server-confirmed lock timeout,
+and completes rollback before the realm fence is released. Independent review
+approved the protocol and fixture correction.
