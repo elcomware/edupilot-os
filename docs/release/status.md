@@ -486,7 +486,13 @@ stale and duplicate commands, and checked placement isolation and empty Auth
 user/session/role/grant tables.
 
 Local PostgreSQL verification skipped because a disposable server with CREATE
-DATABASE was unavailable. Hosted PostgreSQL and native-stack/browser verification
-are pending for this checkpoint. Scoped grants and sessions, lifecycle and
-reparenting, locations/teams/curricula, administration screens, verified tenant
-moves and the remaining frontend and production-release criteria stay open.
+DATABASE was unavailable. The [hosted hierarchy verification](https://github.com/elcomware/edupilot-os/actions/runs/42356701408)
+passed on implementation commit `0d952b4` with SQLite, PostgreSQL, client unit
+tests/builds, Linux window smoke, Windows compilation and native-stack browser
+end-to-end/accessibility checks. Hosted backend builds passed with their standard
+parallel settings. Independent review approved the implementation with no
+actionable findings.
+
+Scoped grants and sessions, lifecycle and reparenting, locations/teams/curricula,
+administration screens, verified tenant moves and the remaining frontend and
+production-release criteria stay open.
