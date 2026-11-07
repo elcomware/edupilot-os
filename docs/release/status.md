@@ -309,8 +309,10 @@ and sessions to these enrollment roots.
 
 Local unit/feature tests, vet, build and race detection passed. A compiled native
 CLI drill rejected a populated reserved realm while preserving the role and
-empty placement pin. Independent review found no important issue. Hosted
-PostgreSQL and client verification are pending.
+empty placement pin. Independent review found no important issue. The
+[hosted enrollment reconciliation checks](https://github.com/elcomware/edupilot-os/actions/runs/42338650413)
+passed on PostgreSQL and SQLite, together with client tests/builds, native Linux
+window smoke, Windows compilation and browser end-to-end/accessibility checks.
 
 This is control-side snapshot reconciliation for the installed Auth foundation.
 Activation still requires explicit writer exclusion, revalidation through
