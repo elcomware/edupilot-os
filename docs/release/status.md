@@ -432,7 +432,7 @@ Auth creation, competing credentials, exact retry, changed credentials/grants,
 principal deletion, other-tenant isolation and real HTTP login, protected
 access, cross-tenant denial and logout. SQLite passed locally. PostgreSQL was
 skipped locally because the disposable CREATE DATABASE fixture was unavailable
-and still requires hosted verification.
+and was verified in the hosted run linked below.
 
 A compiled native SQLite CLI drill upgraded an activated installation from
 `68f504f` with exactly one additive control migration. It verified enrollment,
@@ -449,5 +449,9 @@ waits for enrollment's audit-table lock request, checks that enrollment has yet
 to acquire the outbox fence, and then releases delivery. It covers initial
 control enrollment alongside another tenant's event and exact enrollment retry
 alongside dedicated target delivery. Each worker must publish in one attempt.
-Local full Go tests, vet, build and feature race checks passed. This PostgreSQL
-interleaving requires hosted execution because the local fixture is unavailable.
+Local full Go tests, vet, build and feature race checks passed. The
+[hosted enrollment verification](https://github.com/elcomware/edupilot-os/actions/runs/42348998826)
+passed SQLite, PostgreSQL including both paused-delivery interleavings, and client
+tests/builds, Linux window smoke, Windows compilation and browser
+end-to-end/accessibility checks. Independent re-review approved the lock-order
+correction and regression coverage.
